@@ -85,12 +85,11 @@
 
 ## Команда
 
-| Учасник | GitHub | Основна зона відповідальності |
-| --- | --- | --- |
-| Мар'ян | https://github.com/DemusMaryan | _Додати модуль_ |
-| Таня | https://github.com/fhyhtyh | _Додати модуль_ |
-| Саша | https://github.com/loktiska | _Додати модуль_ |
-| Семен | https://github.com/SemYanyshyn | _Додати модуль_ |
+| Учасник | GitHub | 
+| Мар'ян | https://github.com/DemusMaryan | 
+| Таня | https://github.com/fhyhtyh | 
+| Саша | https://github.com/loktiska | 
+| Семен | https://github.com/SemYanyshyn | 
 
 ## Документація
 
