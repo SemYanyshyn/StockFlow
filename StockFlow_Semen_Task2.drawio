@@ -1,0 +1,430 @@
+<mxfile host="app.diagrams.net" agent="Codex" compressed="false" pages="4">
+  <diagram id="owner-use-case" name="Use-case — Власник">
+    <mxGraphModel dx="1258" dy="866" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="p1-title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=24;fontStyle=1;fontColor=#1F2937;" value="Use-case діаграма — роль «Власник»" vertex="1">
+          <mxGeometry height="40" width="700" x="250" y="15" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-boundary" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F9FAFB;strokeColor=#475569;strokeWidth=2;" value="" vertex="1">
+          <mxGeometry height="780" width="970" x="190" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-system-label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=17;fontStyle=1;fontColor=#334155;" value="Система складського обліку StockFlow" vertex="1">
+          <mxGeometry height="30" width="390" x="480" y="82" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-actor" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;aspect=fixed;fontSize=16;fontStyle=1;strokeColor=#1F2937;" value="Власник" vertex="1">
+          <mxGeometry height="140" width="80" x="55" y="375" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-login" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#E0F2FE;strokeColor=#0284C7;strokeWidth=2;fontSize=14;" value="Увійти до системи" vertex="1">
+          <mxGeometry height="70" width="230" x="250" y="130" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-menu" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#E0F2FE;strokeColor=#0284C7;strokeWidth=2;fontSize=14;" value="Переглянути головне меню" vertex="1">
+          <mxGeometry height="70" width="230" x="250" y="235" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-list" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#E0F2FE;strokeColor=#0284C7;strokeWidth=2;fontSize=14;" value="Переглянути список накладних" vertex="1">
+          <mxGeometry height="70" width="230" x="250" y="340" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-filter" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#E0F2FE;strokeColor=#0284C7;strokeWidth=2;fontSize=14;" value="Знайти та відфільтрувати накладні" vertex="1">
+          <mxGeometry height="70" width="230" x="250" y="445" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-details" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#E0F2FE;strokeColor=#0284C7;strokeWidth=2;fontSize=14;" value="Переглянути деталі накладної" vertex="1">
+          <mxGeometry height="70" width="230" x="250" y="550" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-receipt" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#DCFCE7;strokeColor=#16A34A;strokeWidth=2;fontSize=14;fontStyle=1;" value="Зареєструвати надходження товару" vertex="1">
+          <mxGeometry height="85" width="260" x="540" y="205" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-writeoff" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#D97706;strokeWidth=2;fontSize=14;fontStyle=1;" value="Зареєструвати списання товару" vertex="1">
+          <mxGeometry height="85" width="260" x="540" y="515" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-warehouse" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#64748B;strokeWidth=1.5;fontSize=13;" value="Обрати склад" vertex="1">
+          <mxGeometry height="60" width="210" x="880" y="235" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-supplier" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#64748B;strokeWidth=1.5;fontSize=13;" value="Обрати постачальника" vertex="1">
+          <mxGeometry height="60" width="210" x="880" y="125" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-products" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#64748B;strokeWidth=1.5;fontSize=13;" value="Додати товар і кількість" vertex="1">
+          <mxGeometry height="60" width="210" x="880" y="345" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-save" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#64748B;strokeWidth=1.5;fontSize=13;" value="Зберегти накладну" vertex="1">
+          <mxGeometry height="60" width="210" x="880" y="455" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-check-stock" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#64748B;strokeWidth=1.5;fontSize=13;" value="Перевірити достатній залишок" vertex="1">
+          <mxGeometry height="60" width="210" x="880" y="565" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-e1" edge="1" parent="1" source="p1-actor" style="edgeStyle=none;rounded=0;html=0;endArrow=none;strokeColor=#475569;strokeWidth=1.5;" target="p1-login">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-e2" edge="1" parent="1" source="p1-actor" style="edgeStyle=none;rounded=0;html=0;endArrow=none;strokeColor=#475569;strokeWidth=1.5;" target="p1-menu">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-e3" edge="1" parent="1" source="p1-actor" style="edgeStyle=none;rounded=0;html=0;endArrow=none;strokeColor=#475569;strokeWidth=1.5;" target="p1-list">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-e4" edge="1" parent="1" source="p1-actor" style="edgeStyle=none;rounded=0;html=0;endArrow=none;strokeColor=#475569;strokeWidth=1.5;" target="p1-filter">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-e5" edge="1" parent="1" source="p1-actor" style="edgeStyle=none;rounded=0;html=0;endArrow=none;strokeColor=#475569;strokeWidth=1.5;" target="p1-details">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-e6" edge="1" parent="1" source="p1-actor" style="edgeStyle=none;rounded=0;html=0;endArrow=none;strokeColor=#475569;strokeWidth=1.5;" target="p1-receipt">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-e7" edge="1" parent="1" source="p1-actor" style="edgeStyle=none;rounded=0;html=0;endArrow=none;strokeColor=#475569;strokeWidth=1.5;" target="p1-writeoff">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-i1" edge="1" parent="1" source="p1-receipt" style="edgeStyle=none;rounded=0;html=0;dashed=1;dashPattern=6 4;endArrow=open;endFill=0;strokeColor=#64748B;strokeWidth=1.3;fontSize=11;fontColor=#334155;labelBackgroundColor=#F9FAFB;" target="p1-warehouse" value="&lt;&lt;include&gt;&gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-i2" edge="1" parent="1" source="p1-receipt" style="edgeStyle=none;rounded=0;html=0;dashed=1;dashPattern=6 4;endArrow=open;endFill=0;strokeColor=#64748B;strokeWidth=1.3;fontSize=11;fontColor=#334155;labelBackgroundColor=#F9FAFB;" target="p1-supplier" value="&lt;&lt;include&gt;&gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-i3" edge="1" parent="1" source="p1-receipt" style="edgeStyle=none;rounded=0;html=0;dashed=1;dashPattern=6 4;endArrow=open;endFill=0;strokeColor=#64748B;strokeWidth=1.3;fontSize=11;fontColor=#334155;labelBackgroundColor=#F9FAFB;" target="p1-products" value="&lt;&lt;include&gt;&gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-i4" edge="1" parent="1" source="p1-receipt" style="edgeStyle=none;rounded=0;html=0;dashed=1;dashPattern=6 4;endArrow=open;endFill=0;strokeColor=#64748B;strokeWidth=1.3;fontSize=11;fontColor=#334155;labelBackgroundColor=#F9FAFB;" target="p1-save" value="&lt;&lt;include&gt;&gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-i5" edge="1" parent="1" source="p1-writeoff" style="edgeStyle=none;rounded=0;html=0;dashed=1;dashPattern=6 4;endArrow=open;endFill=0;strokeColor=#64748B;strokeWidth=1.3;fontSize=11;fontColor=#334155;labelBackgroundColor=#F9FAFB;" target="p1-warehouse" value="&lt;&lt;include&gt;&gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-i6" edge="1" parent="1" source="p1-writeoff" style="edgeStyle=none;rounded=0;html=0;dashed=1;dashPattern=6 4;endArrow=open;endFill=0;strokeColor=#64748B;strokeWidth=1.3;fontSize=11;fontColor=#334155;labelBackgroundColor=#F9FAFB;" target="p1-products" value="&lt;&lt;include&gt;&gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-i7" edge="1" parent="1" source="p1-writeoff" style="edgeStyle=none;rounded=0;html=0;dashed=1;dashPattern=6 4;endArrow=open;endFill=0;strokeColor=#64748B;strokeWidth=1.3;fontSize=11;fontColor=#334155;labelBackgroundColor=#F9FAFB;" target="p1-save" value="&lt;&lt;include&gt;&gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-i8" edge="1" parent="1" source="p1-writeoff" style="edgeStyle=none;rounded=0;html=0;dashed=1;dashPattern=6 4;endArrow=open;endFill=0;strokeColor=#64748B;strokeWidth=1.3;fontSize=11;fontColor=#334155;labelBackgroundColor=#F9FAFB;" target="p1-check-stock" value="&lt;&lt;include&gt;&gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p1-note" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#FFF7ED;strokeColor=#F59E0B;fontSize=13;align=left;spacingLeft=10;" value="Примітка: після збереження StockFlow автоматично оновлює залишок товару на вибраному складі." vertex="1">
+          <mxGeometry height="70" width="560" x="510" y="740" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="main-menu-wireframe" name="Wireframe — Головне меню">
+    <mxGraphModel dx="1184" dy="815" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="800" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="p2-bg" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F8FAFC;strokeColor=#334155;strokeWidth=2;arcSize=2;" value="" vertex="1">
+          <mxGeometry height="740" width="1160" x="20" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="p2-top" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0F172A;strokeColor=#0F172A;arcSize=2;" value="" vertex="1">
+          <mxGeometry height="70" width="1160" x="20" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="p2-logo" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=22;fontStyle=1;fontColor=#FFFFFF;" value="STOCKFLOW" vertex="1">
+          <mxGeometry height="40" width="220" x="50" y="35" as="geometry" />
+        </mxCell>
+        <mxCell id="p2-user" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=right;verticalAlign=middle;fontSize=14;fontColor=#E2E8F0;" value="Семен Янишин  •  Власник" vertex="1">
+          <mxGeometry height="40" width="220" x="860" y="35" as="geometry" />
+        </mxCell>
+        <mxCell id="p2-logout" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#334155;strokeColor=#64748B;fontColor=#FFFFFF;fontSize=13;" value="Вийти" vertex="1">
+          <mxGeometry height="34" width="65" x="1090" y="38" as="geometry" />
+        </mxCell>
+        <mxCell id="p2-side" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E2E8F0;strokeColor=none;" value="" vertex="1">
+          <mxGeometry height="670" width="220" x="20" y="90" as="geometry" />
+        </mxCell>
+        <mxCell id="p2-nav1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2563EB;strokeColor=#2563EB;fontColor=#FFFFFF;fontSize=15;fontStyle=1;align=left;spacingLeft=18;" value="⌂  Головна" vertex="1">
+          <mxGeometry height="48" width="180" x="40" y="120" as="geometry" />
+        </mxCell>
+        <mxCell id="p2-nav2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontColor=#334155;fontSize=15;align=left;spacingLeft=18;" value="▤  Накладні" vertex="1">
+          <mxGeometry height="48" width="180" x="40" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="p2-nav3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontColor=#334155;fontSize=15;align=left;spacingLeft=18;" value="▦  Залишки" vertex="1">
+          <mxGeometry height="48" width="180" x="40" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="p2-nav4" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontColor=#334155;fontSize=15;align=left;spacingLeft=18;" value="□  Склади" vertex="1">
+          <mxGeometry height="48" width="180" x="40" y="300" as="geometry" />
+        </mxCell>
+        <mxCell id="p2-nav5" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontColor=#334155;fontSize=15;align=left;spacingLeft=18;" value="▥  Звіти" vertex="1">
+          <mxGeometry height="48" width="180" x="40" y="360" as="geometry" />
+        </mxCell>
+        <mxCell id="p2-heading" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=26;fontStyle=1;fontColor=#0F172A;" value="Головне меню" vertex="1">
+          <mxGeometry height="45" width="350" x="280" y="115" as="geometry" />
+        </mxCell>
+        <mxCell id="p2-sub" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=14;fontColor=#64748B;" value="Швидкі дії для роботи з рухом товарів" vertex="1">
+          <mxGeometry height="30" width="430" x="280" y="158" as="geometry" />
+        </mxCell>
+        <mxCell id="p2-card1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCFCE7;strokeColor=#86EFAC;strokeWidth=2;arcSize=8;shadow=1;" value="" vertex="1">
+          <mxGeometry height="150" width="260" x="280" y="220" as="geometry" />
+        </mxCell>
+        <mxCell id="p2-card1-icon" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#16A34A;strokeColor=#16A34A;fontColor=#FFFFFF;fontSize=28;fontStyle=1;" value="＋" vertex="1">
+          <mxGeometry height="55" width="55" x="290" y="245" as="geometry" />
+        </mxCell>
+        <mxCell id="p2-card1-text" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=17;fontStyle=1;fontColor=#14532D;" value="Створити прибуткову&lt;br&gt;накладну" vertex="1">
+          <mxGeometry height="60" width="145" x="350" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="p2-card1-btn" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#16A34A;strokeColor=#16A34A;fontColor=#FFFFFF;fontSize=13;fontStyle=1;" value="Створити →" vertex="1">
+          <mxGeometry height="34" width="120" x="305" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="p2-card2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#FCD34D;strokeWidth=2;arcSize=8;shadow=1;" value="" vertex="1">
+          <mxGeometry height="150" width="260" x="570" y="220" as="geometry" />
+        </mxCell>
+        <mxCell id="p2-card2-icon" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#D97706;strokeColor=#D97706;fontColor=#FFFFFF;fontSize=30;fontStyle=1;" value="−" vertex="1">
+          <mxGeometry height="55" width="55" x="580" y="245" as="geometry" />
+        </mxCell>
+        <mxCell id="p2-card2-text" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=17;fontStyle=1;fontColor=#78350F;" value="Створити видаткову&lt;br&gt;накладну" vertex="1">
+          <mxGeometry height="60" width="145" x="640" y="245" as="geometry" />
+        </mxCell>
+        <mxCell id="p2-card2-btn" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D97706;strokeColor=#D97706;fontColor=#FFFFFF;fontSize=13;fontStyle=1;" value="Створити →" vertex="1">
+          <mxGeometry height="34" width="120" x="595" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="p2-card3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DBEAFE;strokeColor=#93C5FD;strokeWidth=2;arcSize=8;shadow=1;" value="" vertex="1">
+          <mxGeometry height="150" width="260" x="860" y="220" as="geometry" />
+        </mxCell>
+        <mxCell id="p2-card3-icon" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#2563EB;strokeColor=#2563EB;fontColor=#FFFFFF;fontSize=25;fontStyle=1;" value="▤" vertex="1">
+          <mxGeometry height="55" width="55" x="885" y="245" as="geometry" />
+        </mxCell>
+        <mxCell id="p2-card3-text" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=17;fontStyle=1;fontColor=#1E3A8A;" value="Переглянути всі&lt;br&gt;накладні" vertex="1">
+          <mxGeometry height="60" width="145" x="955" y="245" as="geometry" />
+        </mxCell>
+        <mxCell id="p2-card3-btn" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2563EB;strokeColor=#2563EB;fontColor=#FFFFFF;fontSize=13;fontStyle=1;" value="Відкрити →" vertex="1">
+          <mxGeometry height="34" width="120" x="885" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="p2-recent-title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=19;fontStyle=1;fontColor=#0F172A;" value="Останні операції" vertex="1">
+          <mxGeometry height="35" width="250" x="280" y="415" as="geometry" />
+        </mxCell>
+        <mxCell id="p2-table-head" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E2E8F0;strokeColor=#CBD5E1;fontSize=13;fontStyle=1;align=left;spacingLeft=15;" value="№ накладної          Дата               Тип                     Склад                 Статус" vertex="1">
+          <mxGeometry height="45" width="840" x="280" y="460" as="geometry" />
+        </mxCell>
+        <mxCell id="p2-row1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#E2E8F0;fontSize=13;align=left;spacingLeft=15;" value="НК-015                  17.09.2026      Прибуткова          Склад №1           Проведено" vertex="1">
+          <mxGeometry height="48" width="840" x="280" y="505" as="geometry" />
+        </mxCell>
+        <mxCell id="p2-row2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F8FAFC;strokeColor=#E2E8F0;fontSize=13;align=left;spacingLeft=15;" value="НК-014                  16.09.2026      Видаткова            Склад №1           Проведено" vertex="1">
+          <mxGeometry height="48" width="840" x="280" y="553" as="geometry" />
+        </mxCell>
+        <mxCell id="p2-row3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#E2E8F0;fontSize=13;align=left;spacingLeft=15;" value="НК-013                  16.09.2026      Прибуткова          Склад №2           Проведено" vertex="1">
+          <mxGeometry height="48" width="840" x="280" y="601" as="geometry" />
+        </mxCell>
+        <mxCell id="p2-view-all" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2563EB;fontColor=#2563EB;fontSize=13;fontStyle=1;" value="Переглянути всі накладні →" vertex="1">
+          <mxGeometry height="40" width="200" x="920" y="675" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="invoice-list-wireframe" name="Wireframe — Список накладних">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="800" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="p3-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F8FAFC;strokeColor=#334155;strokeWidth=2;arcSize=2;" vertex="1" parent="1">
+          <mxGeometry x="20" y="20" width="1160" height="740" as="geometry" />
+        </mxCell>
+        <mxCell id="p3-top" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0F172A;strokeColor=#0F172A;arcSize=2;" vertex="1" parent="1">
+          <mxGeometry x="20" y="20" width="1160" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p3-logo" value="STOCKFLOW" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=22;fontStyle=1;fontColor=#FFFFFF;" vertex="1" parent="1">
+          <mxGeometry x="50" y="35" width="220" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="p3-user" value="Семен Янишин  •  Власник" style="text;html=1;strokeColor=none;fillColor=none;align=right;verticalAlign=middle;fontSize=14;fontColor=#E2E8F0;" vertex="1" parent="1">
+          <mxGeometry x="860" y="35" width="220" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="p3-logout" value="Вийти" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#334155;strokeColor=#64748B;fontColor=#FFFFFF;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="1090" y="38" width="65" height="34" as="geometry" />
+        </mxCell>
+        <mxCell id="p3-side" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E2E8F0;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="20" y="90" width="220" height="670" as="geometry" />
+        </mxCell>
+        <mxCell id="p3-nav1" value="⌂  Головна" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontColor=#334155;fontSize=15;align=left;spacingLeft=18;" vertex="1" parent="1">
+          <mxGeometry x="40" y="120" width="180" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="p3-nav2" value="▤  Накладні" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2563EB;strokeColor=#2563EB;fontColor=#FFFFFF;fontSize=15;fontStyle=1;align=left;spacingLeft=18;" vertex="1" parent="1">
+          <mxGeometry x="40" y="180" width="180" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="p3-nav3" value="▦  Залишки" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontColor=#334155;fontSize=15;align=left;spacingLeft=18;" vertex="1" parent="1">
+          <mxGeometry x="40" y="240" width="180" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="p3-nav4" value="□  Склади" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontColor=#334155;fontSize=15;align=left;spacingLeft=18;" vertex="1" parent="1">
+          <mxGeometry x="40" y="300" width="180" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="p3-nav5" value="▥  Звіти" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontColor=#334155;fontSize=15;align=left;spacingLeft=18;" vertex="1" parent="1">
+          <mxGeometry x="40" y="360" width="180" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="p3-heading" value="Накладні" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=26;fontStyle=1;fontColor=#0F172A;" vertex="1" parent="1">
+          <mxGeometry x="280" y="112" width="250" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="p3-add" value="＋ Створити накладну" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2563EB;strokeColor=#2563EB;fontColor=#FFFFFF;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="900" y="115" width="220" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="p3-search-label" value="Пошук за номером" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=12;fontColor=#475569;" vertex="1" parent="1">
+          <mxGeometry x="280" y="180" width="150" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="p3-search" value="НК-..." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#CBD5E1;fontColor=#94A3B8;fontSize=13;align=left;spacingLeft=12;" vertex="1" parent="1">
+          <mxGeometry x="280" y="202" width="190" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="p3-type-label" value="Тип" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=12;fontColor=#475569;" vertex="1" parent="1">
+          <mxGeometry x="490" y="180" width="80" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="p3-type" value="Усі типи  ▾" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#CBD5E1;fontColor=#334155;fontSize=13;align=left;spacingLeft=12;" vertex="1" parent="1">
+          <mxGeometry x="490" y="202" width="145" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="p3-wh-label" value="Склад" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=12;fontColor=#475569;" vertex="1" parent="1">
+          <mxGeometry x="655" y="180" width="80" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="p3-wh" value="Усі склади  ▾" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#CBD5E1;fontColor=#334155;fontSize=13;align=left;spacingLeft=12;" vertex="1" parent="1">
+          <mxGeometry x="655" y="202" width="145" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="p3-from-label" value="Дата від" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=12;fontColor=#475569;" vertex="1" parent="1">
+          <mxGeometry x="820" y="180" width="80" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="p3-from" value="01.09.2026" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#CBD5E1;fontColor=#334155;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="820" y="202" width="130" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="p3-to-label" value="Дата до" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=12;fontColor=#475569;" vertex="1" parent="1">
+          <mxGeometry x="970" y="180" width="80" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="p3-to" value="17.09.2026" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#CBD5E1;fontColor=#334155;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="970" y="202" width="150" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="p3-apply" value="Застосувати" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#334155;strokeColor=#334155;fontColor=#FFFFFF;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="880" y="260" width="120" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="p3-reset" value="Очистити" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#94A3B8;fontColor=#475569;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="1010" y="260" width="110" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="p3-head" value="№                 Дата             Тип                   Склад             Відповідальний       Статус            Дії" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E2E8F0;strokeColor=#CBD5E1;fontSize=12;fontStyle=1;align=left;spacingLeft=14;" vertex="1" parent="1">
+          <mxGeometry x="280" y="325" width="840" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="p3-r1" value="НК-015       17.09.2026     Прибуткова       Склад №1       Семен Янишин          Проведено      Переглянути" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#E2E8F0;fontSize=12;align=left;spacingLeft=14;" vertex="1" parent="1">
+          <mxGeometry x="280" y="370" width="840" height="52" as="geometry" />
+        </mxCell>
+        <mxCell id="p3-r2" value="НК-014       16.09.2026     Видаткова         Склад №1       Семен Янишин          Проведено      Переглянути" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F8FAFC;strokeColor=#E2E8F0;fontSize=12;align=left;spacingLeft=14;" vertex="1" parent="1">
+          <mxGeometry x="280" y="422" width="840" height="52" as="geometry" />
+        </mxCell>
+        <mxCell id="p3-r3" value="НК-013       16.09.2026     Прибуткова       Склад №2       Семен Янишин          Проведено      Переглянути" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#E2E8F0;fontSize=12;align=left;spacingLeft=14;" vertex="1" parent="1">
+          <mxGeometry x="280" y="474" width="840" height="52" as="geometry" />
+        </mxCell>
+        <mxCell id="p3-r4" value="НК-012       15.09.2026     Видаткова         Склад №2       Семен Янишин          Проведено      Переглянути" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F8FAFC;strokeColor=#E2E8F0;fontSize=12;align=left;spacingLeft=14;" vertex="1" parent="1">
+          <mxGeometry x="280" y="526" width="840" height="52" as="geometry" />
+        </mxCell>
+        <mxCell id="p3-r5" value="НК-011       14.09.2026     Прибуткова       Склад №1       Семен Янишин          Проведено      Переглянути" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#E2E8F0;fontSize=12;align=left;spacingLeft=14;" vertex="1" parent="1">
+          <mxGeometry x="280" y="578" width="840" height="52" as="geometry" />
+        </mxCell>
+        <mxCell id="p3-count" value="Показано 5 із 24 накладних" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=12;fontColor=#64748B;" vertex="1" parent="1">
+          <mxGeometry x="280" y="665" width="220" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="p3-pages" value="←    1    2    3    →" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#CBD5E1;fontColor=#334155;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="940" y="658" width="180" height="40" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="movement-form-wireframe" name="Wireframe — Форма руху товару">
+    <mxGraphModel dx="1200" dy="850" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="850" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="p4-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F8FAFC;strokeColor=#334155;strokeWidth=2;arcSize=2;" vertex="1" parent="1">
+          <mxGeometry x="20" y="20" width="1160" height="790" as="geometry" />
+        </mxCell>
+        <mxCell id="p4-top" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0F172A;strokeColor=#0F172A;arcSize=2;" vertex="1" parent="1">
+          <mxGeometry x="20" y="20" width="1160" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="p4-logo" value="STOCKFLOW" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=22;fontStyle=1;fontColor=#FFFFFF;" vertex="1" parent="1">
+          <mxGeometry x="50" y="35" width="220" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="p4-user" value="Семен Янишин  •  Власник" style="text;html=1;strokeColor=none;fillColor=none;align=right;verticalAlign=middle;fontSize=14;fontColor=#E2E8F0;" vertex="1" parent="1">
+          <mxGeometry x="860" y="35" width="220" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="p4-logout" value="Вийти" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#334155;strokeColor=#64748B;fontColor=#FFFFFF;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="1090" y="38" width="65" height="34" as="geometry" />
+        </mxCell>
+        <mxCell id="p4-side" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E2E8F0;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="20" y="90" width="220" height="720" as="geometry" />
+        </mxCell>
+        <mxCell id="p4-nav1" value="⌂  Головна" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontColor=#334155;fontSize=15;align=left;spacingLeft=18;" vertex="1" parent="1">
+          <mxGeometry x="40" y="120" width="180" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="p4-nav2" value="▤  Накладні" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2563EB;strokeColor=#2563EB;fontColor=#FFFFFF;fontSize=15;fontStyle=1;align=left;spacingLeft=18;" vertex="1" parent="1">
+          <mxGeometry x="40" y="180" width="180" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="p4-nav3" value="▦  Залишки" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontColor=#334155;fontSize=15;align=left;spacingLeft=18;" vertex="1" parent="1">
+          <mxGeometry x="40" y="240" width="180" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="p4-nav4" value="□  Склади" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontColor=#334155;fontSize=15;align=left;spacingLeft=18;" vertex="1" parent="1">
+          <mxGeometry x="40" y="300" width="180" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="p4-heading" value="Створення накладної" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=26;fontStyle=1;fontColor=#0F172A;" vertex="1" parent="1">
+          <mxGeometry x="280" y="110" width="380" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="p4-back" value="← До списку накладних" style="text;html=1;strokeColor=none;fillColor=none;align=right;verticalAlign=middle;fontSize=13;fontColor=#2563EB;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="900" y="118" width="220" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="p4-type-label" value="Тип руху товару *" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=13;fontStyle=1;fontColor=#334155;" vertex="1" parent="1">
+          <mxGeometry x="280" y="180" width="180" height="25" as="geometry" />
+        </mxCell>
+        <mxCell id="p4-type-in" value="Прибуткова" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#16A34A;strokeColor=#16A34A;fontColor=#FFFFFF;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="280" y="210" width="145" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="p4-type-out" value="Видаткова" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#CBD5E1;fontColor=#475569;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="425" y="210" width="145" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="p4-num-label" value="Номер накладної *" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=12;fontColor=#475569;" vertex="1" parent="1">
+          <mxGeometry x="600" y="180" width="150" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="p4-num" value="НК-016" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#CBD5E1;fontColor=#334155;fontSize=13;align=left;spacingLeft=12;" vertex="1" parent="1">
+          <mxGeometry x="600" y="205" width="180" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="p4-date-label" value="Дата *" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=12;fontColor=#475569;" vertex="1" parent="1">
+          <mxGeometry x="805" y="180" width="100" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="p4-date" value="17.09.2026  ▣" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#CBD5E1;fontColor=#334155;fontSize=13;align=left;spacingLeft=12;" vertex="1" parent="1">
+          <mxGeometry x="805" y="205" width="160" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="p4-wh-label" value="Склад *" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=12;fontColor=#475569;" vertex="1" parent="1">
+          <mxGeometry x="990" y="180" width="100" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="p4-wh" value="Склад №1  ▾" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#CBD5E1;fontColor=#334155;fontSize=13;align=left;spacingLeft=12;" vertex="1" parent="1">
+          <mxGeometry x="990" y="205" width="130" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="p4-sup-label" value="Постачальник *" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=12;fontColor=#475569;" vertex="1" parent="1">
+          <mxGeometry x="280" y="280" width="150" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="p4-sup" value="Оберіть постачальника  ▾" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#CBD5E1;fontColor=#334155;fontSize=13;align=left;spacingLeft=12;" vertex="1" parent="1">
+          <mxGeometry x="280" y="305" width="290" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="p4-resp-label" value="Відповідальна особа" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=12;fontColor=#475569;" vertex="1" parent="1">
+          <mxGeometry x="600" y="280" width="160" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="p4-resp" value="Семен Янишин" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F1F5F9;strokeColor=#CBD5E1;fontColor=#64748B;fontSize=13;align=left;spacingLeft=12;" vertex="1" parent="1">
+          <mxGeometry x="600" y="305" width="220" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="p4-note-label" value="Примітка" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=12;fontColor=#475569;" vertex="1" parent="1">
+          <mxGeometry x="850" y="280" width="100" height="22" as="geometry" />
+        </mxCell>
+        <mxCell id="p4-note-field" value="Необов’язково" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#CBD5E1;fontColor=#94A3B8;fontSize=13;align=left;spacingLeft=12;" vertex="1" parent="1">
+          <mxGeometry x="850" y="305" width="270" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="p4-items-title" value="Товари в накладній" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=18;fontStyle=1;fontColor=#0F172A;" vertex="1" parent="1">
+          <mxGeometry x="280" y="385" width="250" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="p4-add-item" value="＋ Додати товар" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#2563EB;fontColor=#2563EB;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="970" y="378" width="150" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="p4-head" value="Товар                               Категорія                  Кількість       Од. виміру       Дія" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E2E8F0;strokeColor=#CBD5E1;fontSize=12;fontStyle=1;align=left;spacingLeft=14;" vertex="1" parent="1">
+          <mxGeometry x="280" y="435" width="840" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="p4-item1" value="Ноутбук Lenovo IdeaPad            Електроніка                     5                  шт.            Видалити" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#E2E8F0;fontSize=12;align=left;spacingLeft=14;" vertex="1" parent="1">
+          <mxGeometry x="280" y="480" width="840" height="52" as="geometry" />
+        </mxCell>
+        <mxCell id="p4-item2" value="Оберіть товар...                         —                             1                  шт.            Видалити" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F8FAFC;strokeColor=#E2E8F0;fontSize=12;align=left;spacingLeft=14;fontColor=#64748B;" vertex="1" parent="1">
+          <mxGeometry x="280" y="532" width="840" height="52" as="geometry" />
+        </mxCell>
+        <mxCell id="p4-info" value="Після збереження прибуткової накладної кількість товару на вибраному складі автоматично збільшиться." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#EFF6FF;strokeColor=#60A5FA;fontColor=#1E3A8A;fontSize=12;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="280" y="610" width="570" height="62" as="geometry" />
+        </mxCell>
+        <mxCell id="p4-error" value="При видатковій накладній система не дозволить списати більше товару, ніж є на складі." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#FEF2F2;strokeColor=#F87171;fontColor=#991B1B;fontSize=12;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="870" y="610" width="250" height="62" as="geometry" />
+        </mxCell>
+        <mxCell id="p4-cancel" value="Скасувати" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#94A3B8;fontColor=#475569;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="840" y="715" width="125" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="p4-save" value="Зберегти накладну" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2563EB;strokeColor=#2563EB;fontColor=#FFFFFF;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="980" y="715" width="140" height="44" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
