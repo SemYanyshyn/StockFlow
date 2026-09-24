@@ -1,12 +1,4 @@
-# User stories and acceptance criteria
-
-Grouped by module (matching the team split). Each block below the bold
-title is formatted for a direct copy-paste into a GitHub issue
-description.
-
----
-
-## Products and categories (Tanya)
+## Products and categories
 
 **US-01: View product list**
 
@@ -28,11 +20,11 @@ As an **Admin**,
 ### Acceptance Criteria
 * The form requires a mandatory "Name" field
 * A duplicate category name is rejected with an error message
-* The "Add category" button is not visible to the Employee and Owner roles
+* The "Add category" button is not visible to the Employee role
 
 ---
 
-## Suppliers (Marian)
+## Suppliers
 
 **US-03: Add a supplier**
 
@@ -57,23 +49,23 @@ As an **Employee**,
 
 ---
 
-## Invoices / stock movements (Semen)
+## Invoices / stock movements
 
 **US-05: Register a stock receipt**
 
-As an **Owner**,
+As an **Employee**,
 **I want to** register a stock receipt from a supplier,
 **so that** the stock level updates automatically.
 ### Acceptance Criteria
 * The form includes: product, quantity, supplier, warehouse
 * After saving, the stock level for the selected product and warehouse increases by the specified quantity
-* The form is not accessible to the Employee and Admin roles
+* The form is not accessible to the Admin role
 
 ---
 
 **US-06: Register a stock write-off**
 
-As an **Owner**,
+As an **Employee**,
 **I want to** register a stock write-off,
 **so that** I can reflect that the product is no longer actually available.
 ### Acceptance Criteria
@@ -83,7 +75,7 @@ As an **Owner**,
 
 ---
 
-## Stock, warehouses, and reporting (Sasha)
+## Stock, warehouses, and reporting
 
 **US-07: View current stock levels**
 
@@ -116,11 +108,11 @@ As **any role**,
 ### Acceptance Criteria
 * A date range (from — to) can be selected
 * The result shows total receipts and write-offs per product
-* The report is available to all three roles (Employee, Owner, Admin)
+* The report is available to both roles (Employee, Admin)
 
 ---
 
-## Authentication and roles (shared)
+## Authentication and roles
 
 **US-10: Log in**
 
@@ -139,5 +131,5 @@ As an **Admin**,
 **I want to** create user accounts and assign them roles,
 **so that** I can control access to the system.
 ### Acceptance Criteria
-* The form includes: username, password, role (Employee/Owner/Admin)
-* The "Users" section is not visible to the Employee and Owner roles
+* The form includes: username, password, role (Employee/Admin)
+* The "Users" section is not visible to the Employee role
