@@ -18,11 +18,26 @@ StockFlow побудовано за **шаровою (layered) архітект�
 /src
   StockFlow.Domain          — сутності (Product, Category, Supplier, Warehouse,
                               Stock, StockMovement, User) і переліки
-  StockFlow.DataAccess      — репозиторії на ADO.NET, DbConnectionFactory
+                              (UnitOfMeasure, MovementType, UserRole)
+  StockFlow.DataAccess      — інтерфейси й реалізації репозиторіїв (ADO.NET),
+                              DbConnectionFactory
   StockFlow.BusinessLogic   — сервіси з бізнес-правилами та валідацією
   StockFlow.UI              — WPF-застосунок: Views (XAML) і ViewModels
 /tests
   StockFlow.Tests           — автоматизовані тести (xUnit)
+/database                   — SQL-скрипти створення схеми та тестових даних
+/documentation              — вимоги, діаграми, архітектура
+/.github/workflows          — збирання й тести (GitHub Actions)
+```
+
+Посилання між проєктами:
+
+```
+UI            → BusinessLogic, Domain
+BusinessLogic → DataAccess, Domain
+DataAccess    → Domain
+Domain        → (немає)
+Tests         → BusinessLogic, DataAccess, Domain
 ```
 
 ## 3. Основні компоненти та їх відповідальність
