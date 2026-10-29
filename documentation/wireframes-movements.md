@@ -34,3 +34,9 @@ NODE_PATH=/private/tmp/stockflow-svg-render/node_modules node documentation/diag
 Усі три PNG експортовано й візуально перевірено: український текст читається,
 підписи та компоненти не обрізані. SVG перевірено XML-парсером; розміри PNG
 відповідають SVG і попереднім PNG. WPF-код не змінювався, Windows-прогін не виконувався.
+
+Після звичайного злиття актуального main `723e656` виконано `dotnet restore`,
+`dotnet build StockFlow.sln -c Release --no-restore` (0 warnings, 0 errors) та
+`dotnet test tests/StockFlow.Tests/StockFlow.Tests.csproj -c Release --no-build --no-restore`:
+146 passed, 0 failed, 0 skipped на macOS ARM64, SDK 8.0.427. Усі шість SVG/PNG
+побайтово незмінні після злиття; diff від main містить лише ці 8 файлів документації.
