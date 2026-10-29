@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using StockFlow.BusinessLogic.Products;
+using StockFlow.BusinessLogic.Users;
 using StockFlow.Domain;
 
 namespace StockFlow.UI.ViewModels;
@@ -28,15 +29,35 @@ public sealed partial class ProductsViewModel : ViewModelBase
     [ObservableProperty]
     private string? _errorMessage;
 
-    public ProductsViewModel(ProductService productService, CategoryService categoryService)
+    [ObservableProperty]
+    private string _newProductName = string.Empty;
+
+    [ObservableProperty]
+    private CategoryFilterItem? _newProductCategory;
+
+    [ObservableProperty]
+    private UnitOption? _newProductUnit;
+
+    [ObservableProperty]
+    private string? _addErrorMessage;
+
+    public ProductsViewModel(ProductService productService, CategoryService categoryService, ICurrentUserContext currentUser)
     {
         ArgumentNullException.ThrowIfNull(productService);
         ArgumentNullException.ThrowIfNull(categoryService);
+        ArgumentNullException.ThrowIfNull(currentUser);
         _productService = productService;
         _categoryService = categoryService;
+        CanManage = currentUser.IsAdmin;
     }
 
+    public bool CanManage { get; }
+
     public ObservableCollection<CategoryFilterItem> Categories { get; } = new() { CategoryFilterItem.All };
+
+    public ObservableCollection<CategoryFilterItem> ProductCategories { get; } = new();
+
+    public IReadOnlyList<UnitOption> Units => UnitOption.All;
 
     partial void OnSearchTextChanged(string value) => ApplyFilter();
 
@@ -62,17 +83,48 @@ public sealed partial class ProductsViewModel : ViewModelBase
         ApplyFilter();
     }
 
+    [RelayCommand]
+    private async Task AddAsync()
+    {
+        AddErrorMessage = null;
+        try
+        {
+            var name = NewProductName;
+            var categoryId = NewProductCategory?.Id;
+            var unit = NewProductUnit?.Unit;
+            await Task.Run(() => _productService.Add(name, categoryId, unit));
+            NewProductName = string.Empty;
+        }
+        catch (ValidationException error)
+        {
+            AddErrorMessage = error.Message;
+            return;
+        }
+        catch (Exception error)
+        {
+            AddErrorMessage = DataErrorText.From(error);
+            return;
+        }
+
+        await LoadAsync();
+    }
+
     private void RefreshCategories(IEnumerable<Category> categories)
     {
         var selectedId = SelectedCategory?.Id;
+        var newProductCategoryId = NewProductCategory?.Id;
         Categories.Clear();
+        ProductCategories.Clear();
         Categories.Add(CategoryFilterItem.All);
         foreach (var category in categories)
         {
-            Categories.Add(new CategoryFilterItem(category.Id, category.Name));
+            var item = new CategoryFilterItem(category.Id, category.Name);
+            Categories.Add(item);
+            ProductCategories.Add(item);
         }
 
         SelectedCategory = Categories.FirstOrDefault(item => item.Id == selectedId) ?? CategoryFilterItem.All;
+        NewProductCategory = ProductCategories.FirstOrDefault(item => item.Id == newProductCategoryId);
     }
 
     private void ApplyFilter()
