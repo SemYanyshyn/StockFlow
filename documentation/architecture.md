@@ -20,33 +20,47 @@ StockFlow побудовано за **шаровою (layered) архітект�
 ```text
 StockFlow.sln
 global.json
+.github/workflows/ci.yml            # restore → build → test на windows-latest
+database/
+  01_schema.sql                     # таблиці, ключі, ON DELETE RESTRICT, CHECK
+  02_seed.sql                       # тестові користувачі, довідники, залишки
 src/
-  StockFlow.Domain/
-    StockFlow.Domain.csproj          # net8.0, незалежна модель
-    MovementType.cs                 # Receipt / WriteOff
-  StockFlow.DataAccess/
-    StockFlow.DataAccess.csproj      # net8.0, ADO.NET / Npgsql
+  StockFlow.Domain/                 # net8.0, незалежна модель
+    Product.cs, Category.cs, UnitOfMeasure.cs
+    Supplier.cs, User.cs, UserRole.cs
+    Stock.cs, Warehouse.cs, MovementType.cs
+  StockFlow.DataAccess/             # net8.0, ADO.NET / Npgsql
     DbConnectionFactory.cs          # нове закрите з'єднання на кожну операцію
-  StockFlow.BusinessLogic/
-    StockFlow.BusinessLogic.csproj   # net8.0, майбутні сервіси
+    IStockRepository.cs             # контракт залишків (модуль Саші)
+    Products/                       # CategoryRepository, ProductRepository, UnitOfMeasureColumn
+    Suppliers/                      # SupplierRepository
+  StockFlow.BusinessLogic/          # net8.0, сервіси й правила
     ServiceCollectionExtensions.cs  # AddStockFlow: межа реєстрації DI
     StockFlowConfiguration.cs       # JSON біля executable + STOCKFLOW_ environment
-  StockFlow.UI/
-    StockFlow.UI.csproj             # net8.0-windows, UseWPF=true
-    App.xaml / App.xaml.cs          # виклик BusinessLogic для конфігурації й DI
-    MainWindow.xaml / .xaml.cs       # стандартне порожнє вікно
+    Products/                       # CategoryService, ProductService, ValidationException
+    Suppliers/                      # SupplierService
+    Users/                          # ICurrentUserContext, TemporaryUserContext
+  StockFlow.UI/                     # net8.0-windows, WPF, MVVM
+    App.xaml / App.xaml.cs          # конфігурація, AddStockFlow, DI екранів
+    Services/                       # NavigationService
+    Styles/Theme.xaml               # кольори, кнопки, таблиці
+    ViewModels/                     # MainWindowViewModel, ProductsViewModel, CategoriesViewModel, SuppliersViewModel, ...
+    Views/                          # MainWindow, ProductsView, CategoriesView, SuppliersView, екрани-заглушки
     appsettings.example.json        # лише безпечний приклад; не завантажується
     appsettings.json                # тільки локально, ігнорується Git
 tests/
-  StockFlow.Tests/
-    StockFlow.Tests.csproj          # net8.0, xUnit, без WPF і PostgreSQL
-    DbConnectionFactoryTests.cs
-    StockFlowConfigurationTests.cs
+  StockFlow.Tests/                  # net8.0, xUnit, без WPF і PostgreSQL
+    *Tests.cs                       # домен, сервіси з фейковими репозиторіями, DI, конфігурація
 documentation/
   architecture.md
+  requirements.md, user-stories.md, scenarios.md
   stage5-integration.md             # контракти, перевірки й залежності команди
-  diagrams/                        # актуальні UML та ER
+  diagrams/                         # актуальні UML та ER
 ```
+
+Модулі в DataAccess і BusinessLogic лежать у власних папках (`Products/`, `Suppliers/`, `Users/`).
+В UI екрани розкладено за типом: `Views/` і `ViewModels/`; новий екран реєструється
+в `App.xaml.cs` (ViewModel у DI) і в `MainWindow.xaml` (DataTemplate).
 
 Фактичні **прямі** `ProjectReference`:
 
@@ -81,17 +95,9 @@ JSON. `appsettings.example.json` ніколи не використовуєть�
 мінімальне вікно можуть бути створені; перше отримання фабрики дає зрозумілу
 помилку без пароля. Некоректний JSON також дає очищену від вмісту файлу помилку.
 
-**Реалізовано:** каркас, фабрика, конфігурація, реєстрація DI, `MovementType`
-та юніт-тести інфраструктури. `StockMovement` і тести `Validate(stock)` /
-`Apply(stock)` ще не додані: у main і доступних гілках немає `Stock` Саші.
-Мінімальний контракт наведено в [інтеграційних нотатках](stage5-integration.md).
-Production-заглушки й альтернативного типу Stock немає.
-
-**Залишається команді:** Саша — `Stock`, `Warehouse`, `IStockRepository`, оболонка,
-меню та стилі; Мар'ян — `database/`, користувачі, постачальники, тимчасовий контекст
-користувача та `.github/workflows/ci.yml`; Таня — товари, категорії, їхній
-наскрізний зріз і загальний README. Цих майбутніх папок/модулів поки немає в коді.
-Інші розділи цього документа описують цільову архітектуру.
+Поточний стан реалізованих модулів наведено в розділі «Поточний стан» у
+[README](../README.md). Розділи 3–6 описують цільову архітектуру, зокрема
+сервіси й репозиторії модулів, які ще в роботі.
 
 ## 3. Основні компоненти та їх відповідальність
 
@@ -193,7 +199,7 @@ Production-заглушки й альтернативного типу Stock н�
 
 MVVM у UI-шарі обрано, бо:
 
-- ViewModel — звичайний клас без вікна, тож логіку екранів можна покрити тестами xUnit;
+- ViewModel не залежить від вікна, тож її можна тестувати окремим проєктом пізніше; зараз проєкт `Tests` не посилається на UI, тому автоматичними тестами покриті домен і сервіси;
 - видимість елементів залежно від ролі користувача задається властивістю ViewModel і прив'язується до інтерфейсу, а не прописується вручну в кожному вікні;
 - бізнес-логіка не потрапляє в code-behind вікон, що зберігає межі між шарами.
 
@@ -214,6 +220,14 @@ MVVM у UI-шарі обрано, бо:
 Доступність кнопок і розділів налаштовується в UI, а перевірка дозволу на виконання захищених операцій здійснюється в `BusinessLogic`.
 
 Обмеження рішення — відсутність окремого набору прав для власника. Якщо надалі йому знадобляться специфічні можливості, модель доступу можна розширити, узгоджено оновивши `UserRole`, допустимі значення в БД, перевірки прав та інтерфейс.
+
+### Пряма робота з базою даних замість окремого API
+
+StockFlow — настільний застосунок для одного магазину й невеликої команди, тому він звертається до PostgreSQL напряму через шар `DataAccess`, без окремого серверного API. Це прибирає з проєкту окремий сервер, його розгортання та протокол обміну, а транзакції (наприклад, рух товару разом зі зміною залишку) виконуються в одному процесі.
+
+Межі шарів при цьому зберігаються: UI не бачить `DataAccess` (`DisableTransitiveProjectReferences`), SQL є лише в репозиторіях, правила й перевірка ролі — у сервісах `BusinessLogic`.
+
+Обмеження: кожен комп'ютер із застосунком потребує мережевого доступу до бази та власного рядка підключення в локальній конфігурації, а права доступу до даних перевіряє сам застосунок. Якщо знадобляться вебклієнт або віддалені користувачі, сервіси `BusinessLogic` можна винести за API, не змінюючи домен і репозиторії.
 
 ### ADO.NET замість Entity Framework
 

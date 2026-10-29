@@ -2,13 +2,13 @@
 
 **View product list**
 
-As an **Employee**,
+As **any role**,
 **I want to** view the list of products with a category filter,
 **so that** I can quickly find the product I need.
 ### Acceptance Criteria
 * The product list loads when the window opens
 * Filtering by category narrows the list without reloading the window
-* An empty search result shows a "No products found" message
+* If no products match the filter, a "No products found" message is shown
 
 ---
 
@@ -26,7 +26,7 @@ As an **Admin**,
 
 **Search for a product by name**
 
-As an **Employee**,
+As **any role**,
 **I want to** search for a product by name,
 **so that** I can find it without scrolling through the whole list.
 ### Acceptance Criteria
@@ -59,7 +59,7 @@ As an **Admin**,
 * The edit form is pre-filled with the current values
 * The same validation as when adding a product applies
 * After saving, the changes are visible in the product list, stock levels and movement history
-* Changing the unit of measure of a product that already has stock records or movements asks for confirmation
+* The unit of measure cannot be changed for a product that already has stock records or movements; the system shows an explanatory message
 * The "Edit" action is not visible to the Employee role
 
 ---
@@ -122,15 +122,16 @@ As an **Admin**,
 **I want to** add a new supplier with contact details,
 **so that** I can track the sources of incoming stock.
 ### Acceptance Criteria
-* The form includes fields: name, phone/email
-* The supplier name is required
+* The form includes fields: name, phone, email
+* The supplier name is required; phone and email are optional
 * The new supplier immediately appears in the list
+* The "Add" button is not visible to the Employee role
 
 ---
 
 **Search for a supplier**
 
-As an **Employee**,
+As **any role**,
 **I want to** search for a supplier by name,
 **so that** I can quickly find their contact details.
 ### Acceptance Criteria
@@ -173,7 +174,10 @@ As an **Employee**,
 **I want to** register a stock receipt from a supplier,
 **so that** the stock level updates automatically.
 ### Acceptance Criteria
-* The form includes: product, quantity, supplier, warehouse
+* The form includes: movement number, date, product, quantity, supplier, warehouse
+* The movement number is required and unique
+* The quantity must be greater than 0
+* The supplier is required for a receipt
 * After saving, the stock level for the selected product and warehouse increases by the specified quantity
 * The form is not accessible to the Admin role
 
@@ -185,9 +189,13 @@ As an **Employee**,
 **I want to** register a stock write-off,
 **so that** I can reflect that the product is no longer actually available.
 ### Acceptance Criteria
+* The form includes: movement number, date, product, quantity, warehouse (no supplier)
+* The movement number is required and unique
+* The quantity must be greater than 0
 * A write-off greater than the current stock level is rejected with an error message
 * After a successful save, the stock level decreases by the specified quantity
 * The operation runs as a single transaction (the stock level is never updated partially on failure)
+* The form is not accessible to the Admin role
 
 ---
 
@@ -209,7 +217,7 @@ As **any role**,
 
 **View current stock levels**
 
-As an **Employee**,
+As **any role**,
 **I want to** view the current stock levels for each warehouse,
 **so that** I know what's available.
 ### Acceptance Criteria
@@ -225,8 +233,9 @@ As an **Admin**,
 **I want to** add a new warehouse,
 **so that** I can expand the storage network.
 ### Acceptance Criteria
-* The form requires a mandatory "Name" field
+* The form requires a mandatory "Name" field; the address is optional
 * The new warehouse is immediately selectable in the stock movement form
+* The "Add" button is not visible to the Employee role
 
 ---
 
@@ -236,8 +245,8 @@ As **any role**,
 **I want to** generate a stock movement report for a chosen period,
 **so that** I can analyze warehouse activity.
 ### Acceptance Criteria
-* A date range (from — to) can be selected
-* The result shows total receipts and write-offs per product
+* A date range (from — to) can be selected; the start date cannot be later than the end date
+* The result shows total receipts and write-offs for each product and warehouse pair
 * The report is available to both roles (Employee, Admin)
 
 ---
@@ -320,13 +329,15 @@ As a **system user**,
 
 ---
 
-**Manage users**
+**Create a user**
 
 As an **Admin**,
 **I want to** create user accounts and assign them roles,
 **so that** I can control access to the system.
 ### Acceptance Criteria
-* The form includes: username, password, role (Employee/Admin)
+* The form includes: username, full name, password, role (Employee/Admin)
+* The username, full name and password are required
+* A duplicate username is rejected with an error message
 * The "Users" section is not visible to the Employee role
 
 ---
@@ -352,7 +363,7 @@ As an **Admin**,
 **so that** account details stay correct when responsibilities change.
 ### Acceptance Criteria
 * The edit form is pre-filled with the current values
-* The username must remain unique
+* The username cannot be changed
 * The Admin role cannot be removed from the last remaining active Admin
 * After saving, the changes are visible in the user list
 
