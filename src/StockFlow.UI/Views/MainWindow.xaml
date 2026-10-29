@@ -13,6 +13,9 @@
         <DataTemplate DataType="{x:Type vm:CategoriesViewModel}">
             <views:CategoriesView/>
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:SuppliersViewModel}">
+            <views:SuppliersView/>
+        </DataTemplate>
         <DataTemplate DataType="{x:Type vm:WarehousesViewModel}">
             <views:WarehousesView/>
         </DataTemplate>
@@ -38,6 +41,7 @@
             <TextBlock Text="StockFlow" FontSize="18" FontWeight="Bold" Foreground="{StaticResource PrimaryTextBrush}" Margin="24,32,0,32"/>
             <Button Style="{StaticResource SidebarButton}" Content="Товари" Command="{Binding NavigateProductsCommand}" Margin="16,0,0,4"/>
             <Button Style="{StaticResource SidebarButton}" Content="Категорії" Command="{Binding NavigateCategoriesCommand}" Margin="16,0,0,4"/>
+            <Button Style="{StaticResource SidebarButton}" Content="Постачальники" Command="{Binding NavigateSuppliersCommand}" Margin="16,0,0,4"/>
             <Button Style="{StaticResource SidebarButton}" Content="Накладні" Command="{Binding NavigateMovementsCommand}" Margin="16,0,0,4"/>
             <Button Style="{StaticResource SidebarButton}" Content="Залишки" Command="{Binding NavigateStockCommand}" Margin="16,0,0,4"/>
             <Button Style="{StaticResource SidebarButton}" Content="Склади" Command="{Binding NavigateWarehousesCommand}" Margin="16,0,0,4"/>
