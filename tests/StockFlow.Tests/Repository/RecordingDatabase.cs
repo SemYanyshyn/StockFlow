@@ -2,7 +2,7 @@ using System.Collections;
 using System.Data;
 using System.Diagnostics.CodeAnalysis;
 
-namespace StockFlow.Invoices.Prototype.Tests.Repository;
+namespace StockFlow.Tests.Repository;
 
 // Test-only recording ADO.NET objects. They never connect to a database and
 // establish command/ownership behavior, not PostgreSQL SQL correctness or atomicity.

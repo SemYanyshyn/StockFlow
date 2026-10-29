@@ -4,7 +4,7 @@ using StockFlow.DataAccess;
 using StockFlow.Domain;
 using Xunit;
 
-namespace StockFlow.Invoices.Prototype.Tests.Repository;
+namespace StockFlow.Tests.Repository;
 
 public sealed class StockMovementRepositoryTests
 {

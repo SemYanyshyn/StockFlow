@@ -4,7 +4,7 @@ using StockFlow.Domain;
 
 namespace StockFlow.DataAccess;
 
-// Integration candidate for the schema in PR #123. It does not own the supplied
+// Uses the merged team schema. It does not own the supplied
 // transaction or connection; the service decides commit/rollback and disposes them.
 public sealed class StockMovementRepository : IStockMovementRepository
 {
