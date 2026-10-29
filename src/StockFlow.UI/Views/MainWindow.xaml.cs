@@ -1,6 +1,6 @@
-using System.Windows;
+﻿using System.Windows;
 
-namespace StockFlow.UI;
+namespace StockFlow.UI.Views;
 
 public partial class MainWindow : Window
 {
