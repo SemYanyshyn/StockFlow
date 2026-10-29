@@ -1,6 +1,6 @@
 using StockFlow.Domain;
 
-namespace StockFlow.UI.Products;
+namespace StockFlow.UI.ViewModels;
 
 public static class UnitOfMeasureText
 {

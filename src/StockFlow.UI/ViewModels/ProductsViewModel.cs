@@ -4,9 +4,9 @@ using CommunityToolkit.Mvvm.Input;
 using StockFlow.BusinessLogic.Products;
 using StockFlow.Domain;
 
-namespace StockFlow.UI.Products;
+namespace StockFlow.UI.ViewModels;
 
-public sealed partial class ProductsViewModel : ObservableObject
+public sealed partial class ProductsViewModel : ViewModelBase
 {
     private readonly ProductService _productService;
     private readonly CategoryService _categoryService;

@@ -1,16 +1,16 @@
-<UserControl x:Class="StockFlow.UI.Products.CategoriesView"
+<UserControl x:Class="StockFlow.UI.Views.CategoriesView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:local="clr-namespace:StockFlow.UI.Products"
+             xmlns:vm="clr-namespace:StockFlow.UI.ViewModels"
              mc:Ignorable="d"
-             d:DataContext="{d:DesignInstance Type=local:CategoriesViewModel}"
+             d:DataContext="{d:DesignInstance Type=vm:CategoriesViewModel}"
              Loaded="OnLoaded">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibility" />
     </UserControl.Resources>
-    <Grid Margin="16">
+    <Grid Margin="32">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -19,13 +19,13 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Text="Категорії" FontSize="20" FontWeight="Bold" Margin="0,0,0,12" />
+        <TextBlock Grid.Row="0" Text="Категорії" FontSize="20" FontWeight="Bold" Foreground="{StaticResource PrimaryTextBrush}" Margin="0,0,0,16" />
 
         <StackPanel Grid.Row="1"
                     Orientation="Horizontal"
                     Margin="0,0,0,12"
                     Visibility="{Binding CanManage, Converter={StaticResource BooleanToVisibility}}">
-            <TextBlock Text="Назва категорії:" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <TextBlock Text="Назва категорії:" VerticalAlignment="Center" Foreground="{StaticResource PrimaryTextBrush}" Margin="0,0,8,0" />
             <TextBox Width="240"
                      Text="{Binding NewCategoryName, UpdateSourceTrigger=PropertyChanged}">
                 <TextBox.InputBindings>
@@ -40,7 +40,7 @@
 
         <TextBlock Grid.Row="2"
                    Text="{Binding ErrorMessage}"
-                   Foreground="Firebrick"
+                   Foreground="{StaticResource ErrorTextBrush}"
                    TextWrapping="Wrap"
                    Margin="0,0,0,12">
             <TextBlock.Style>
@@ -69,6 +69,7 @@
                    Text="* Додавання категорій доступне лише ролі Адмін"
                    FontStyle="Italic"
                    FontSize="11"
+                   Foreground="{StaticResource SecondaryTextBrush}"
                    Margin="0,8,0,0" />
     </Grid>
 </UserControl>

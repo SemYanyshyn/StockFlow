@@ -1,7 +1,8 @@
 using System.Windows;
 using System.Windows.Controls;
+using StockFlow.UI.ViewModels;
 
-namespace StockFlow.UI.Products;
+namespace StockFlow.UI.Views;
 
 public partial class ProductsView : UserControl
 {

@@ -1,11 +1,12 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using StockFlow.BusinessLogic.Products;
+using StockFlow.BusinessLogic.Users;
 using StockFlow.Domain;
 
-namespace StockFlow.UI.Products;
+namespace StockFlow.UI.ViewModels;
 
-public sealed partial class CategoriesViewModel : ObservableObject
+public sealed partial class CategoriesViewModel : ViewModelBase
 {
     private readonly CategoryService _categoryService;
 
@@ -18,14 +19,15 @@ public sealed partial class CategoriesViewModel : ObservableObject
     [ObservableProperty]
     private string? _errorMessage;
 
-    [ObservableProperty]
-    private bool _canManage;
-
-    public CategoriesViewModel(CategoryService categoryService)
+    public CategoriesViewModel(CategoryService categoryService, ICurrentUserContext currentUser)
     {
         ArgumentNullException.ThrowIfNull(categoryService);
+        ArgumentNullException.ThrowIfNull(currentUser);
         _categoryService = categoryService;
+        CanManage = currentUser.IsAdmin;
     }
+
+    public bool CanManage { get; }
 
     [RelayCommand]
     private async Task LoadAsync()
