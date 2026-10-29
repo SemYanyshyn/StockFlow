@@ -1,0 +1,10 @@
+﻿<UserControl x:Class="StockFlow.UI.Views.StockBalancesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StackPanel Margin="32">
+        <TextBlock Text="Залишки" FontSize="20" FontWeight="Bold" Foreground="{StaticResource PrimaryTextBrush}" Margin="0,0,0,16"/>
+        <Border Background="{StaticResource BackgroundBrush}" Padding="24" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+            <TextBlock Text="Розділ залишків в розробці" FontSize="16" Foreground="{StaticResource SecondaryTextBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </Border>
+    </StackPanel>
+</UserControl>

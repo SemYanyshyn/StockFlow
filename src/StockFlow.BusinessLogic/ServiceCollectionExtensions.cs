@@ -1,6 +1,9 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using StockFlow.BusinessLogic.Products;
+using StockFlow.BusinessLogic.Users;
 using StockFlow.DataAccess;
+using StockFlow.DataAccess.Products;
 
 namespace StockFlow.BusinessLogic;
 
@@ -14,6 +17,11 @@ public static class ServiceCollectionExtensions
         // Lazy singleton stores configuration only. No shared connection or database access at startup.
         services.AddSingleton<DbConnectionFactory>(_ => new DbConnectionFactory(configuration));
         // Module owners add their real services/repositories here when implemented.
+        services.AddSingleton<ICurrentUserContext>(_ => TemporaryUserContext.FromConfiguration(configuration));
+        services.AddSingleton<ICategoryRepository, CategoryRepository>();
+        services.AddSingleton<IProductRepository, ProductRepository>();
+        services.AddSingleton<CategoryService>();
+        services.AddSingleton<ProductService>();
         return services;
     }
 }
