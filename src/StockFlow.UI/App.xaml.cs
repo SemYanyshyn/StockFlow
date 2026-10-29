@@ -1,6 +1,8 @@
 using System;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
+using StockFlow.BusinessLogic;
 using StockFlow.UI.Services;
 using StockFlow.UI.ViewModels;
 using StockFlow.UI.Views;
@@ -11,12 +13,8 @@ public partial class App : Application
 {
     public static IServiceProvider ServiceProvider { get; private set; } = null!;
 
-    public App()
-    {
-        var services = new ServiceCollection();
-        ConfigureServices(services);
-        ServiceProvider = services.BuildServiceProvider();
-    }
+    private ServiceProvider? _services;
+    private IConfigurationRoot? _configuration;
 
     private void ConfigureServices(IServiceCollection services)
     {
@@ -35,9 +33,39 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        try
+        {
+            _configuration = StockFlowConfiguration.Load();
+            var services = new ServiceCollection();
+            services.AddStockFlow(_configuration);
+            ConfigureServices(services);
+            _services = services.BuildServiceProvider(new ServiceProviderOptions
+            {
+                ValidateOnBuild = true,
+                ValidateScopes = true
+            });
+            ServiceProvider = _services;
+            var mainWindow = _services.GetRequiredService<MainWindow>();
+            mainWindow.DataContext = _services.GetRequiredService<MainWindowViewModel>();
+            mainWindow.Show();
+        }
+        catch (InvalidOperationException error)
+        {
+            MessageBox.Show(error.Message, "StockFlow", MessageBoxButton.OK, MessageBoxImage.Error);
+            Shutdown(1);
+        }
+        catch (Exception)
+        {
+            MessageBox.Show("Не вдалося запустити застосунок. Перевірте налаштування та спробуйте ще раз",
+                "StockFlow", MessageBoxButton.OK, MessageBoxImage.Error);
+            Shutdown(1);
+        }
+    }
 
-        var mainWindow = ServiceProvider.GetRequiredService<MainWindow>();
-        mainWindow.DataContext = ServiceProvider.GetRequiredService<MainWindowViewModel>();
-        mainWindow.Show();
+    protected override void OnExit(ExitEventArgs e)
+    {
+        _services?.Dispose();
+        (_configuration as IDisposable)?.Dispose();
+        base.OnExit(e);
     }
 }
