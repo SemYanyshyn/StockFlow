@@ -35,4 +35,20 @@ public sealed class ProductRepository : IProductRepository
 
         return products;
     }
+
+    public int Add(Product product)
+    {
+        ArgumentNullException.ThrowIfNull(product);
+
+        using var connection = _connectionFactory.CreateConnection();
+        connection.Open();
+        using var command = new NpgsqlCommand(
+            "INSERT INTO products (name, unit, category_id) VALUES (@name, @unit, @category_id) RETURNING id",
+            connection);
+        command.Parameters.AddWithValue("name", product.Name);
+        command.Parameters.AddWithValue("unit", UnitOfMeasureColumn.Format(product.Unit));
+        command.Parameters.AddWithValue("category_id", product.CategoryId);
+
+        return (int)command.ExecuteScalar()!;
+    }
 }

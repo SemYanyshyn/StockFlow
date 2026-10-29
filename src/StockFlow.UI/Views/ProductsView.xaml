@@ -9,13 +9,21 @@
              Loaded="OnLoaded">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibility" />
+        <Style x:Key="ErrorText" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource ErrorTextBrush}" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Margin" Value="0,0,0,12" />
+        </Style>
     </UserControl.Resources>
     <Grid Margin="32">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0" Text="Товари" FontSize="20" FontWeight="Bold" Foreground="{StaticResource PrimaryTextBrush}" Margin="0,0,0,16" />
@@ -31,13 +39,71 @@
                       DisplayMemberPath="Name" />
         </StackPanel>
 
-        <TextBlock Grid.Row="2"
-                   Text="{Binding ErrorMessage}"
-                   Foreground="{StaticResource ErrorTextBrush}"
-                   TextWrapping="Wrap"
-                   Margin="0,0,0,12">
+        <Border Grid.Row="2"
+                Margin="0,0,0,12"
+                Padding="12"
+                HorizontalAlignment="Left"
+                BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="1"
+                CornerRadius="4"
+                Visibility="{Binding CanManage, Converter={StaticResource BooleanToVisibility}}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="240" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="200" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Новий товар:" VerticalAlignment="Center" Foreground="{StaticResource PrimaryTextBrush}" Margin="0,0,8,0" />
+                <TextBox Grid.Row="0" Grid.Column="1"
+                         Text="{Binding NewProductName, UpdateSourceTrigger=PropertyChanged}">
+                    <TextBox.InputBindings>
+                        <KeyBinding Key="Enter" Command="{Binding AddCommand}" />
+                    </TextBox.InputBindings>
+                </TextBox>
+                <TextBlock Grid.Row="0" Grid.Column="2" Text="Категорія:" VerticalAlignment="Center" Foreground="{StaticResource PrimaryTextBrush}" Margin="24,0,8,0" />
+                <ComboBox Grid.Row="0" Grid.Column="3"
+                          ItemsSource="{Binding ProductCategories}"
+                          SelectedItem="{Binding NewProductCategory}"
+                          DisplayMemberPath="Name" />
+
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Од. виміру:" VerticalAlignment="Center" Foreground="{StaticResource PrimaryTextBrush}" Margin="0,8,8,0" />
+                <ComboBox Grid.Row="1" Grid.Column="1"
+                          Width="90"
+                          HorizontalAlignment="Left"
+                          Margin="0,8,0,0"
+                          ItemsSource="{Binding Units}"
+                          SelectedItem="{Binding NewProductUnit}"
+                          DisplayMemberPath="Name" />
+                <Button Grid.Row="1" Grid.Column="3"
+                        Content="+ Додати"
+                        Command="{Binding AddCommand}"
+                        HorizontalAlignment="Right"
+                        Padding="16,4"
+                        Margin="0,8,0,0" />
+            </Grid>
+        </Border>
+
+        <TextBlock Grid.Row="3" Text="{Binding AddErrorMessage}">
             <TextBlock.Style>
-                <Style TargetType="TextBlock">
+                <Style TargetType="TextBlock" BasedOn="{StaticResource ErrorText}">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding AddErrorMessage}" Value="{x:Null}">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </TextBlock.Style>
+        </TextBlock>
+
+        <TextBlock Grid.Row="4" Text="{Binding ErrorMessage}">
+            <TextBlock.Style>
+                <Style TargetType="TextBlock" BasedOn="{StaticResource ErrorText}">
                     <Style.Triggers>
                         <DataTrigger Binding="{Binding ErrorMessage}" Value="{x:Null}">
                             <Setter Property="Visibility" Value="Collapsed" />
@@ -47,7 +113,7 @@
             </TextBlock.Style>
         </TextBlock>
 
-        <Grid Grid.Row="3">
+        <Grid Grid.Row="5">
             <DataGrid ItemsSource="{Binding Products}"
                       AutoGenerateColumns="False"
                       IsReadOnly="True"
@@ -66,5 +132,12 @@
                        Foreground="{StaticResource SecondaryTextBrush}"
                        Visibility="{Binding IsEmpty, Converter={StaticResource BooleanToVisibility}}" />
         </Grid>
+
+        <TextBlock Grid.Row="6"
+                   Text="* Додавання товарів доступне лише ролі Адмін"
+                   FontStyle="Italic"
+                   FontSize="11"
+                   Foreground="{StaticResource SecondaryTextBrush}"
+                   Margin="0,8,0,0" />
     </Grid>
 </UserControl>
