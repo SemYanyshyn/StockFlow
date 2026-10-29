@@ -15,14 +15,14 @@ CREATE TABLE products (
 CREATE TABLE warehouses (
     id      SERIAL       PRIMARY KEY,
     name    VARCHAR(100) NOT NULL,
-    address VARCHAR(255) NULL
+    address VARCHAR(200) NULL
 );
 
 CREATE TABLE suppliers (
     id    SERIAL       PRIMARY KEY,
     name  VARCHAR(100) NOT NULL,
     phone VARCHAR(30)  NULL,
-    email VARCHAR(255) NULL
+    email VARCHAR(100) NULL
 );
 
 CREATE TABLE users (

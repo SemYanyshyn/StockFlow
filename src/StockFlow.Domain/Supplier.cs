@@ -4,7 +4,7 @@ public class Supplier
 {
     public const int MaxNameLength = 100;
     public const int MaxPhoneLength = 30;
-    public const int MaxEmailLength = 255;
+    public const int MaxEmailLength = 100;
 
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;

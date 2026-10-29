@@ -60,10 +60,20 @@ public sealed class SupplierTests
     }
 
     [Fact]
+    public void EmailAtMaxLengthIsAccepted()
+    {
+        const string domain = "@x.example";
+        var supplier = Valid();
+        supplier.Email = new string('a', Supplier.MaxEmailLength - domain.Length) + domain;
+        Assert.True(supplier.Validate());
+    }
+
+    [Fact]
     public void TooLongEmailIsRejected()
     {
+        const string domain = "@x.example";
         var supplier = Valid();
-        supplier.Email = new string('a', Supplier.MaxEmailLength) + "@x.example";
+        supplier.Email = new string('a', Supplier.MaxEmailLength - domain.Length + 1) + domain;
         Assert.False(supplier.Validate());
     }
 

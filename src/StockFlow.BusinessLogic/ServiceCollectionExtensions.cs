@@ -15,7 +15,7 @@ public static class ServiceCollectionExtensions
         // Lazy singleton stores configuration only. No shared connection or database access at startup.
         services.AddSingleton<DbConnectionFactory>(_ => new DbConnectionFactory(configuration));
         // Module owners add their real services/repositories here when implemented.
-        services.AddSingleton<ICurrentUserContext, TemporaryAdminUserContext>();
+        services.AddSingleton<ICurrentUserContext>(_ => TemporaryUserContext.FromConfiguration(configuration));
         return services;
     }
 }

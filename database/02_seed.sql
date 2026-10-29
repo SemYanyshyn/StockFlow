@@ -33,4 +33,12 @@ INSERT INTO suppliers (name, phone, email) VALUES
     ('ФОП Овочевий двір',   '+380 44 000 00 02', NULL),
     ('ТОВ «Бакалія Опт»',   NULL,                'orders@grocery.example');
 
+INSERT INTO stock (product_id, warehouse_id, quantity, min_threshold) VALUES
+    ((SELECT id FROM products WHERE name = 'Молоко 2,5%'),      (SELECT id FROM warehouses WHERE name = 'Основний склад'), 40,  10),
+    ((SELECT id FROM products WHERE name = 'Кефір'),            (SELECT id FROM warehouses WHERE name = 'Основний склад'), 4,   10),
+    ((SELECT id FROM products WHERE name = 'Гречка'),           (SELECT id FROM warehouses WHERE name = 'Основний склад'), 120, 20),
+    ((SELECT id FROM products WHERE name = 'Шоколад молочний'), (SELECT id FROM warehouses WHERE name = 'Основний склад'), 3,   5),
+    ((SELECT id FROM products WHERE name = 'Яблука'),           (SELECT id FROM warehouses WHERE name = 'Склад №2'),       15,  0),
+    ((SELECT id FROM products WHERE name = 'Картопля'),         (SELECT id FROM warehouses WHERE name = 'Склад №2'),       60,  25);
+
 COMMIT;

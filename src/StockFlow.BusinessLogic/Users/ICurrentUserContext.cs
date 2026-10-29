@@ -6,5 +6,9 @@ public interface ICurrentUserContext
 {
     User CurrentUser { get; }
 
-    bool IsAdmin => CurrentUser.Role == UserRole.Admin;
+    int UserId => CurrentUser.Id;
+
+    UserRole Role => CurrentUser.Role;
+
+    bool IsAdmin => Role == UserRole.Admin;
 }
