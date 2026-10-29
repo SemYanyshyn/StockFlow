@@ -6,7 +6,7 @@
 
 ## Звірка з репозиторієм
 
-- Гілку оновлено merge актуального main `3abbd04862cd5e0c0534c6993c6fb40621b79fd5` без переписування історії.
+- Гілку оновлено merge актуального main `723e6563a7265db1e709a450b45b62854bd96d31` без переписування історії.
 - PR #124 автора `loktiska` додав єдиний `StockFlow.Domain.Stock`, Warehouse та
   IStockRepository з GetForUpdate/Save. Властивості Stock точно збігаються з
   потрібними ProductId, WarehouseId, Quantity, MinThreshold; усі int з public setter.
@@ -117,7 +117,7 @@ dotnet build StockFlow.sln -c Release --no-restore
 dotnet test tests/StockFlow.Tests/StockFlow.Tests.csproj -c Release --no-build --no-restore
 ```
 
-Restore і cross-build успішні: 0 warnings, 0 errors. Виконано **109 unit-тестів**:
-109 passed, 0 failed, 0 skipped. Збережено тести етапу 5 і команди; нова сигнатура
+Restore і cross-build успішні: 0 warnings, 0 errors. Виконано **146 unit-тестів**:
+146 passed, 0 failed, 0 skipped. Збережено тести етапу 5 і команди; нова сигнатура
 не зламала Solution. Це не перевірка SQL, атомарності PostgreSQL або запуску WPF.
 Після зміни лише документації повторну збірку не виконували; тестований код не змінено.
