@@ -98,6 +98,35 @@
 - `README.md` — загальний опис проєкту, його мета, користувачі, функціонал, модулі та план роботи;
 - `requirements.md` — детальні функціональні й нефункціональні вимоги, технології, обмеження, моделі та критерії приймання. Цей файл готує відповідальний учасник команди.
 
+## Налаштування бази даних
+
+Потрібен PostgreSQL 15 або новіший. Скрипти лежать у `database/`:
+
+- `01_schema.sql` — таблиці за ER-діаграмою, ключі, `ON DELETE RESTRICT` і `CHECK`;
+- `02_seed.sql` — тестові дані: користувачі `admin` і `employee`, категорії, товари, склади, постачальники.
+
+Скрипти розраховані на порожню базу. Команди виконуються з кореня репозиторію в PowerShell. Якщо `psql` немає в `PATH`, використовуйте повний шлях, наприклад `& "C:\Program Files\PostgreSQL\17\bin\psql.exe"`.
+
+1. Створіть користувача й базу (від імені `postgres`), замінивши пароль своїм локальним:
+
+   ```powershell
+   psql -U postgres -c "CREATE ROLE stockflow_app LOGIN PASSWORD 'your-local-password';"
+   psql -U postgres -c "CREATE DATABASE stockflow OWNER stockflow_app ENCODING 'UTF8' TEMPLATE template0;"
+   ```
+
+2. Створіть таблиці й заповніть тестові дані:
+
+   ```powershell
+   psql -h localhost -U stockflow_app -d stockflow -v ON_ERROR_STOP=1 -f database/01_schema.sql
+   psql -h localhost -U stockflow_app -d stockflow -v ON_ERROR_STOP=1 -f database/02_seed.sql
+   ```
+
+3. Скопіюйте `src/StockFlow.UI/appsettings.example.json` у `src/StockFlow.UI/appsettings.json` і замініть `<set-locally>` своїм паролем. Файл `appsettings.json` ігнорується Git. Замість нього можна задати змінну середовища `STOCKFLOW_ConnectionStrings__StockFlow`.
+
+Щоб почати з чистої бази, видаліть її (`psql -U postgres -c "DROP DATABASE stockflow;"`), знову створіть другою командою з кроку 1 і повторіть крок 2. Користувача `stockflow_app` створювати вдруге не потрібно.
+
+Справжнього входу поки немає: у `password_hash` тестових користувачів записана заглушка, а застосунок тимчасово працює від імені Адміністратора (`TemporaryAdminUserContext`).
+
 ## Поточний стан
 
 Проєкт перебуває на етапі формування концепції та початкового планування. Програмну реалізацію ще не додано. Інструкція зі збирання та запуску з’явиться в цьому README після створення першої працездатної версії.
