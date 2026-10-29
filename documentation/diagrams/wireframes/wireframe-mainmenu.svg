@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2000" height="1100" viewBox="0 0 2000 1100" role="img" aria-labelledby="title description">
+<title id="title">StockFlow — Головне меню</title>
+<desc id="description">Редагований макет StockFlow. Світла палітра; створення руху доступне лише Працівнику.</desc>
+<g font-family="Arial, sans-serif">
+<rect x="0" y="0" width="2000" height="1100" rx="0" fill="white" stroke="none" stroke-width="2"/>
+<rect x="40" y="40" width="1920" height="960" rx="0" fill="white" stroke="#999" stroke-width="2"/>
+<rect x="40" y="40" width="1920" height="112" rx="0" fill="#f5f4f0" stroke="#999" stroke-width="2"/>
+<text x="72" y="116" font-size="40" font-weight="700" fill="#29323a">StockFlow — Головне меню</text>
+<text x="72" y="212" font-size="30" font-weight="700" fill="#29323a">Швидкі дії</text>
+<rect x="72" y="240" width="580" height="220" rx="12" fill="#fffdf8" stroke="#cc7900" stroke-width="2"/>
+<text x="104" y="300" font-size="30" font-weight="700" fill="#29323a">Надходження товару*</text>
+<text x="104" y="345" font-size="25" fill="#7e858b">Зареєструвати надходження</text>
+<rect x="104" y="372" width="238" height="62" rx="8" fill="#fceacb" stroke="#cc7900" stroke-width="2"/><text x="134" y="412.0" font-size="26" font-weight="700" fill="#8f5300">+ Створити</text>
+<rect x="692" y="240" width="580" height="220" rx="12" fill="white" stroke="#999" stroke-width="2"/>
+<text x="724" y="300" font-size="30" font-weight="700" fill="#29323a">Списання товару*</text>
+<text x="724" y="345" font-size="25" fill="#7e858b">Зареєструвати списання</text>
+<rect x="724" y="372" width="238" height="62" rx="8" fill="white" stroke="#999" stroke-width="2"/><text x="754" y="412.0" font-size="26" fill="#29323a">+ Створити</text>
+<rect x="1312" y="240" width="580" height="220" rx="12" fill="white" stroke="#999" stroke-width="2"/>
+<text x="1344" y="300" font-size="30" font-weight="700" fill="#29323a">Накладні</text>
+<text x="1344" y="345" font-size="25" fill="#7e858b">Переглянути та знайти накладну</text>
+<rect x="1344" y="372" width="238" height="62" rx="8" fill="white" stroke="#999" stroke-width="2"/><text x="1374" y="412.0" font-size="26" fill="#29323a">Відкрити →</text>
+<text x="72" y="520" font-size="30" font-weight="700" fill="#29323a">Останні операції</text>
+<rect x="72" y="560" width="1820" height="64" rx="0" fill="#eeeee9" stroke="#ccc" stroke-width="2"/>
+<text x="104" y="603" font-size="26" font-weight="700" fill="#29323a">№ накладної</text>
+<text x="560" y="603" font-size="26" font-weight="700" fill="#29323a">Дата</text>
+<text x="980" y="603" font-size="26" font-weight="700" fill="#29323a">Тип</text>
+<text x="1460" y="603" font-size="26" font-weight="700" fill="#29323a">Склад</text>
+<rect x="72" y="624" width="1820" height="72" rx="0" fill="white" stroke="#ddd" stroke-width="2"/>
+<text x="104" y="670" font-size="26" fill="#29323a">НК-016</text>
+<text x="560" y="670" font-size="26" fill="#29323a">30.10.2026</text>
+<text x="980" y="670" font-size="26" fill="#29323a">Надходження</text>
+<text x="1460" y="670" font-size="26" fill="#29323a">Склад №1</text>
+<rect x="72" y="696" width="1820" height="72" rx="0" fill="#f7f7f4" stroke="#ddd" stroke-width="2"/>
+<text x="104" y="742" font-size="26" fill="#29323a">НК-015</text>
+<text x="560" y="742" font-size="26" fill="#29323a">29.10.2026</text>
+<text x="980" y="742" font-size="26" fill="#29323a">Списання</text>
+<text x="1460" y="742" font-size="26" fill="#29323a">Склад №1</text>
+<rect x="72" y="768" width="1820" height="72" rx="0" fill="white" stroke="#ddd" stroke-width="2"/>
+<text x="104" y="814" font-size="26" fill="#29323a">НК-014</text>
+<text x="560" y="814" font-size="26" fill="#29323a">29.10.2026</text>
+<text x="980" y="814" font-size="26" fill="#29323a">Надходження</text>
+<text x="1460" y="814" font-size="26" fill="#29323a">Склад №2</text>
+<rect x="1580" y="880" width="312" height="72" rx="8" fill="#fceacb" stroke="#cc7900" stroke-width="2"/><text x="1610" y="925.0" font-size="26" font-weight="700" fill="#8f5300">Усі накладні →</text>
+<text x="72" y="1044" font-size="25" font-style="italic" fill="#666">* Дія доступна лише Працівнику. Адміністратор переглядає рухи, але не створює їх.</text>
+</g>
+</svg>
