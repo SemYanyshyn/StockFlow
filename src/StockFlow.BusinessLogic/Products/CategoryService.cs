@@ -1,3 +1,4 @@
+using StockFlow.BusinessLogic.Users;
 using StockFlow.DataAccess.Products;
 using StockFlow.Domain;
 
@@ -5,23 +6,32 @@ namespace StockFlow.BusinessLogic.Products;
 
 public sealed class CategoryService
 {
+    public const string AdminOnlyMessage = "Додавати категорії може лише Адміністратор.";
     public const string NameRequiredMessage = "Назва категорії обов'язкова.";
     public const string DuplicateNameMessage = "Категорія з такою назвою вже існує.";
     public static readonly string NameTooLongMessage =
         $"Назва категорії не може бути довшою за {Category.MaxNameLength} символів.";
 
     private readonly ICategoryRepository _repository;
+    private readonly ICurrentUserContext _currentUser;
 
-    public CategoryService(ICategoryRepository repository)
+    public CategoryService(ICategoryRepository repository, ICurrentUserContext currentUser)
     {
         ArgumentNullException.ThrowIfNull(repository);
+        ArgumentNullException.ThrowIfNull(currentUser);
         _repository = repository;
+        _currentUser = currentUser;
     }
 
     public IReadOnlyList<Category> GetAll() => _repository.GetAll();
 
     public Category Add(string? name)
     {
+        if (!_currentUser.IsAdmin)
+        {
+            throw new ValidationException(AdminOnlyMessage);
+        }
+
         var category = new Category { Name = name?.Trim() ?? string.Empty };
         if (!category.Validate())
         {
