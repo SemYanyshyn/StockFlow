@@ -15,3 +15,29 @@
 
 # Test results
 [Tt]est[Rr]esult*/
+
+# Local editors and operating system state
+.idea/
+.vscode/
+.DS_Store
+
+# Personal configuration and credentials (only examples belong in Git)
+appsettings.json
+appsettings.*.json
+!appsettings.example.json
+.env
+.env.*
+!.env.example
+secrets.json
+*.pfx
+*.p12
+*.pem
+*.key
+*.local
+*.local.json
+
+# Test and coverage output
+*.trx
+coverage/
+coverage*.xml
+coverage*.json
