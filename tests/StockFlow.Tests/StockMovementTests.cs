@@ -1,7 +1,7 @@
 using StockFlow.Domain;
 using Xunit;
 
-namespace StockFlow.Invoices.Prototype.Tests.Domain;
+namespace StockFlow.Tests;
 
 public sealed class StockMovementTests
 {

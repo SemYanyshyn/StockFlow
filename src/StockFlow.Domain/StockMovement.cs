@@ -1,7 +1,5 @@
 namespace StockFlow.Domain;
 
-// Integration candidate only. This file is compiled by the isolated prototype tests,
-// never by StockFlow.Domain while the shared Stock contract is still unavailable.
 public sealed class StockMovement
 {
     public const int MaxNumberLength = 50;
