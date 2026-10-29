@@ -7,5 +7,6 @@ namespace StockFlow.DataAccess
     {
         Stock GetForUpdate(int productId, int warehouseId, IDbTransaction transaction);
         void Save(Stock stock, IDbTransaction transaction);
+        IReadOnlyList<Stock> GetAll(int? warehouseId);
     }
 }

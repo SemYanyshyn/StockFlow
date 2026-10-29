@@ -6,27 +6,23 @@
 
 ## Звірка з репозиторієм
 
-- База гілки: main `1e26367b94631f486d6130a470948af011e460ca`.
-- У main і всіх доступних remote-гілках після fetch не знайдено `Stock.cs`,
-  `Warehouse.cs`, `IStockRepository.cs` або `StockRepository.cs`.
-- У гілці Мар'яна `feature/database-users-suppliers` (`aa4285a6261150aacc14efff89d5b70cfef9e741`) є
-  `database/01_schema.sql`: складений ключ stock(product_id, warehouse_id), int
-  quantity/min_threshold з CHECK >= 0 і min_threshold DEFAULT 0. Ця гілка ще не є main.
-- Реального API Саші для звірки немає. Цей PR змінює лише документацію, не створює
-  його production-модуль і не доводить роботу SQL/конкурентності.
+- Гілку оновлено merge актуального main `3abbd04862cd5e0c0534c6993c6fb40621b79fd5` без переписування історії.
+- PR #124 автора `loktiska` додав єдиний `StockFlow.Domain.Stock`, Warehouse та
+  IStockRepository з GetForUpdate/Save. Властивості Stock точно збігаються з
+  потрібними ProductId, WarehouseId, Quantity, MinThreshold; усі int з public setter.
+- У цьому PR додано лише відсутню сигнатуру GetAll(int? warehouseId) до наявного
+  інтерфейсу. Stock не дублюється; реалізації StockRepository досі немає.
+- PR #123 додав до main database/01_schema.sql: складений ключ stock по парі,
+  quantity/min_threshold int з CHECK >= 0 і min_threshold DEFAULT 0.
+- Наявні типи дозволяють розробляти правила проти реального Stock без прототипу.
+  Наявність інтерфейсу не підтверджує SQL, конкурентність або погодження Саші.
 
-## Мінімальний спільний тип
+## Єдиний спільний тип
 
-Потрібен один `StockFlow.Domain.Stock` з читанням ProductId, WarehouseId, Quantity,
-MinThreshold і можливістю змінити Quantity після перевірки руху. Пропонуються
-властивості int у PascalCase. Саша може надати конструктор/обмежені setter-и,
-якщо вони дозволяють створити нульовий залишок для потрібної пари та застосувати
-перевірену нову Quantity. Власник Stock і Warehouse — Саша.
-
-Тестовий прототип, дозволений планом етапу 6, має бути ізольований від production
-Domain та Solution і явно позначений як прототип. Після появи реального Stock
-правила й тести потрібно перенести та запустити проти нього. Другий production Stock,
-object/dynamic і некомпільований готовий до злиття модуль неприпустимі.
+Використовується вже наявний `StockFlow.Domain.Stock` Саші з int-властивостями
+ProductId, WarehouseId, Quantity і MinThreshold. StockMovement читає перші три
+й змінює Quantity після перевірки; MinThreshold рух не змінює. Нових production
+або тестових альтернатив Stock, object/dynamic чи тимчасових заглушок немає.
 
 ## Синхронний IStockRepository
 
@@ -100,13 +96,28 @@ Serializable не означає, що будь-які два запуски о�
 
 ## Підготовлене повідомлення Саші
 
-> Сашо, підтверди, будь ласка, спільний StockFlow.Domain.Stock (int ProductId,
-> WarehouseId, Quantity, MinThreshold; створення залишку 0 і зміна Quantity) та
+> Сашо, дякую за Stock з PR #124: його ProductId, WarehouseId, Quantity,
+> MinThreshold підходять для правил руху. Підтверди, будь ласка,
 > синхронний IStockRepository з GetForUpdate(int, int, IDbTransaction),
 > Save(Stock, IDbTransaction), GetAll(int? warehouseId) без транзакції в GetAll.
 > GetForUpdate відсутньої пари повертає новий Stock=0; Save робить UPSERT лише
 > quantity, новий поріг 0, наявний min_threshold не перезаписує; передані connection
 > і transaction не закриває. Чи погоджуємо Serializable для всього Register,
 > відкат і «Спробуйте ще раз» на 40001/40P01 без автоматичного retry, щоб виконати
-> SE-9? Надішли PR/commit мінімального Stock та інтерфейсу, щоб я перевірив правила
-> руху проти твого типу. Мар'яну потрібно підтвердити схему й провести SQL-перевірку.
+> SE-9? GetAll додано до твого інтерфейсу у цьому draft PR, реалізація StockRepository
+> залишається тобі. Мар'яну потрібно підтвердити механізм і провести SQL-перевірку.
+
+## Локальна перевірка уточненого інтерфейсу
+
+На macOS ARM64, SDK .NET 8.0.427, після оновлення з main:
+
+```sh
+dotnet restore StockFlow.sln
+dotnet build StockFlow.sln -c Release --no-restore
+dotnet test tests/StockFlow.Tests/StockFlow.Tests.csproj -c Release --no-build --no-restore
+```
+
+Restore і cross-build успішні: 0 warnings, 0 errors. Виконано **109 unit-тестів**:
+109 passed, 0 failed, 0 skipped. Збережено тести етапу 5 і команди; нова сигнатура
+не зламала Solution. Це не перевірка SQL, атомарності PostgreSQL або запуску WPF.
+Після зміни лише документації повторну збірку не виконували; тестований код не змінено.
