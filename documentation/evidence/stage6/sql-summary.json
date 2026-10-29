@@ -1,0 +1,11 @@
+{
+  "postgres_version": "postgres (PostgreSQL) 18.4 (Postgres.app)",
+  "source_commit": "5e1a9101d4b89b18e9d64667a15d856b743d1f45",
+  "schema_sha256": {
+    "01_schema.sql": "d74a78cade4e83517fe11f257eb3129aef1c2b9cc7161d96efc8d076a60cdcf1",
+    "02_seed.sql": "ef93b7025dcd2071882c041aa63c0a6ae72aa67523b8df76053a3f1c1b2f4f17"
+  },
+  "integration_groups_passed": 7,
+  "concurrency_scenarios_passed": 2,
+  "scope": "Real movement classes; TEST-ONLY stock SQL adapter; SQL mechanism probe, not completed application SE-9"
+}

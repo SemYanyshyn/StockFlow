@@ -1,0 +1,8 @@
+PASS repository: real INSERT/RETURNING, all parameters, nullable fields and TIMESTAMP mapping
+PASS repository: actual stock_movements_number_key is classified correctly
+PASS service: real Serializable transaction commits movement+quantity and preserves threshold/user identity
+PASS service: injected real SQL CHECK failure in test Save rolls back movement and stock
+PASS service: writeoff over stock leaves no movement and no quantity change
+PASS service: real duplicate number returns sanitized message and rolls back
+PASS resources: no operation connections remain after success or failure
+Integration groups passed: 7. These tests use a TEST-ONLY stock SQL adapter, not Sasha's production repository.

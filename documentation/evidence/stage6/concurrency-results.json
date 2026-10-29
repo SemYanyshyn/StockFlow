@@ -1,0 +1,75 @@
+{
+  "scope": "Proposed raw SQL Serializable mechanism only; NOT application/StockRepository SE-9 completion",
+  "postgres_version": "18.4 (Postgres.app)",
+  "schema_commit": "5e1a9101d4b89b18e9d64667a15d856b743d1f45",
+  "schema_sha256": {
+    "01_schema.sql": "d74a78cade4e83517fe11f257eb3129aef1c2b9cc7161d96efc8d076a60cdcf1",
+    "02_seed.sql": "ef93b7025dcd2071882c041aa63c0a6ae72aa67523b8df76053a3f1c1b2f4f17"
+  },
+  "database": "stockflow_se6_concurrency_80ca39e889",
+  "writeoff": {
+    "before": {
+      "quantity": 10,
+      "min_threshold": 10
+    },
+    "amounts": [
+      8,
+      8
+    ],
+    "overlap": "B old snapshot then pg_stat_activity wait_event_type=Lock before A commit",
+    "A": {
+      "exit_code": 0,
+      "sqlstates": [],
+      "sql": "writeoff-A.sql",
+      "log": "writeoff-A.log"
+    },
+    "B": {
+      "exit_code": 3,
+      "sqlstates": [
+        "40001"
+      ],
+      "sql": "writeoff-B.sql",
+      "log": "writeoff-B.log"
+    },
+    "final": {
+      "quantity": 2,
+      "min_threshold": 10,
+      "movement_count": 1,
+      "movement_quantity": 8,
+      "movement_numbers": [
+        "PROBE-65ec4ff6-WRITE-A"
+      ]
+    }
+  },
+  "receipt": {
+    "before": "row absent",
+    "amounts": [
+      5,
+      7
+    ],
+    "overlap": "both ABSENCE_READ barriers reached before either write",
+    "A": {
+      "exit_code": 3,
+      "sqlstates": [
+        "40001"
+      ],
+      "sql": "receipt-A.sql",
+      "log": "receipt-A.log"
+    },
+    "B": {
+      "exit_code": 0,
+      "sqlstates": [],
+      "sql": "receipt-B.sql",
+      "log": "receipt-B.log"
+    },
+    "final": {
+      "quantity": 7,
+      "min_threshold": 0,
+      "movement_count": 1,
+      "movement_quantity": 7,
+      "movement_numbers": [
+        "PROBE-65ec4ff6-RECEIPT-B"
+      ]
+    }
+  }
+}

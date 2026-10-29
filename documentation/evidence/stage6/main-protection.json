@@ -1,0 +1,17 @@
+{
+  "ruleset_id": 22749088,
+  "name": "Main branch protection",
+  "enforcement": "active",
+  "required_approvals": 2,
+  "required_check": {
+    "context": "build-and-test",
+    "integration_id": 15368
+  },
+  "strict_required_status_checks_policy": false,
+  "bypass_actors": [],
+  "force_push_blocked": true,
+  "deletion_blocked": true,
+  "effective_main_rules_verified": true,
+  "user_confirmation_received": true,
+  "main_ci_run": 40968466801
+}
