@@ -1,0 +1,9 @@
+SET application_name='sf_65ec4ff6_write_b';
+BEGIN ISOLATION LEVEL SERIALIZABLE;
+SELECT quantity FROM stock WHERE product_id=1 AND warehouse_id=1;
+10
+\echo B_SNAPSHOT_READY
+B_SNAPSHOT_READY
+SELECT quantity FROM stock WHERE product_id=1 AND warehouse_id=1 FOR UPDATE;
+ERROR:  40001: could not serialize access due to concurrent update
+LOCATION:  ExecLockRows, nodeLockRows.c:228
