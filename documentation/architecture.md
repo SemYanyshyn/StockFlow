@@ -14,31 +14,84 @@ StockFlow побудовано за **шаровою (layered) архітект�
 
 ## 2. Структура рішення
 
-```
-/src
-  StockFlow.Domain          — сутності (Product, Category, Supplier, Warehouse,
-                              Stock, StockMovement, User) і переліки
-                              (UnitOfMeasure, MovementType, UserRole)
-  StockFlow.DataAccess      — інтерфейси й реалізації репозиторіїв (ADO.NET),
-                              DbConnectionFactory
-  StockFlow.BusinessLogic   — сервіси з бізнес-правилами та валідацією
-  StockFlow.UI              — WPF-застосунок: Views (XAML) і ViewModels
-/tests
-  StockFlow.Tests           — автоматизовані тести (xUnit)
-/database                   — SQL-скрипти створення схеми та тестових даних
-/documentation              — вимоги, діаграми, архітектура
-/.github/workflows          — збирання й тести (GitHub Actions)
+Реальний каркас використовує .NET 8 і містить саме `StockFlow.sln` (не `.slnx`).
+`global.json` обирає стабільний SDK 8.0.4xx або новіший feature band .NET 8.
+
+```text
+StockFlow.sln
+global.json
+src/
+  StockFlow.Domain/
+    StockFlow.Domain.csproj          # net8.0, незалежна модель
+    MovementType.cs                 # Receipt / WriteOff
+  StockFlow.DataAccess/
+    StockFlow.DataAccess.csproj      # net8.0, ADO.NET / Npgsql
+    DbConnectionFactory.cs          # нове закрите з'єднання на кожну операцію
+  StockFlow.BusinessLogic/
+    StockFlow.BusinessLogic.csproj   # net8.0, майбутні сервіси
+    ServiceCollectionExtensions.cs  # AddStockFlow: межа реєстрації DI
+    StockFlowConfiguration.cs       # JSON біля executable + STOCKFLOW_ environment
+  StockFlow.UI/
+    StockFlow.UI.csproj             # net8.0-windows, UseWPF=true
+    App.xaml / App.xaml.cs          # виклик BusinessLogic для конфігурації й DI
+    MainWindow.xaml / .xaml.cs       # стандартне порожнє вікно
+    appsettings.example.json        # лише безпечний приклад; не завантажується
+    appsettings.json                # тільки локально, ігнорується Git
+tests/
+  StockFlow.Tests/
+    StockFlow.Tests.csproj          # net8.0, xUnit, без WPF і PostgreSQL
+    DbConnectionFactoryTests.cs
+    StockFlowConfigurationTests.cs
+documentation/
+  architecture.md
+  stage5-integration.md             # контракти, перевірки й залежності команди
+  diagrams/                        # актуальні UML та ER
 ```
 
-Посилання між проєктами:
+Фактичні **прямі** `ProjectReference`:
 
-```
-UI            → BusinessLogic, Domain
-BusinessLogic → DataAccess, Domain
-DataAccess    → Domain
-Domain        → (немає)
-Tests         → BusinessLogic, DataAccess, Domain
-```
+| Проєкт | Посилається на |
+|---|---|
+| Domain | жоден проєкт |
+| DataAccess | Domain |
+| BusinessLogic | Domain, DataAccess |
+| UI | BusinessLogic, Domain |
+| Tests | Domain, BusinessLogic, DataAccess |
+
+`DisableTransitiveProjectReferences=true` у UI забороняє доступ до публічних
+типів DataAccess через BusinessLogic. `EnableWindowsTargeting=true` тільки в UI
+дозволяє cross-build на macOS; запуск WPF потребує Windows. Tests не посилається
+на UI. Domain не містить Npgsql, WPF, DI чи пакетів конфігурації.
+
+Npgsql 8.0.9 використовується в DataAccess; CommunityToolkit.Mvvm 8.4.2 — у UI.
+Tests використовує xUnit 2.9.3, runner 3.1.5 і Microsoft.NET.Test.Sdk 17.14.1.
+Компоненти Microsoft.Extensions 8.0.x додані лише до проєктів, які їх використовують.
+
+`DbConnectionFactory` читає `ConnectionStrings:StockFlow`, перевіряє синтаксис
+без доступу до сервера та створює **закриті незалежні** підключення. Фабрика
+реєструється ліниво як singleton, але connection ніколи не є singleton.
+Споживач відкриває підключення для операції й виконує `Dispose`/`DisposeAsync`.
+Сервіс керує спільною транзакцією; фабрика її не створює й не фіксує.
+
+Конфігурація читається з `AppContext.BaseDirectory`, незалежно від поточної
+директорії термінала. Змінна `STOCKFLOW_ConnectionStrings__StockFlow` перевизначає
+JSON. `appsettings.example.json` ніколи не використовується як конфігурація
+з'єднання. Локальний `appsettings.json` копіюється у build/publish output лише
+за наявності; чиста копія збирається без нього. Без рядка підключення DI та
+мінімальне вікно можуть бути створені; перше отримання фабрики дає зрозумілу
+помилку без пароля. Некоректний JSON також дає очищену від вмісту файлу помилку.
+
+**Реалізовано:** каркас, фабрика, конфігурація, реєстрація DI, `MovementType`
+та юніт-тести інфраструктури. `StockMovement` і тести `Validate(stock)` /
+`Apply(stock)` ще не додані: у main і доступних гілках немає `Stock` Саші.
+Мінімальний контракт наведено в [інтеграційних нотатках](stage5-integration.md).
+Production-заглушки й альтернативного типу Stock немає.
+
+**Залишається команді:** Саша — `Stock`, `Warehouse`, `IStockRepository`, оболонка,
+меню та стилі; Мар'ян — `database/`, користувачі, постачальники, тимчасовий контекст
+користувача та `.github/workflows/ci.yml`; Таня — товари, категорії, їхній
+наскрізний зріз і загальний README. Цих майбутніх папок/модулів поки немає в коді.
+Інші розділи цього документа описують цільову архітектуру.
 
 ## 3. Основні компоненти та їх відповідальність
 
