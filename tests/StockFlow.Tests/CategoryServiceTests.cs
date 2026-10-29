@@ -1,4 +1,5 @@
 using StockFlow.BusinessLogic.Products;
+using StockFlow.BusinessLogic.Users;
 using StockFlow.DataAccess.Products;
 using StockFlow.Domain;
 using Xunit;
@@ -29,7 +30,10 @@ public sealed class CategoryServiceTests
         }
     }
 
-    private static (CategoryService Service, FakeCategoryRepository Repository) Create(params string[] existing)
+    private static (CategoryService Service, FakeCategoryRepository Repository) Create(params string[] existing) =>
+        CreateAs(UserRole.Admin, existing);
+
+    private static (CategoryService Service, FakeCategoryRepository Repository) CreateAs(UserRole role, params string[] existing)
     {
         var repository = new FakeCategoryRepository();
         foreach (var name in existing)
@@ -37,12 +41,33 @@ public sealed class CategoryServiceTests
             repository.Categories.Add(new Category { Id = repository.Categories.Count + 1, Name = name });
         }
 
-        return (new CategoryService(repository), repository);
+        return (new CategoryService(repository, new TemporaryUserContext(role)), repository);
     }
 
     [Fact]
     public void NullRepositoryIsRejected() =>
-        Assert.Throws<ArgumentNullException>(() => new CategoryService(null!));
+        Assert.Throws<ArgumentNullException>(() =>
+            new CategoryService(null!, new TemporaryUserContext(UserRole.Admin)));
+
+    [Fact]
+    public void NullUserContextIsRejected() =>
+        Assert.Throws<ArgumentNullException>(() => new CategoryService(new FakeCategoryRepository(), null!));
+
+    [Fact]
+    public void EmployeeCannotAddCategory()
+    {
+        var (service, repository) = CreateAs(UserRole.Employee);
+        var error = Assert.Throws<ValidationException>(() => service.Add("Напої"));
+        Assert.Equal(CategoryService.AdminOnlyMessage, error.Message);
+        Assert.Equal(0, repository.AddCalls);
+    }
+
+    [Fact]
+    public void EmployeeCanViewCategories()
+    {
+        var (service, _) = CreateAs(UserRole.Employee, "Напої");
+        Assert.Single(service.GetAll());
+    }
 
     [Fact]
     public void GetAllReturnsRepositoryCategories()
