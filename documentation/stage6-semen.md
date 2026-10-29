@@ -1,9 +1,9 @@
 # Етап 6 — частина Семена
 
 Факти перевірено 2026-10-30. Робочий репозиторій: SemYanyshyn/StockFlow.
-Актуальна база виконаних перевірок: main `723e6563a7265db1e709a450b45b62854bd96d31`.
+Актуальна база виконаних перевірок: main `0be154163759c66c510777d8d6cab67655b8a3a5`.
 Під час роботи команда злила #124 (Stock/оболонка), #123 (БД/контекст), #120
-(товари/категорії) та #141 (CI). Початковий прототип перенесено на справжні типи;
+(товари/категорії) та #141 (CI), #147 (постачальники), #121 (екрани товарів/категорій). Початковий прототип перенесено на справжні типи;
 другого production Stock або тестового дубліката User/контексту немає.
 
 ## Статус SE-1–SE-9
@@ -14,7 +14,7 @@
 | SE-2 [#127](https://github.com/SemYanyshyn/StockFlow/issues/127) | [PR #139](https://github.com/SemYanyshyn/StockFlow/pull/139) готовий до review: production StockMovement + 42 тести на справжньому Stock; Windows CI success | Командне review і два approvals; PR не злитий |
 | SE-3 [#128](https://github.com/SemYanyshyn/StockFlow/issues/128) | [Draft PR #140](https://github.com/SemYanyshyn/StockFlow/pull/140): production ADO.NET Add/RETURNING, 23 unit-тести; реальний SQL-runner перевірив схему/nullable/timestamp/дублікат | Злиття домену; CI для власного head після перенесення base у main |
 | SE-4 [#129](https://github.com/SemYanyshyn/StockFlow/issues/129) | [Draft PR #146](https://github.com/SemYanyshyn/StockFlow/pull/146): production сервіс/транзакційна фабрика, 21 тест сервісу + 2 DI; реальні commit/rollback перевірки з тестовим SQL adapter | Реалізація StockRepository Саші, погодження стратегії, активація модуля та Windows запуск |
-| SE-5 [#130](https://github.com/SemYanyshyn/StockFlow/issues/130) | **Виконано й перевірено** після окремого підтвердження користувача: до ruleset22749088 додано фактичний build-and-test від GitHub Actions; усі попередні правила збережені | Передано лише підготовлений текст повідомлення команді, без самовільного надсилання |
+| SE-5 [#130](https://github.com/SemYanyshyn/StockFlow/issues/130) | **Виконано й перевірено** після окремого підтвердження користувача: до ruleset 22749088 додано фактичний build-and-test від GitHub Actions; усі попередні правила збережені | Передано лише підготовлений текст повідомлення команді, без самовільного надсилання |
 | SE-6 [#131](https://github.com/SemYanyshyn/StockFlow/issues/131) | [COMMENT review PR #124](https://github.com/SemYanyshyn/StockFlow/pull/124#pullrequestreview-5705948049): 2 inline-коментарі App.xaml.cs:18 / IStockRepository.cs:9, автор перевірений як loktiska | Переглянути SQL/UPSERT, коли з'явиться справжній StockRepository. Approve не ставився |
 | SE-7 [#132](https://github.com/SemYanyshyn/StockFlow/issues/132) | [PR #135](https://github.com/SemYanyshyn/StockFlow/pull/135) готовий до review: 3 SVG + 3 PNG у чинних шляхах, експорти візуально перевірені, CI success | Два approvals; PR не злитий. Це макети, а не скриншоти WPF |
 | SE-8 [#133](https://github.com/SemYanyshyn/StockFlow/issues/133) | Не оголошено реалізованим: критерії/розбіжність #30 і повідомлення Тані підготовлені | StockRepository, активація сервісу, узгоджена sequence-міграція номера, форма/список/навігація та справжні Windows-скриншоти |
@@ -42,9 +42,10 @@
   **після** реєстрації реального IStockRepository. Заглушки не реєструються.
   Наявні інфраструктурні тести без БД збережено. Тест DI явно доводить помилку
   відсутньої командної залежності замість приховування її фіктивною реалізацією.
-- `src/StockFlow.UI/App.xaml.cs`: відновлено Load/AddStockFlow, ValidateOnBuild і
-  ValidateScopes та Dispose, збережено всі реєстрації оболонки/навігації Саші.
-  Це виправлення інтеграції, підняте у review124; запуск WPF ще не перевірено.
+- `src/StockFlow.UI/App.xaml.cs`: збережено актуальні конфігурацію, Dispose,
+  Products/Categories та всі інші реєстрації команди. Додано ValidateOnBuild,
+  ValidateScopes і безпечний fallback стартової помилки. Конфлікт із паралельним
+  PR121 розв'язано зі збереженням його екранів; запуск WPF ще не перевірено.
 - `tests/StockFlow.Tests/{StockMovementTests.cs,Repository/,Service/}`: звичайні unit-тести.
   Фейки існують лише в tests. Справжні Stock/User/context беруться з Domain/BusinessLogic.
 
@@ -68,15 +69,15 @@ dotnet test tests/StockFlow.Tests/StockFlow.Tests.csproj -c Release --no-build -
 ```
 
 Solution зберігає п'ять проєктів. Restore/Release build успішні: 0 warnings/errors.
-**234 passed, 0 failed, 0 skipped** = 146 командних +42 доменних +23 репозиторію
+**263 passed, 0 failed, 0 skipped** = 175 командних +42 доменних +23 репозиторію
 +21 сервісу +2 DI. Тести не потребують БД, локального JSON, WPF або мережі після restore.
 EnableWindowsTargeting увімкнено тільки для UI; інші чотири проєкти лишилися net8.0.
 
-Компіляційна проба в окремій копії: UI→DbConnectionFactory відхилено CS0234;
+Компіляційна проба в окремій копії: UI→DbConnectionFactory відхилено CS0263;
 та сама проба без DisableTransitiveProjectReferences компілюється, після видалення
 перевірочного файла нормальний build знову проходить. У production проби немає.
 Окрема чиста копія Git snapshot без appsettings.json також пройшла restore,
-Release build і всі234тести; умовне копіювання синтетичного JSON перевірено лише
+Release build і всі 263 тести; умовне копіювання синтетичного JSON перевірено лише
 в тимчасовій копії. Обидва створені нами PostgreSQL сервери після перевірок зупинені.
 Перевірено всі прямі ProjectReference, .gitignore й git diff --check; UI не має
 прямого доступу до DataAccess. Особистий JSON/секрети/bin/obj не додаються в Git.
@@ -120,8 +121,8 @@ macOS TMPDIR/socket; це виправлено, повторний повний 
 
 ## CI та захист
 
-- [main CI](https://github.com/SemYanyshyn/StockFlow/actions/runs/40968466801) — success.
-- [домен139 Windows CI](https://github.com/SemYanyshyn/StockFlow/actions/runs/40968882593) — success,188 tests.
+- [main CI](https://github.com/SemYanyshyn/StockFlow/actions/runs/40970971594) — success.
+- [домен139 Windows CI](https://github.com/SemYanyshyn/StockFlow/actions/runs/40971633995) — success,217 tests.
 - [контракт125 CI](https://github.com/SemYanyshyn/StockFlow/actions/runs/40969925494) — success,146 tests.
 - [макети135 CI](https://github.com/SemYanyshyn/StockFlow/actions/runs/40969916067) — success,146 tests.
 - Repo140/service146 та поточний перевірочний PR мають feature-base: чинний
@@ -131,7 +132,7 @@ macOS TMPDIR/socket; це виправлено, повторний повний 
 Після явного підтвердження користувача змінено рівно одне правило:
 required build-and-test, GitHub Actions integration15368. Перед save звірено
 свіжий ruleset із підготовленим before; після save перевірено ruleset та effective
-rules main. PR,2approvals,stale approvals,review threads,block deletion/force push,
+rules main. PR,2 approvals,stale approvals,review threads,block deletion/force push,
 default-branch target і bypass[] збережені; strict up-to-date requirement не додавали.
 [Чинний ruleset](https://github.com/SemYanyshyn/StockFlow/rules/22749088).
 
@@ -140,11 +141,11 @@ default-branch target і bypass[] збережені; strict up-to-date requirem
 | Гілка | PR / base | Перевірений head |
 |---|---|---|
 | docs/stock-contract | #125 → main, Draft | 2ba704e |
-| feature/invoices-domain-rules | #139 → main, ready for review | 753cb8c |
-| feature/invoices-repository | #140 → domain branch, Draft | 0fbf180 |
-| feature/invoices-service | #146 → repository branch, Draft | 3049bc7 |
+| feature/invoices-domain-rules | #139 → main, ready for review | f96e557 |
+| feature/invoices-repository | #140 → domain branch, Draft | d345d01 |
+| feature/invoices-service | #146 → repository branch, Draft | 3ac8697 |
 | docs/wireframes-movements | #135 → main, ready for review | 81e7143 |
-| test/invoices-verification | поточний окремий PR → service branch, Draft | див. історію гілки |
+| test/invoices-verification | [PR #148](https://github.com/SemYanyshyn/StockFlow/pull/148) → service branch, Draft | див. історію гілки |
 
 Залежні PR не відкривали незалежно в main із повторними файлами. Main оновлювався
 звичайними merge лише **в feature-гілки**; PR не зливалися, force push не було.
