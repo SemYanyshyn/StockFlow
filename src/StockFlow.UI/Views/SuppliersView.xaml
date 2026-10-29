@@ -1,0 +1,127 @@
+<UserControl x:Class="StockFlow.UI.Views.SuppliersView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Loaded="OnLoaded">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="VisibleIfTrue" />
+        <Style x:Key="AccentButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Background" Value="#FFF1DB" />
+            <Setter Property="BorderBrush" Value="#C87800" />
+            <Setter Property="BorderThickness" Value="1.5" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Padding" Value="12,8" />
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="32">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Постачальники" FontSize="20" FontWeight="Bold"
+                   Foreground="{StaticResource PrimaryTextBrush}" Margin="0,0,0,16" />
+
+        <Grid Grid.Row="1" Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Grid Grid.Column="0" MaxWidth="380" HorizontalAlignment="Left">
+                <TextBox x:Name="SearchBox" Width="340"
+                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                         ToolTip="Пошук за назвою, телефоном або електронною поштою" />
+                <TextBlock Text="Пошук за назвою або контактом..."
+                           Foreground="{StaticResource SecondaryTextBrush}"
+                           FontStyle="Italic" IsHitTestVisible="False"
+                           Margin="10,0,0,0" VerticalAlignment="Center">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding SearchText}" Value="">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </Grid>
+            <Button Grid.Column="1" Content="Оновити" Command="{Binding ReloadCommand}"
+                    Margin="8,0,8,0" Padding="12,8" />
+            <Button Grid.Column="2" Content="+ Додати постачальника"
+                    Style="{StaticResource AccentButton}" Command="{Binding OpenEditorCommand}"
+                    Visibility="{Binding CanManage, Converter={StaticResource VisibleIfTrue}}" />
+        </Grid>
+
+        <Border Grid.Row="2" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
+                Background="{StaticResource BackgroundBrush}" Padding="16" Margin="0,0,0,12"
+                Visibility="{Binding IsEditorOpen, Converter={StaticResource VisibleIfTrue}}">
+            <StackPanel>
+                <TextBlock Text="Новий постачальник" FontWeight="SemiBold" FontSize="15"
+                           Foreground="{StaticResource PrimaryTextBrush}" Margin="0,0,0,10" />
+                <WrapPanel>
+                    <StackPanel Margin="0,0,12,10" Width="225">
+                        <TextBlock Text="Назва *" Margin="0,0,0,4" />
+                        <TextBox Text="{Binding NewName, UpdateSourceTrigger=PropertyChanged}" MaxLength="100" />
+                    </StackPanel>
+                    <StackPanel Margin="0,0,12,10" Width="180">
+                        <TextBlock Text="Телефон" Margin="0,0,0,4" />
+                        <TextBox Text="{Binding NewPhone, UpdateSourceTrigger=PropertyChanged}" MaxLength="30" />
+                    </StackPanel>
+                    <StackPanel Margin="0,0,12,10" Width="245">
+                        <TextBlock Text="Email" Margin="0,0,0,4" />
+                        <TextBox Text="{Binding NewEmail, UpdateSourceTrigger=PropertyChanged}" MaxLength="100" />
+                    </StackPanel>
+                </WrapPanel>
+                <StackPanel Orientation="Horizontal">
+                    <Button Content="Зберегти" Command="{Binding AddCommand}"
+                            Style="{StaticResource AccentButton}" Margin="0,0,10,0" />
+                    <Button Content="Скасувати" Command="{Binding CancelEditorCommand}" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <StackPanel Grid.Row="3" Margin="0,0,0,10">
+            <TextBlock Text="Завантаження..." FontStyle="Italic"
+                       Foreground="{StaticResource SecondaryTextBrush}"
+                       Visibility="{Binding IsBusy, Converter={StaticResource VisibleIfTrue}}" />
+            <TextBlock Text="{Binding ErrorMessage}" Foreground="#A42B2B" TextWrapping="Wrap">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ErrorMessage}" Value="{x:Null}">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+        </StackPanel>
+
+        <Grid Grid.Row="4">
+            <DataGrid ItemsSource="{Binding Suppliers}" AutoGenerateColumns="False"
+                      IsReadOnly="True" CanUserAddRows="False" HeadersVisibility="Column"
+                      AlternationCount="2">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Назва" Binding="{Binding Name}" Width="2*" />
+                    <DataGridTextColumn Header="Телефон" Binding="{Binding Phone}" Width="1.4*" />
+                    <DataGridTextColumn Header="Email" Binding="{Binding Email}" Width="2*" />
+                </DataGrid.Columns>
+            </DataGrid>
+            <TextBlock Text="Постачальників не знайдено" FontStyle="Italic"
+                       Foreground="{StaticResource SecondaryTextBrush}"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                       IsHitTestVisible="False"
+                       Visibility="{Binding IsEmpty, Converter={StaticResource VisibleIfTrue}}" />
+        </Grid>
+
+        <TextBlock Grid.Row="5" Text="* Додавання постачальників доступне лише Адміністратору."
+                   FontStyle="Italic" Foreground="#B56A00" Margin="0,12,0,0" />
+    </Grid>
+</UserControl>
