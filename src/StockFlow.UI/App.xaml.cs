@@ -1,7 +1,7 @@
 using System;
 using System.Windows;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using StockFlow.BusinessLogic;
 using StockFlow.UI.Services;
 using StockFlow.UI.ViewModels;
@@ -11,10 +11,9 @@ namespace StockFlow.UI;
 
 public partial class App : Application
 {
-    public static IServiceProvider ServiceProvider { get; private set; } = null!;
-
-    private ServiceProvider? _services;
     private IConfigurationRoot? _configuration;
+
+    public static IServiceProvider ServiceProvider { get; private set; } = null!;
 
     private void ConfigureServices(IServiceCollection services)
     {
@@ -23,6 +22,8 @@ public partial class App : Application
         services.AddSingleton<MainWindowViewModel>();
         services.AddSingleton<MainWindow>();
 
+        services.AddTransient<ProductsViewModel>();
+        services.AddTransient<CategoriesViewModel>();
         services.AddTransient<WarehousesViewModel>();
         services.AddTransient<StockBalancesViewModel>();
         services.AddTransient<ReportsViewModel>();
@@ -39,14 +40,14 @@ public partial class App : Application
             var services = new ServiceCollection();
             services.AddStockFlow(_configuration);
             ConfigureServices(services);
-            _services = services.BuildServiceProvider(new ServiceProviderOptions
+            ServiceProvider = services.BuildServiceProvider(new ServiceProviderOptions
             {
                 ValidateOnBuild = true,
                 ValidateScopes = true
             });
-            ServiceProvider = _services;
-            var mainWindow = _services.GetRequiredService<MainWindow>();
-            mainWindow.DataContext = _services.GetRequiredService<MainWindowViewModel>();
+
+            var mainWindow = ServiceProvider.GetRequiredService<MainWindow>();
+            mainWindow.DataContext = ServiceProvider.GetRequiredService<MainWindowViewModel>();
             mainWindow.Show();
         }
         catch (InvalidOperationException error)
@@ -64,7 +65,7 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
-        _services?.Dispose();
+        (ServiceProvider as IDisposable)?.Dispose();
         (_configuration as IDisposable)?.Dispose();
         base.OnExit(e);
     }

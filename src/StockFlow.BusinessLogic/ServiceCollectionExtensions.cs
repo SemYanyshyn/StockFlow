@@ -1,9 +1,11 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using StockFlow.BusinessLogic.Products;
+using StockFlow.BusinessLogic.Suppliers;
 using StockFlow.BusinessLogic.Users;
 using StockFlow.DataAccess;
 using StockFlow.DataAccess.Products;
+using StockFlow.DataAccess.Suppliers;
 
 namespace StockFlow.BusinessLogic;
 
@@ -25,6 +27,8 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IProductRepository, ProductRepository>();
         services.AddSingleton<CategoryService>();
         services.AddSingleton<ProductService>();
+        services.AddSingleton<ISupplierRepository, SupplierRepository>();
+        services.AddSingleton<SupplierService>();
         return services;
     }
 }

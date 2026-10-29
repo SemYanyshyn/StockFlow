@@ -7,6 +7,12 @@
         WindowStartupLocation="CenterScreen">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <DataTemplate DataType="{x:Type vm:ProductsViewModel}">
+            <views:ProductsView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:CategoriesViewModel}">
+            <views:CategoriesView/>
+        </DataTemplate>
         <DataTemplate DataType="{x:Type vm:WarehousesViewModel}">
             <views:WarehousesView/>
         </DataTemplate>

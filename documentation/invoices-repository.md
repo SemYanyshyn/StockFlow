@@ -26,7 +26,7 @@
 
 ## Сумісність зі злитою схемою
 
-Звірено з `database/01_schema.sql` у main `723e656`:
+Звірено з `database/01_schema.sql` у main `0be1541`:
 `stock_movements` містить `number`, `type`, `product_id`, `warehouse_id`,
 `supplier_id`, `user_id`, `quantity`, `movement_date`, `note`.
 Унікальність `number` має PostgreSQL constraint `stock_movements_number_key`.
@@ -50,8 +50,8 @@ dotnet test tests/StockFlow.Tests/StockFlow.Tests.csproj -c Release --no-build -
 ```
 
 Фактично виконано на macOS ARM64, SDK .NET 8.0.427: restore та Release build
-успішні, 0 warnings / 0 errors. У звичайному test project виконано **211 тестів**:
-146 наявних командних/інфраструктурних +42 доменних +23 репозиторію; 0 failed,
+успішні, 0 warnings / 0 errors. У звичайному test project виконано **240 тестів**:
+175 наявних командних/інфраструктурних +42 доменних +23 репозиторію; 0 failed,
 0 skipped. Окремий фільтр StockMovementRepositoryTests виконав 23/23.
 
 23 тести репозиторію перевіряють передачу всіх значень, SQL-параметризацію,
