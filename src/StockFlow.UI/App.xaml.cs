@@ -40,7 +40,11 @@ public partial class App : Application
             var services = new ServiceCollection();
             services.AddStockFlow(_configuration);
             ConfigureServices(services);
-            ServiceProvider = services.BuildServiceProvider();
+            ServiceProvider = services.BuildServiceProvider(new ServiceProviderOptions
+            {
+                ValidateOnBuild = true,
+                ValidateScopes = true
+            });
 
             var mainWindow = ServiceProvider.GetRequiredService<MainWindow>();
             mainWindow.DataContext = ServiceProvider.GetRequiredService<MainWindowViewModel>();
@@ -49,6 +53,12 @@ public partial class App : Application
         catch (InvalidOperationException error)
         {
             MessageBox.Show(error.Message, "StockFlow", MessageBoxButton.OK, MessageBoxImage.Error);
+            Shutdown(1);
+        }
+        catch (Exception)
+        {
+            MessageBox.Show("Не вдалося запустити застосунок. Перевірте налаштування та спробуйте ще раз",
+                "StockFlow", MessageBoxButton.OK, MessageBoxImage.Error);
             Shutdown(1);
         }
     }
