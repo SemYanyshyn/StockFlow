@@ -26,7 +26,7 @@
 
 ## Сумісність зі злитою схемою
 
-Звірено з `database/01_schema.sql` у main `3abbd04`:
+Звірено з `database/01_schema.sql` у main `723e656`:
 `stock_movements` містить `number`, `type`, `product_id`, `warehouse_id`,
 `supplier_id`, `user_id`, `quantity`, `movement_date`, `note`.
 Унікальність `number` має PostgreSQL constraint `stock_movements_number_key`.
@@ -50,8 +50,8 @@ dotnet test tests/StockFlow.Tests/StockFlow.Tests.csproj -c Release --no-build -
 ```
 
 Фактично виконано на macOS ARM64, SDK .NET 8.0.427: restore та Release build
-успішні, 0 warnings / 0 errors. У звичайному test project виконано **174 тести**:
-109 наявних командних/інфраструктурних +42 доменних +23 репозиторію; 0 failed,
+успішні, 0 warnings / 0 errors. У звичайному test project виконано **211 тестів**:
+146 наявних командних/інфраструктурних +42 доменних +23 репозиторію; 0 failed,
 0 skipped. Окремий фільтр StockMovementRepositoryTests виконав 23/23.
 
 23 тести репозиторію перевіряють передачу всіх значень, SQL-параметризацію,
@@ -65,3 +65,7 @@ PR #140 спирається на `feature/invoices-domain-rules` (PR #139), т�
 повторює домен. `Part of #128`, `Part of #30`, `Part of #32`; повні історії з
 формою цим репозиторієм ще не завершені. PR лишається Draft до остаточної
 перевірки CI й узгодження командної інтеграції; він не зливався.
+
+CI на main `723e656` фактично успішний (run 40968466801, job build-and-test).
+Наявний workflow виконується для push/main та PR із base main. Для цього PR з
+feature-base CI автоматично не запускається; успіх main не є перевіркою head PR.
