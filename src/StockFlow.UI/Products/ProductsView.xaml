@@ -1,0 +1,69 @@
+<UserControl x:Class="StockFlow.UI.Products.ProductsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:local="clr-namespace:StockFlow.UI.Products"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=local:ProductsViewModel}"
+             Loaded="OnLoaded">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibility" />
+    </UserControl.Resources>
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Товари" FontSize="20" FontWeight="Bold" Margin="0,0,0,12" />
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,12">
+            <TextBlock Text="Пошук за назвою:" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <TextBox Width="240"
+                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
+            <TextBlock Text="Категорія:" VerticalAlignment="Center" Margin="24,0,8,0" />
+            <ComboBox Width="200"
+                      ItemsSource="{Binding Categories}"
+                      SelectedItem="{Binding SelectedCategory}"
+                      DisplayMemberPath="Name" />
+        </StackPanel>
+
+        <TextBlock Grid.Row="2"
+                   Text="{Binding ErrorMessage}"
+                   Foreground="Firebrick"
+                   TextWrapping="Wrap"
+                   Margin="0,0,0,12">
+            <TextBlock.Style>
+                <Style TargetType="TextBlock">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding ErrorMessage}" Value="{x:Null}">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </TextBlock.Style>
+        </TextBlock>
+
+        <Grid Grid.Row="3">
+            <DataGrid ItemsSource="{Binding Products}"
+                      AutoGenerateColumns="False"
+                      IsReadOnly="True"
+                      CanUserAddRows="False"
+                      HeadersVisibility="Column">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Назва" Binding="{Binding Name}" Width="2*" />
+                    <DataGridTextColumn Header="Категорія" Binding="{Binding CategoryName}" Width="2*" />
+                    <DataGridTextColumn Header="Од. виміру" Binding="{Binding Unit}" Width="*" />
+                </DataGrid.Columns>
+            </DataGrid>
+            <TextBlock Text="Товари не знайдено"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       FontStyle="Italic"
+                       Visibility="{Binding IsEmpty, Converter={StaticResource BooleanToVisibility}}" />
+        </Grid>
+    </Grid>
+</UserControl>
