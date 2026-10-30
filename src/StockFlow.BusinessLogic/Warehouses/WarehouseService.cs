@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using StockFlow.BusinessLogic.Products;
 using StockFlow.DataAccess.Warehouses;
 using StockFlow.Domain;
 using StockFlow.BusinessLogic.Users;

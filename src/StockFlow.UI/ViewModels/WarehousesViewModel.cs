@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using StockFlow.BusinessLogic.Users;
-using StockFlow.BusinessLogic;            
+using StockFlow.BusinessLogic.Products;
 using StockFlow.BusinessLogic.Warehouses;
 using StockFlow.Domain;
 

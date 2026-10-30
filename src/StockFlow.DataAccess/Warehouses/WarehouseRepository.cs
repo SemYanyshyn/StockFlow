@@ -8,11 +8,11 @@ namespace StockFlow.DataAccess.Warehouses;
 
 public class WarehouseRepository : IWarehouseRepository
 {
-    private readonly IDbConnectionFactory _connectionFactory;
+    private readonly DbConnectionFactory _connectionFactory;
 
-    public WarehouseRepository(IDbConnectionFactory connectionFactory)
+    public WarehouseRepository(DbConnectionFactory connectionFactory)
     {
-        _connectionFactory = connectionFactory;
+        _connectionFactory = connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
     }
 
     public IReadOnlyList<Warehouse> GetAll()
