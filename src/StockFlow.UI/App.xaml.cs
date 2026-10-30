@@ -14,6 +14,22 @@ public partial class App : Application
     private IConfigurationRoot? _configuration;
 
     public static IServiceProvider ServiceProvider { get; private set; } = null!;
+    public App()
+    {
+        DispatcherUnhandledException += (sender, args) =>
+        {
+            MessageBox.Show(
+                $"Сталася неочікувана помилка: {args.Exception.Message}",
+                "Помилка",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+            args.Handled = true; 
+        };
+
+        var services = new ServiceCollection();
+        ConfigureServices(services);
+        ServiceProvider = services.BuildServiceProvider();
+    }
 
     private void ConfigureServices(IServiceCollection services)
     {
