@@ -47,4 +47,50 @@ public sealed class CategoryRepository : ICategoryRepository
             throw new DuplicateNameException();
         }
     }
+
+    public bool Update(Category category)
+    {
+        ArgumentNullException.ThrowIfNull(category);
+
+        using var connection = _connectionFactory.CreateConnection();
+        connection.Open();
+        using var command = new NpgsqlCommand("UPDATE categories SET name = @name WHERE id = @id", connection);
+        command.Parameters.AddWithValue("name", category.Name);
+        command.Parameters.AddWithValue("id", category.Id);
+
+        try
+        {
+            return command.ExecuteNonQuery() == 1;
+        }
+        catch (PostgresException error) when (error.SqlState == PostgresErrorCodes.UniqueViolation)
+        {
+            throw new DuplicateNameException();
+        }
+    }
+
+    public int CountProducts(int categoryId)
+    {
+        using var connection = _connectionFactory.CreateConnection();
+        connection.Open();
+        using var command = new NpgsqlCommand("SELECT COUNT(*) FROM products WHERE category_id = @id", connection);
+        command.Parameters.AddWithValue("id", categoryId);
+        return Convert.ToInt32(command.ExecuteScalar());
+    }
+
+    public bool Delete(int categoryId)
+    {
+        using var connection = _connectionFactory.CreateConnection();
+        connection.Open();
+        using var command = new NpgsqlCommand("DELETE FROM categories WHERE id = @id", connection);
+        command.Parameters.AddWithValue("id", categoryId);
+
+        try
+        {
+            return command.ExecuteNonQuery() == 1;
+        }
+        catch (PostgresException error) when (error.SqlState == PostgresErrorCodes.ForeignKeyViolation)
+        {
+            throw new RecordInUseException();
+        }
+    }
 }

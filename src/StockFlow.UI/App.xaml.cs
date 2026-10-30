@@ -18,6 +18,7 @@ public partial class App : Application
     private void ConfigureServices(IServiceCollection services)
     {
         services.AddSingleton<INavigationService, NavigationService>();
+        services.AddSingleton<IConfirmationService, ConfirmationService>();
 
         services.AddSingleton<MainWindowViewModel>();
         services.AddSingleton<MainWindow>();
