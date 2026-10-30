@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using StockFlow.BusinessLogic.Products;
 using StockFlow.BusinessLogic.Users;
 using StockFlow.Domain;
+using StockFlow.UI.Services;
 
 namespace StockFlow.UI.ViewModels;
 
@@ -11,6 +12,7 @@ public sealed partial class ProductsViewModel : ViewModelBase
 {
     private readonly ProductService _productService;
     private readonly CategoryService _categoryService;
+    private readonly IConfirmationService _confirmation;
     private IReadOnlyList<Product> _allProducts = Array.Empty<Product>();
     private Dictionary<int, string> _categoryNames = new();
 
@@ -39,19 +41,35 @@ public sealed partial class ProductsViewModel : ViewModelBase
     private UnitOption? _newProductUnit;
 
     [ObservableProperty]
-    private string? _addErrorMessage;
+    private string? _formErrorMessage;
 
-    public ProductsViewModel(ProductService productService, CategoryService categoryService, ICurrentUserContext currentUser)
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsEditing), nameof(FormLabel), nameof(SaveButtonText))]
+    private int? _editingProductId;
+
+    public ProductsViewModel(
+        ProductService productService,
+        CategoryService categoryService,
+        ICurrentUserContext currentUser,
+        IConfirmationService confirmation)
     {
         ArgumentNullException.ThrowIfNull(productService);
         ArgumentNullException.ThrowIfNull(categoryService);
         ArgumentNullException.ThrowIfNull(currentUser);
+        ArgumentNullException.ThrowIfNull(confirmation);
         _productService = productService;
         _categoryService = categoryService;
+        _confirmation = confirmation;
         CanManage = currentUser.IsAdmin;
     }
 
     public bool CanManage { get; }
+
+    public bool IsEditing => EditingProductId is not null;
+
+    public string FormLabel => IsEditing ? "Редагування:" : "Новий товар:";
+
+    public string SaveButtonText => IsEditing ? "Зберегти" : "+ Додати";
 
     public ObservableCollection<CategoryFilterItem> Categories { get; } = new() { CategoryFilterItem.All };
 
@@ -84,26 +102,100 @@ public sealed partial class ProductsViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private async Task AddAsync()
+    private async Task SaveAsync()
     {
-        AddErrorMessage = null;
+        FormErrorMessage = null;
         try
         {
             var name = NewProductName;
             var categoryId = NewProductCategory?.Id;
             var unit = NewProductUnit?.Unit;
-            await Task.Run(() => _productService.Add(name, categoryId, unit));
+            var editingId = EditingProductId;
+            if (editingId is null)
+            {
+                await Task.Run(() => _productService.Add(name, categoryId, unit));
+            }
+            else
+            {
+                await Task.Run(() => _productService.Update(editingId.Value, name, categoryId, unit));
+                ClearForm();
+            }
+
             NewProductName = string.Empty;
+            EditingProductId = null;
         }
         catch (ValidationException error)
         {
-            AddErrorMessage = error.Message;
+            FormErrorMessage = error.Message;
             return;
         }
         catch (Exception error)
         {
-            AddErrorMessage = DataErrorText.From(error);
+            FormErrorMessage = DataErrorText.From(error);
             return;
+        }
+
+        await LoadAsync();
+    }
+
+    [RelayCommand]
+    private void Edit(ProductRow row)
+    {
+        var product = _allProducts.FirstOrDefault(item => item.Id == row.Id);
+        if (product is null)
+        {
+            return;
+        }
+
+        FormErrorMessage = null;
+        EditingProductId = product.Id;
+        NewProductName = product.Name;
+        NewProductCategory = ProductCategories.FirstOrDefault(item => item.Id == product.CategoryId);
+        NewProductUnit = Units.FirstOrDefault(option => option.Unit == product.Unit);
+    }
+
+    [RelayCommand]
+    private void CancelEdit()
+    {
+        FormErrorMessage = null;
+        EditingProductId = null;
+        ClearForm();
+    }
+
+    private void ClearForm()
+    {
+        NewProductName = string.Empty;
+        NewProductCategory = null;
+        NewProductUnit = null;
+    }
+
+    [RelayCommand]
+    private async Task DeleteAsync(ProductRow row)
+    {
+        FormErrorMessage = null;
+        if (!_confirmation.Confirm($"Видалити товар «{row.Name}»?"))
+        {
+            return;
+        }
+
+        try
+        {
+            await Task.Run(() => _productService.Delete(row.Id));
+        }
+        catch (ValidationException error)
+        {
+            FormErrorMessage = error.Message;
+            return;
+        }
+        catch (Exception error)
+        {
+            FormErrorMessage = DataErrorText.From(error);
+            return;
+        }
+
+        if (EditingProductId == row.Id)
+        {
+            CancelEdit();
         }
 
         await LoadAsync();
@@ -131,6 +223,7 @@ public sealed partial class ProductsViewModel : ViewModelBase
     {
         Products = ProductService.Filter(_allProducts, SelectedCategory?.Id, SearchText)
             .Select(product => new ProductRow(
+                product.Id,
                 product.Name,
                 _categoryNames.GetValueOrDefault(product.CategoryId, string.Empty),
                 UnitOfMeasureText.Short(product.Unit)))
