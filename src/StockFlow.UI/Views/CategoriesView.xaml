@@ -9,6 +9,11 @@
              Loaded="OnLoaded">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibility" />
+        <Style x:Key="RowActionButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Padding" Value="8,1" />
+            <Setter Property="Margin" Value="0,1,6,1" />
+            <Setter Property="FontSize" Value="12" />
+        </Style>
     </UserControl.Resources>
     <Grid Margin="32">
         <Grid.RowDefinitions>
@@ -25,17 +30,23 @@
                     Orientation="Horizontal"
                     Margin="0,0,0,12"
                     Visibility="{Binding CanManage, Converter={StaticResource BooleanToVisibility}}">
-            <TextBlock Text="Назва категорії:" VerticalAlignment="Center" Foreground="{StaticResource PrimaryTextBrush}" Margin="0,0,8,0" />
+            <TextBlock Text="{Binding FormLabel}" VerticalAlignment="Center" Foreground="{StaticResource PrimaryTextBrush}" Margin="0,0,8,0" />
             <TextBox Width="240"
                      Text="{Binding NewCategoryName, UpdateSourceTrigger=PropertyChanged}">
                 <TextBox.InputBindings>
-                    <KeyBinding Key="Enter" Command="{Binding AddCommand}" />
+                    <KeyBinding Key="Enter" Command="{Binding SaveCommand}" />
+                    <KeyBinding Key="Escape" Command="{Binding CancelEditCommand}" />
                 </TextBox.InputBindings>
             </TextBox>
-            <Button Content="+ Додати категорію"
-                    Command="{Binding AddCommand}"
+            <Button Content="{Binding SaveButtonText}"
+                    Command="{Binding SaveCommand}"
                     Padding="12,4"
                     Margin="8,0,0,0" />
+            <Button Content="Скасувати"
+                    Command="{Binding CancelEditCommand}"
+                    Padding="12,4"
+                    Margin="8,0,0,0"
+                    Visibility="{Binding IsEditing, Converter={StaticResource BooleanToVisibility}}" />
         </StackPanel>
 
         <TextBlock Grid.Row="2"
@@ -62,11 +73,27 @@
                   HeadersVisibility="Column">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Назва категорії" Binding="{Binding Name}" Width="*" />
+                <DataGridTemplateColumn x:Name="ActionsColumn" Header="Дії" Width="Auto">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="Редагувати"
+                                        Style="{StaticResource RowActionButton}"
+                                        Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        CommandParameter="{Binding}" />
+                                <Button Content="Видалити"
+                                        Style="{StaticResource RowActionButton}"
+                                        Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        CommandParameter="{Binding}" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
             </DataGrid.Columns>
         </DataGrid>
 
         <TextBlock Grid.Row="4"
-                   Text="* Додавання категорій доступне лише ролі Адмін"
+                   Text="* Додавання, редагування та видалення доступні лише ролі Адмін"
                    FontStyle="Italic"
                    FontSize="11"
                    Foreground="{StaticResource SecondaryTextBrush}"
