@@ -19,16 +19,12 @@ public partial class App : Application
         DispatcherUnhandledException += (sender, args) =>
         {
             MessageBox.Show(
-                $"Сталася неочікувана помилка: {args.Exception.Message}",
-                "Помилка",
+                $"РЎС‚Р°Р»Р°СЃСЏ РЅРµРѕС‡С–РєСѓРІР°РЅР° РїРѕРјРёР»РєР°: {args.Exception.Message}",
+                "РџРѕРјРёР»РєР°",
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
-            args.Handled = true; 
+            args.Handled = true;
         };
-
-        var services = new ServiceCollection();
-        ConfigureServices(services);
-        ServiceProvider = services.BuildServiceProvider();
     }
 
     private void ConfigureServices(IServiceCollection services)
