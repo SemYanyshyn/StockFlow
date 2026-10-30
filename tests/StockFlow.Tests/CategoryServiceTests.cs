@@ -11,8 +11,13 @@ public sealed class CategoryServiceTests
     private sealed class FakeCategoryRepository : ICategoryRepository
     {
         public List<Category> Categories { get; } = new();
+        public Dictionary<int, int> ProductCounts { get; } = new();
         public bool ThrowDuplicateOnAdd { get; set; }
+        public bool ThrowDuplicateOnUpdate { get; set; }
+        public bool ThrowInUseOnDelete { get; set; }
         public int AddCalls { get; private set; }
+        public int UpdateCalls { get; private set; }
+        public int DeleteCalls { get; private set; }
 
         public IReadOnlyList<Category> GetAll() => Categories.ToList();
 
@@ -27,6 +32,37 @@ public sealed class CategoryServiceTests
             var id = Categories.Count + 1;
             Categories.Add(new Category { Id = id, Name = category.Name });
             return id;
+        }
+
+        public bool Update(Category category)
+        {
+            UpdateCalls++;
+            if (ThrowDuplicateOnUpdate)
+            {
+                throw new DuplicateNameException();
+            }
+
+            var existing = Categories.FirstOrDefault(c => c.Id == category.Id);
+            if (existing is null)
+            {
+                return false;
+            }
+
+            existing.Name = category.Name;
+            return true;
+        }
+
+        public int CountProducts(int categoryId) => ProductCounts.GetValueOrDefault(categoryId);
+
+        public bool Delete(int categoryId)
+        {
+            DeleteCalls++;
+            if (ThrowInUseOnDelete)
+            {
+                throw new RecordInUseException();
+            }
+
+            return Categories.RemoveAll(c => c.Id == categoryId) == 1;
         }
     }
 
@@ -137,5 +173,132 @@ public sealed class CategoryServiceTests
         repository.ThrowDuplicateOnAdd = true;
         var error = Assert.Throws<ValidationException>(() => service.Add("Напої"));
         Assert.Equal(CategoryService.DuplicateNameMessage, error.Message);
+    }
+
+    [Fact]
+    public void AdminRenamesCategoryWithTrimmedName()
+    {
+        var (service, repository) = Create("Напої", "Бакалія");
+        var category = service.Update(1, "  Напої та соки  ");
+        Assert.Equal("Напої та соки", category.Name);
+        Assert.Equal("Напої та соки", repository.Categories[0].Name);
+    }
+
+    [Fact]
+    public void CategoryCanChangeCaseOfItsOwnName()
+    {
+        var (service, repository) = Create("напої");
+        service.Update(1, "Напої");
+        Assert.Equal("Напої", repository.Categories[0].Name);
+    }
+
+    [Fact]
+    public void EmployeeCannotRenameCategory()
+    {
+        var (service, repository) = CreateAs(UserRole.Employee, "Напої");
+        var error = Assert.Throws<ValidationException>(() => service.Update(1, "Соки"));
+        Assert.Equal(CategoryService.ManageAdminOnlyMessage, error.Message);
+        Assert.Equal(0, repository.UpdateCalls);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("   ")]
+    public void RenameToMissingNameIsRejected(string? name)
+    {
+        var (service, repository) = Create("Напої");
+        var error = Assert.Throws<ValidationException>(() => service.Update(1, name));
+        Assert.Equal(CategoryService.NameRequiredMessage, error.Message);
+        Assert.Equal(0, repository.UpdateCalls);
+    }
+
+    [Fact]
+    public void RenameToTooLongNameIsRejected()
+    {
+        var (service, repository) = Create("Напої");
+        var error = Assert.Throws<ValidationException>(() => service.Update(1, new string('к', Category.MaxNameLength + 1)));
+        Assert.Equal(CategoryService.NameTooLongMessage, error.Message);
+        Assert.Equal(0, repository.UpdateCalls);
+    }
+
+    [Theory]
+    [InlineData("Бакалія")]
+    [InlineData("БАКАЛІЯ")]
+    [InlineData("  бакалія ")]
+    public void RenameToOtherCategoryNameIsRejected(string name)
+    {
+        var (service, repository) = Create("Напої", "Бакалія");
+        var error = Assert.Throws<ValidationException>(() => service.Update(1, name));
+        Assert.Equal(CategoryService.DuplicateNameMessage, error.Message);
+        Assert.Equal(0, repository.UpdateCalls);
+    }
+
+    [Fact]
+    public void RenameOfMissingCategoryReportsNotFound()
+    {
+        var (service, _) = Create("Напої");
+        var error = Assert.Throws<ValidationException>(() => service.Update(99, "Соки"));
+        Assert.Equal(CategoryService.NotFoundMessage, error.Message);
+    }
+
+    [Fact]
+    public void RenameDuplicateDetectedByDatabaseIsReportedAsValidationError()
+    {
+        var (service, repository) = Create("Напої");
+        repository.ThrowDuplicateOnUpdate = true;
+        var error = Assert.Throws<ValidationException>(() => service.Update(1, "Соки"));
+        Assert.Equal(CategoryService.DuplicateNameMessage, error.Message);
+    }
+
+    [Fact]
+    public void AdminDeletesEmptyCategory()
+    {
+        var (service, repository) = Create("Напої", "Бакалія");
+        service.Delete(2);
+        Assert.Equal("Напої", Assert.Single(repository.Categories).Name);
+    }
+
+    [Fact]
+    public void EmployeeCannotDeleteCategory()
+    {
+        var (service, repository) = CreateAs(UserRole.Employee, "Напої");
+        var error = Assert.Throws<ValidationException>(() => service.Delete(1));
+        Assert.Equal(CategoryService.ManageAdminOnlyMessage, error.Message);
+        Assert.Equal(0, repository.DeleteCalls);
+    }
+
+    [Theory]
+    [InlineData(1, "Категорію не можна видалити: у ній 1 товар.")]
+    [InlineData(3, "Категорію не можна видалити: у ній 3 товари.")]
+    [InlineData(5, "Категорію не можна видалити: у ній 5 товарів.")]
+    [InlineData(11, "Категорію не можна видалити: у ній 11 товарів.")]
+    [InlineData(12, "Категорію не можна видалити: у ній 12 товарів.")]
+    [InlineData(21, "Категорію не можна видалити: у ній 21 товар.")]
+    [InlineData(22, "Категорію не можна видалити: у ній 22 товари.")]
+    public void CategoryWithProductsIsNotDeletedAndCountIsShown(int count, string expected)
+    {
+        var (service, repository) = Create("Напої");
+        repository.ProductCounts[1] = count;
+        var error = Assert.Throws<ValidationException>(() => service.Delete(1));
+        Assert.Equal(expected, error.Message);
+        Assert.Equal(0, repository.DeleteCalls);
+        Assert.Single(repository.Categories);
+    }
+
+    [Fact]
+    public void DeleteOfMissingCategoryReportsNotFound()
+    {
+        var (service, _) = Create("Напої");
+        var error = Assert.Throws<ValidationException>(() => service.Delete(99));
+        Assert.Equal(CategoryService.NotFoundMessage, error.Message);
+    }
+
+    [Fact]
+    public void ForeignKeyViolationIsReportedAsValidationError()
+    {
+        var (service, repository) = Create("Напої");
+        repository.ThrowInUseOnDelete = true;
+        var error = Assert.Throws<ValidationException>(() => service.Delete(1));
+        Assert.Equal(CategoryService.InUseMessage, error.Message);
     }
 }
