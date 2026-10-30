@@ -48,7 +48,7 @@ public sealed partial class WarehousesViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            ErrorMessage = "Не вдалося завантажити склади. " + ex.Message;
+            ErrorMessage = "РќРµ РІРґР°Р»РѕСЃСЏ Р·Р°РІР°РЅС‚Р°Р¶РёС‚Рё СЃРєР»Р°РґРё. " + ex.Message;
         }
         finally
         {
@@ -77,7 +77,7 @@ public sealed partial class WarehousesViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            ErrorMessage = "Не вдалося додати склад. " + ex.Message;
+            ErrorMessage = "РќРµ РІРґР°Р»РѕСЃСЏ РґРѕРґР°С‚Рё СЃРєР»Р°Рґ. " + ex.Message;
         }
     }
 }
