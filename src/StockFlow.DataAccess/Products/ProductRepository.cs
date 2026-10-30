@@ -51,4 +51,71 @@ public sealed class ProductRepository : IProductRepository
 
         return (int)command.ExecuteScalar()!;
     }
+
+    public Product? GetById(int productId)
+    {
+        using var connection = _connectionFactory.CreateConnection();
+        connection.Open();
+        using var command = new NpgsqlCommand(
+            "SELECT id, name, unit, category_id FROM products WHERE id = @id", connection);
+        command.Parameters.AddWithValue("id", productId);
+        using var reader = command.ExecuteReader();
+
+        if (!reader.Read())
+        {
+            return null;
+        }
+
+        return new Product
+        {
+            Id = reader.GetInt32(0),
+            Name = reader.GetString(1),
+            Unit = UnitOfMeasureColumn.Parse(reader.GetString(2)),
+            CategoryId = reader.GetInt32(3)
+        };
+    }
+
+    public bool Update(Product product)
+    {
+        ArgumentNullException.ThrowIfNull(product);
+
+        using var connection = _connectionFactory.CreateConnection();
+        connection.Open();
+        using var command = new NpgsqlCommand(
+            "UPDATE products SET name = @name, unit = @unit, category_id = @category_id WHERE id = @id", connection);
+        command.Parameters.AddWithValue("name", product.Name);
+        command.Parameters.AddWithValue("unit", UnitOfMeasureColumn.Format(product.Unit));
+        command.Parameters.AddWithValue("category_id", product.CategoryId);
+        command.Parameters.AddWithValue("id", product.Id);
+
+        return command.ExecuteNonQuery() == 1;
+    }
+
+    public bool HasRelatedRecords(int productId)
+    {
+        using var connection = _connectionFactory.CreateConnection();
+        connection.Open();
+        using var command = new NpgsqlCommand(
+            "SELECT EXISTS (SELECT 1 FROM stock WHERE product_id = @id) " +
+            "OR EXISTS (SELECT 1 FROM stock_movements WHERE product_id = @id)", connection);
+        command.Parameters.AddWithValue("id", productId);
+        return (bool)command.ExecuteScalar()!;
+    }
+
+    public bool Delete(int productId)
+    {
+        using var connection = _connectionFactory.CreateConnection();
+        connection.Open();
+        using var command = new NpgsqlCommand("DELETE FROM products WHERE id = @id", connection);
+        command.Parameters.AddWithValue("id", productId);
+
+        try
+        {
+            return command.ExecuteNonQuery() == 1;
+        }
+        catch (PostgresException error) when (error.SqlState == PostgresErrorCodes.ForeignKeyViolation)
+        {
+            throw new RecordInUseException();
+        }
+    }
 }

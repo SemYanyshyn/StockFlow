@@ -14,6 +14,11 @@
             <Setter Property="TextWrapping" Value="Wrap" />
             <Setter Property="Margin" Value="0,0,0,12" />
         </Style>
+        <Style x:Key="RowActionButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Padding" Value="8,1" />
+            <Setter Property="Margin" Value="0,1,6,1" />
+            <Setter Property="FontSize" Value="12" />
+        </Style>
     </UserControl.Resources>
     <Grid Margin="32">
         <Grid.RowDefinitions>
@@ -59,11 +64,12 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="Новий товар:" VerticalAlignment="Center" Foreground="{StaticResource PrimaryTextBrush}" Margin="0,0,8,0" />
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding FormLabel}" VerticalAlignment="Center" Foreground="{StaticResource PrimaryTextBrush}" Margin="0,0,8,0" />
                 <TextBox Grid.Row="0" Grid.Column="1"
                          Text="{Binding NewProductName, UpdateSourceTrigger=PropertyChanged}">
                     <TextBox.InputBindings>
-                        <KeyBinding Key="Enter" Command="{Binding AddCommand}" />
+                        <KeyBinding Key="Enter" Command="{Binding SaveCommand}" />
+                        <KeyBinding Key="Escape" Command="{Binding CancelEditCommand}" />
                     </TextBox.InputBindings>
                 </TextBox>
                 <TextBlock Grid.Row="0" Grid.Column="2" Text="Категорія:" VerticalAlignment="Center" Foreground="{StaticResource PrimaryTextBrush}" Margin="24,0,8,0" />
@@ -80,20 +86,24 @@
                           ItemsSource="{Binding Units}"
                           SelectedItem="{Binding NewProductUnit}"
                           DisplayMemberPath="Name" />
-                <Button Grid.Row="1" Grid.Column="3"
-                        Content="+ Додати"
-                        Command="{Binding AddCommand}"
-                        HorizontalAlignment="Right"
-                        Padding="16,4"
-                        Margin="0,8,0,0" />
+                <StackPanel Grid.Row="1" Grid.Column="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+                    <Button Content="Скасувати"
+                            Command="{Binding CancelEditCommand}"
+                            Padding="16,4"
+                            Margin="0,0,8,0"
+                            Visibility="{Binding IsEditing, Converter={StaticResource BooleanToVisibility}}" />
+                    <Button Content="{Binding SaveButtonText}"
+                            Command="{Binding SaveCommand}"
+                            Padding="16,4" />
+                </StackPanel>
             </Grid>
         </Border>
 
-        <TextBlock Grid.Row="3" Text="{Binding AddErrorMessage}">
+        <TextBlock Grid.Row="3" Text="{Binding FormErrorMessage}">
             <TextBlock.Style>
                 <Style TargetType="TextBlock" BasedOn="{StaticResource ErrorText}">
                     <Style.Triggers>
-                        <DataTrigger Binding="{Binding AddErrorMessage}" Value="{x:Null}">
+                        <DataTrigger Binding="{Binding FormErrorMessage}" Value="{x:Null}">
                             <Setter Property="Visibility" Value="Collapsed" />
                         </DataTrigger>
                     </Style.Triggers>
@@ -123,6 +133,22 @@
                     <DataGridTextColumn Header="Назва" Binding="{Binding Name}" Width="2*" />
                     <DataGridTextColumn Header="Категорія" Binding="{Binding CategoryName}" Width="2*" />
                     <DataGridTextColumn Header="Од. виміру" Binding="{Binding Unit}" Width="*" />
+                    <DataGridTemplateColumn x:Name="ActionsColumn" Header="Дії" Width="Auto">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Content="Редагувати"
+                                            Style="{StaticResource RowActionButton}"
+                                            Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}" />
+                                    <Button Content="Видалити"
+                                            Style="{StaticResource RowActionButton}"
+                                            Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
                 </DataGrid.Columns>
             </DataGrid>
             <TextBlock Text="Товари не знайдено"
@@ -134,7 +160,7 @@
         </Grid>
 
         <TextBlock Grid.Row="6"
-                   Text="* Додавання товарів доступне лише ролі Адмін"
+                   Text="* Додавання, редагування та видалення доступні лише ролі Адмін"
                    FontStyle="Italic"
                    FontSize="11"
                    Foreground="{StaticResource SecondaryTextBrush}"

@@ -15,6 +15,7 @@ public partial class ProductsView : UserControl
     {
         if (DataContext is ProductsViewModel viewModel)
         {
+            ActionsColumn.Visibility = viewModel.CanManage ? Visibility.Visible : Visibility.Collapsed;
             viewModel.LoadCommand.Execute(null);
         }
     }
