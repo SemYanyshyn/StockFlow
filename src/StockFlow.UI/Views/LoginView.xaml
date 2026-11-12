@@ -1,0 +1,18 @@
+<Window x:Class="StockFlow.UI.Views.LoginView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="StockFlow — Вхід" Width="430" Height="400" ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen" Background="{StaticResource BackgroundBrush}">
+    <Grid Margin="32">
+        <StackPanel>
+            <TextBlock Text="Вхід у StockFlow" FontSize="22" FontWeight="Bold" Foreground="{StaticResource PrimaryTextBrush}" Margin="0,0,0,24" />
+            <TextBlock Text="Логін" Margin="0,0,0,4" />
+            <TextBox Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}" MaxLength="50" Margin="0,0,0,16" AutomationProperties.Name="Логін" />
+            <TextBlock Text="Пароль" Margin="0,0,0,4" />
+            <PasswordBox x:Name="Password" MaxLength="1024" Padding="6,4" Margin="0,0,0,20" AutomationProperties.Name="Пароль"
+                         BorderBrush="{StaticResource BorderBrush}" Background="{StaticResource BackgroundBrush}" Foreground="{StaticResource PrimaryTextBrush}" />
+            <Button Content="Увійти" IsDefault="True" Click="OnLogin" Padding="12,8" />
+            <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource ErrorTextBrush}" TextWrapping="Wrap" Margin="0,16,0,0" />
+        </StackPanel>
+    </Grid>
+</Window>

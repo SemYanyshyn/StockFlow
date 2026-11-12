@@ -2,6 +2,7 @@ namespace StockFlow.Domain;
 
 public class User
 {
+    public const int MaxPasswordLength = 1024;
     public const int MaxUsernameLength = 50;
     public const int MaxFullNameLength = 100;
 
