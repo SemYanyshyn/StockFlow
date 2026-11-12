@@ -301,4 +301,38 @@ public sealed class CategoryServiceTests
         var error = Assert.Throws<ValidationException>(() => service.Delete(1));
         Assert.Equal(CategoryService.InUseMessage, error.Message);
     }
+
+    private static readonly Category[] SearchSource =
+    {
+        new() { Id = 1, Name = "Бакалія" },
+        new() { Id = 2, Name = "Молочні продукти" },
+        new() { Id = 3, Name = "Напої" },
+        new() { Id = 4, Name = "Морепродукти" },
+    };
+
+    private static int[] CategoryIds(IEnumerable<Category> categories) => categories.Select(category => category.Id).ToArray();
+
+    [Fact]
+    public void EmptySearchReturnsEveryCategory() =>
+        Assert.Equal(new[] { 1, 2, 3, 4 }, CategoryIds(CategoryService.Filter(SearchSource, null)));
+
+    [Fact]
+    public void SearchNarrowsCategoryList() =>
+        Assert.Equal(new[] { 2, 4 }, CategoryIds(CategoryService.Filter(SearchSource, "ПРОДУКТИ")));
+
+    [Fact]
+    public void SearchWithoutMatchesReturnsEmptyList() =>
+        Assert.Empty(CategoryService.Filter(SearchSource, "овочі"));
+
+    [Fact]
+    public void SearchDoesNotChangeSourceCategories()
+    {
+        var source = SearchSource.ToList();
+        CategoryService.Filter(source, "мол");
+        Assert.Equal(4, source.Count);
+    }
+
+    [Fact]
+    public void NullCategoriesAreRejectedBySearch() =>
+        Assert.Throws<ArgumentNullException>(() => CategoryService.Filter(null!, null));
 }

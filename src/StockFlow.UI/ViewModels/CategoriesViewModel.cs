@@ -11,9 +11,16 @@ public sealed partial class CategoriesViewModel : ViewModelBase
 {
     private readonly CategoryService _categoryService;
     private readonly IConfirmationService _confirmation;
+    private IReadOnlyList<Category> _allCategories = Array.Empty<Category>();
 
     [ObservableProperty]
     private IReadOnlyList<Category> _categories = Array.Empty<Category>();
+
+    [ObservableProperty]
+    private string _searchText = string.Empty;
+
+    [ObservableProperty]
+    private bool _isEmpty;
 
     [ObservableProperty]
     private string _newCategoryName = string.Empty;
@@ -46,18 +53,29 @@ public sealed partial class CategoriesViewModel : ViewModelBase
 
     public string SaveButtonText => IsEditing ? "Зберегти" : "Додати";
 
+    partial void OnSearchTextChanged(string value) => ApplyFilter();
+
     [RelayCommand]
     private async Task LoadAsync()
     {
         ErrorMessage = null;
         try
         {
-            Categories = await Task.Run(() => _categoryService.GetAll());
+            _allCategories = await Task.Run(() => _categoryService.GetAll());
         }
         catch (Exception error)
         {
+            _allCategories = Array.Empty<Category>();
             ErrorMessage = DataErrorText.From(error);
         }
+
+        ApplyFilter();
+    }
+
+    private void ApplyFilter()
+    {
+        Categories = CategoryService.Filter(_allCategories, SearchText);
+        IsEmpty = Categories.Count == 0 && ErrorMessage is null;
     }
 
     [RelayCommand]

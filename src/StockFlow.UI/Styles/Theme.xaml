@@ -205,7 +205,7 @@
         <Setter Property="BorderBrush" Value="{StaticResource InputBorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Height" Value="40"/>
-        <Setter Property="Padding" Value="10,0"/>
+        <Setter Property="Padding" Value="0"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
         <Setter Property="Template">
             <Setter.Value>
@@ -216,7 +216,7 @@
                             BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="4">
                         <ScrollViewer x:Name="PART_ContentHost"
-                                      Margin="{TemplateBinding Padding}"
+                                      Margin="10,0"
                                       VerticalAlignment="Center"
                                       Focusable="False"
                                       HorizontalScrollBarVisibility="Hidden"
@@ -240,7 +240,7 @@
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="4">
-                        <Grid Margin="{TemplateBinding Padding}">
+                        <Grid Margin="10,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>

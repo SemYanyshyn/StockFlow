@@ -119,6 +119,12 @@ public sealed class CategoryService
     private static bool IsSameName(string existing, string candidate) =>
         string.Equals(existing.Trim(), candidate, StringComparison.OrdinalIgnoreCase);
 
+    public static IReadOnlyList<Category> Filter(IEnumerable<Category> categories, string? query)
+    {
+        ArgumentNullException.ThrowIfNull(categories);
+        return categories.Where(category => category.MatchesSearch(query)).ToList();
+    }
+
     private static string ProductsWord(int count) => (count % 10, count % 100) switch
     {
         (1, not 11) => "товар",

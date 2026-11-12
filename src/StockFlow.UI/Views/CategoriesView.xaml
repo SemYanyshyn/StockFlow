@@ -29,12 +29,22 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <Button Grid.Row="0"
-                    HorizontalAlignment="Right"
-                    Content="+ Додати категорію"
-                    Style="{StaticResource PrimaryButton}"
-                    Command="{Binding OpenAddFormCommand}"
-                    Visibility="{Binding CanManage, Converter={StaticResource BooleanToVisibility}}" />
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="300" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBox Grid.Column="0"
+                         Style="{StaticResource SearchBox}"
+                         Tag="Пошук за назвою..."
+                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
+                <Button Grid.Column="2"
+                        Content="+ Додати категорію"
+                        Style="{StaticResource PrimaryButton}"
+                        Command="{Binding OpenAddFormCommand}"
+                        Visibility="{Binding CanManage, Converter={StaticResource BooleanToVisibility}}" />
+            </Grid>
 
             <Border Grid.Row="1"
                     Margin="0,16,0,0"
@@ -92,41 +102,47 @@
                 </TextBlock.Style>
             </TextBlock>
 
-            <DataGrid Grid.Row="3"
-                      Margin="0,16,0,0"
-                      Style="{StaticResource ListDataGrid}"
-                      ItemsSource="{Binding Categories}"
-                      AutoGenerateColumns="False"
-                      IsReadOnly="True"
-                      CanUserAddRows="False">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="Назва категорії" Binding="{Binding Name}" Width="*" />
-                    <DataGridTemplateColumn x:Name="ActionsColumn"
-                                            Header="Дії*"
-                                            HeaderStyle="{StaticResource ActionsColumnHeader}"
-                                            Width="Auto">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                    <Button Content="Редагувати"
-                                            Style="{StaticResource LinkButton}"
-                                            Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                            CommandParameter="{Binding}" />
-                                    <TextBlock Text="·"
-                                               FontSize="14"
-                                               Foreground="{StaticResource AccentTextBrush}"
-                                               VerticalAlignment="Center"
-                                               Margin="6,0" />
-                                    <Button Content="Видалити"
-                                            Style="{StaticResource LinkButton}"
-                                            Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                            CommandParameter="{Binding}" />
-                                </StackPanel>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-                </DataGrid.Columns>
-            </DataGrid>
+            <Grid Grid.Row="3" Margin="0,16,0,0">
+                <DataGrid Style="{StaticResource ListDataGrid}"
+                          ItemsSource="{Binding Categories}"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          CanUserAddRows="False">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Назва категорії" Binding="{Binding Name}" Width="*" />
+                        <DataGridTemplateColumn x:Name="ActionsColumn"
+                                                Header="Дії*"
+                                                HeaderStyle="{StaticResource ActionsColumnHeader}"
+                                                Width="Auto">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                        <Button Content="Редагувати"
+                                                Style="{StaticResource LinkButton}"
+                                                Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}" />
+                                        <TextBlock Text="·"
+                                                   FontSize="14"
+                                                   Foreground="{StaticResource AccentTextBrush}"
+                                                   VerticalAlignment="Center"
+                                                   Margin="6,0" />
+                                        <Button Content="Видалити"
+                                                Style="{StaticResource LinkButton}"
+                                                Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+                <TextBlock Text="Категорії не знайдено"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           FontStyle="Italic"
+                           Foreground="{StaticResource SecondaryTextBrush}"
+                           Visibility="{Binding IsEmpty, Converter={StaticResource BooleanToVisibility}}" />
+            </Grid>
 
             <TextBlock Grid.Row="4"
                        Text="* Додавання, редагування та видалення доступні лише ролі Адмін"
