@@ -31,6 +31,7 @@ public sealed class SuppliersViewModel : ViewModelBase
     {
         ArgumentNullException.ThrowIfNull(service);
         ArgumentNullException.ThrowIfNull(user);
+        ArgumentNullException.ThrowIfNull(confirmation);
         _service = service;
         _confirmation = confirmation;
         CanManage = user.IsAdmin;
@@ -192,9 +193,9 @@ public sealed class SuppliersViewModel : ViewModelBase
         }
         catch (Exception)
         {
-            // The INSERT succeeded. Keep the new record visible even if refresh fails.
+            // The write succeeded. Keep the saved record visible even if refresh fails.
             _allSuppliers = _allSuppliers.Where(s => s.Id != added.Id).Append(added).OrderBy(s => s.Name).ToArray();
-            ErrorMessage = "Постачальника додано, але оновити список з бази не вдалося.";
+            ErrorMessage = "Постачальника збережено, але оновити список з бази не вдалося.";
         }
         finally
         {

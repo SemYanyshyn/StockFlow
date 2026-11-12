@@ -10,6 +10,8 @@ public sealed class AuthServiceTests
 {
     private sealed class Repository : IUserRepository
     {
+        public IReadOnlyList<User> GetAll() => User is null ? Array.Empty<User>() : new[] { User };
+        public IUserManagementTransaction BeginManagement() => throw new NotSupportedException();
         public User? User { get; set; }
         public User? GetByUsername(string username) => User?.Username == username ? User : null;
     }

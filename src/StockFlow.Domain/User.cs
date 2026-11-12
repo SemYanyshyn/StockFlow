@@ -13,6 +13,10 @@ public class User
     public UserRole Role { get; set; }
     public bool IsActive { get; set; } = true;
 
+    public bool MatchesSearch(string? query) => string.IsNullOrWhiteSpace(query) ||
+        Username.Contains(query.Trim(), StringComparison.OrdinalIgnoreCase) ||
+        FullName.Contains(query.Trim(), StringComparison.OrdinalIgnoreCase);
+
     public bool Validate() =>
         !string.IsNullOrWhiteSpace(Username) &&
         Username.Trim().Length <= MaxUsernameLength &&

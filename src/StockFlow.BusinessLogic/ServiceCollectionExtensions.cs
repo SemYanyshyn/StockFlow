@@ -26,6 +26,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ICurrentUserContext>(sp => sp.GetRequiredService<AuthenticatedUserContext>());
         services.AddSingleton<IUserRepository, UserRepository>();
         services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
+        services.AddSingleton<UserService>();
         // Resolve the repository inside Login, so missing/invalid DB settings are shown in the login window.
         services.AddSingleton<AuthService>(sp => new AuthService(
             () => sp.GetRequiredService<IUserRepository>(), sp.GetRequiredService<IPasswordHasher>(),
