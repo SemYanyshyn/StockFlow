@@ -9,4 +9,8 @@ public class Category
 
     public bool Validate() =>
         !string.IsNullOrWhiteSpace(Name) && Name.Trim().Length <= MaxNameLength;
+
+    public bool MatchesSearch(string? query) =>
+        string.IsNullOrWhiteSpace(query) ||
+        Name.Contains(query.Trim(), StringComparison.OrdinalIgnoreCase);
 }

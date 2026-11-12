@@ -114,6 +114,18 @@ As **any role**,
 
 ---
 
+**Search for a category by name**
+
+As **any role**,
+**I want to** search for a category by name,
+**so that** I can find it quickly as the list of categories grows.
+### Acceptance Criteria
+* Search filters the category list as I type
+* Search is case-insensitive
+* An empty search result shows a "No categories found" message
+
+---
+
 ## Suppliers
 
 **Add a supplier**

@@ -11,15 +11,25 @@ public sealed partial class CategoriesViewModel : ViewModelBase
 {
     private readonly CategoryService _categoryService;
     private readonly IConfirmationService _confirmation;
+    private IReadOnlyList<Category> _allCategories = Array.Empty<Category>();
 
     [ObservableProperty]
     private IReadOnlyList<Category> _categories = Array.Empty<Category>();
+
+    [ObservableProperty]
+    private string _searchText = string.Empty;
+
+    [ObservableProperty]
+    private bool _isEmpty;
 
     [ObservableProperty]
     private string _newCategoryName = string.Empty;
 
     [ObservableProperty]
     private string? _errorMessage;
+
+    [ObservableProperty]
+    private bool _isFormOpen;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsEditing), nameof(FormLabel), nameof(SaveButtonText))]
@@ -39,9 +49,11 @@ public sealed partial class CategoriesViewModel : ViewModelBase
 
     public bool IsEditing => EditingCategory is not null;
 
-    public string FormLabel => IsEditing ? "Нова назва:" : "Назва категорії:";
+    public string FormLabel => IsEditing ? "Редагування категорії" : "Нова категорія";
 
-    public string SaveButtonText => IsEditing ? "Зберегти" : "+ Додати категорію";
+    public string SaveButtonText => IsEditing ? "Зберегти" : "Додати";
+
+    partial void OnSearchTextChanged(string value) => ApplyFilter();
 
     [RelayCommand]
     private async Task LoadAsync()
@@ -49,12 +61,21 @@ public sealed partial class CategoriesViewModel : ViewModelBase
         ErrorMessage = null;
         try
         {
-            Categories = await Task.Run(() => _categoryService.GetAll());
+            _allCategories = await Task.Run(() => _categoryService.GetAll());
         }
         catch (Exception error)
         {
+            _allCategories = Array.Empty<Category>();
             ErrorMessage = DataErrorText.From(error);
         }
+
+        ApplyFilter();
+    }
+
+    private void ApplyFilter()
+    {
+        Categories = CategoryService.Filter(_allCategories, SearchText);
+        IsEmpty = Categories.Count == 0 && ErrorMessage is null;
     }
 
     [RelayCommand]
@@ -74,8 +95,7 @@ public sealed partial class CategoriesViewModel : ViewModelBase
                 await Task.Run(() => _categoryService.Update(editing.Id, name));
             }
 
-            NewCategoryName = string.Empty;
-            EditingCategory = null;
+            CloseForm();
         }
         catch (ValidationException error)
         {
@@ -92,19 +112,30 @@ public sealed partial class CategoriesViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private void OpenAddForm()
+    {
+        CloseForm();
+        IsFormOpen = true;
+    }
+
+    [RelayCommand]
     private void Edit(Category category)
     {
         ErrorMessage = null;
         EditingCategory = category;
         NewCategoryName = category.Name;
+        IsFormOpen = true;
     }
 
     [RelayCommand]
-    private void CancelEdit()
+    private void CancelEdit() => CloseForm();
+
+    private void CloseForm()
     {
         ErrorMessage = null;
         EditingCategory = null;
         NewCategoryName = string.Empty;
+        IsFormOpen = false;
     }
 
     [RelayCommand]

@@ -44,6 +44,9 @@ public sealed partial class ProductsViewModel : ViewModelBase
     private string? _formErrorMessage;
 
     [ObservableProperty]
+    private bool _isFormOpen;
+
+    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsEditing), nameof(FormLabel), nameof(SaveButtonText))]
     private int? _editingProductId;
 
@@ -67,9 +70,9 @@ public sealed partial class ProductsViewModel : ViewModelBase
 
     public bool IsEditing => EditingProductId is not null;
 
-    public string FormLabel => IsEditing ? "Редагування:" : "Новий товар:";
+    public string FormLabel => IsEditing ? "Редагування товару" : "Новий товар";
 
-    public string SaveButtonText => IsEditing ? "Зберегти" : "+ Додати";
+    public string SaveButtonText => IsEditing ? "Зберегти" : "Додати";
 
     public ObservableCollection<CategoryFilterItem> Categories { get; } = new() { CategoryFilterItem.All };
 
@@ -118,11 +121,9 @@ public sealed partial class ProductsViewModel : ViewModelBase
             else
             {
                 await Task.Run(() => _productService.Update(editingId.Value, name, categoryId, unit));
-                ClearForm();
             }
 
-            NewProductName = string.Empty;
-            EditingProductId = null;
+            CloseForm();
         }
         catch (ValidationException error)
         {
@@ -139,6 +140,19 @@ public sealed partial class ProductsViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private void OpenAddForm()
+    {
+        CloseForm();
+        IsFormOpen = true;
+    }
+
+    [RelayCommand]
+    private void FilterByCategory(ProductRow row)
+    {
+        SelectedCategory = Categories.FirstOrDefault(item => item.Id == row.CategoryId) ?? SelectedCategory;
+    }
+
+    [RelayCommand]
     private void Edit(ProductRow row)
     {
         var product = _allProducts.FirstOrDefault(item => item.Id == row.Id);
@@ -152,21 +166,20 @@ public sealed partial class ProductsViewModel : ViewModelBase
         NewProductName = product.Name;
         NewProductCategory = ProductCategories.FirstOrDefault(item => item.Id == product.CategoryId);
         NewProductUnit = Units.FirstOrDefault(option => option.Unit == product.Unit);
+        IsFormOpen = true;
     }
 
     [RelayCommand]
-    private void CancelEdit()
+    private void CancelEdit() => CloseForm();
+
+    private void CloseForm()
     {
         FormErrorMessage = null;
         EditingProductId = null;
-        ClearForm();
-    }
-
-    private void ClearForm()
-    {
         NewProductName = string.Empty;
         NewProductCategory = null;
         NewProductUnit = null;
+        IsFormOpen = false;
     }
 
     [RelayCommand]
@@ -225,6 +238,7 @@ public sealed partial class ProductsViewModel : ViewModelBase
             .Select(product => new ProductRow(
                 product.Id,
                 product.Name,
+                product.CategoryId,
                 _categoryNames.GetValueOrDefault(product.CategoryId, string.Empty),
                 UnitOfMeasureText.Short(product.Unit)))
             .ToList();
