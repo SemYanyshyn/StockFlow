@@ -22,6 +22,9 @@ public sealed partial class CategoriesViewModel : ViewModelBase
     private string? _errorMessage;
 
     [ObservableProperty]
+    private bool _isFormOpen;
+
+    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsEditing), nameof(FormLabel), nameof(SaveButtonText))]
     private Category? _editingCategory;
 
@@ -39,9 +42,9 @@ public sealed partial class CategoriesViewModel : ViewModelBase
 
     public bool IsEditing => EditingCategory is not null;
 
-    public string FormLabel => IsEditing ? "Нова назва:" : "Назва категорії:";
+    public string FormLabel => IsEditing ? "Редагування категорії" : "Нова категорія";
 
-    public string SaveButtonText => IsEditing ? "Зберегти" : "+ Додати категорію";
+    public string SaveButtonText => IsEditing ? "Зберегти" : "Додати";
 
     [RelayCommand]
     private async Task LoadAsync()
@@ -74,8 +77,7 @@ public sealed partial class CategoriesViewModel : ViewModelBase
                 await Task.Run(() => _categoryService.Update(editing.Id, name));
             }
 
-            NewCategoryName = string.Empty;
-            EditingCategory = null;
+            CloseForm();
         }
         catch (ValidationException error)
         {
@@ -92,19 +94,30 @@ public sealed partial class CategoriesViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private void OpenAddForm()
+    {
+        CloseForm();
+        IsFormOpen = true;
+    }
+
+    [RelayCommand]
     private void Edit(Category category)
     {
         ErrorMessage = null;
         EditingCategory = category;
         NewCategoryName = category.Name;
+        IsFormOpen = true;
     }
 
     [RelayCommand]
-    private void CancelEdit()
+    private void CancelEdit() => CloseForm();
+
+    private void CloseForm()
     {
         ErrorMessage = null;
         EditingCategory = null;
         NewCategoryName = string.Empty;
+        IsFormOpen = false;
     }
 
     [RelayCommand]
