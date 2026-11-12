@@ -4,13 +4,7 @@
              Loaded="OnLoaded">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="VisibleIfTrue" />
-        <Style x:Key="AccentButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-            <Setter Property="Background" Value="#FFF1DB" />
-            <Setter Property="BorderBrush" Value="#C87800" />
-            <Setter Property="BorderThickness" Value="1.5" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Padding" Value="12,8" />
-        </Style>
+
     </UserControl.Resources>
 
     <Grid Margin="32">
@@ -55,7 +49,7 @@
             <Button Grid.Column="1" Content="Оновити" Command="{Binding ReloadCommand}"
                     Margin="8,0,8,0" Padding="12,8" />
             <Button Grid.Column="2" Content="+ Додати постачальника"
-                    Style="{StaticResource AccentButton}" Command="{Binding OpenEditorCommand}"
+                    Command="{Binding OpenEditorCommand}"
                     Visibility="{Binding CanManage, Converter={StaticResource VisibleIfTrue}}" />
         </Grid>
 
@@ -63,7 +57,7 @@
                 Background="{StaticResource BackgroundBrush}" Padding="16" Margin="0,0,0,12"
                 Visibility="{Binding IsEditorOpen, Converter={StaticResource VisibleIfTrue}}">
             <StackPanel>
-                <TextBlock Text="Новий постачальник" FontWeight="SemiBold" FontSize="15"
+                <TextBlock Text="{Binding EditorTitle}" FontWeight="SemiBold" FontSize="15"
                            Foreground="{StaticResource PrimaryTextBrush}" Margin="0,0,0,10" />
                 <WrapPanel>
                     <StackPanel Margin="0,0,12,10" Width="225">
@@ -81,7 +75,7 @@
                 </WrapPanel>
                 <StackPanel Orientation="Horizontal">
                     <Button Content="Зберегти" Command="{Binding AddCommand}"
-                            Style="{StaticResource AccentButton}" Margin="0,0,10,0" />
+                            Margin="0,0,10,0" />
                     <Button Content="Скасувати" Command="{Binding CancelEditorCommand}" />
                 </StackPanel>
             </StackPanel>
@@ -91,7 +85,7 @@
             <TextBlock Text="Завантаження..." FontStyle="Italic"
                        Foreground="{StaticResource SecondaryTextBrush}"
                        Visibility="{Binding IsBusy, Converter={StaticResource VisibleIfTrue}}" />
-            <TextBlock Text="{Binding ErrorMessage}" Foreground="#A42B2B" TextWrapping="Wrap">
+            <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource PrimaryTextBrush}" TextWrapping="Wrap">
                 <TextBlock.Style>
                     <Style TargetType="TextBlock">
                         <Style.Triggers>
@@ -112,6 +106,16 @@
                     <DataGridTextColumn Header="Назва" Binding="{Binding Name}" Width="2*" />
                     <DataGridTextColumn Header="Телефон" Binding="{Binding Phone}" Width="1.4*" />
                     <DataGridTextColumn Header="Email" Binding="{Binding Email}" Width="2*" />
+                    <DataGridTemplateColumn Header="Дії" Width="Auto">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" Visibility="{Binding DataContext.CanManage, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource VisibleIfTrue}}">
+                                    <Button Content="Редагувати" Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Margin="2" />
+                                    <Button Content="Видалити" Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Margin="2" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
                 </DataGrid.Columns>
             </DataGrid>
             <TextBlock Text="Постачальників не знайдено" FontStyle="Italic"
@@ -122,6 +126,6 @@
         </Grid>
 
         <TextBlock Grid.Row="5" Text="* Додавання постачальників доступне лише Адміністратору."
-                   FontStyle="Italic" Foreground="#B56A00" Margin="0,12,0,0" />
+                   FontStyle="Italic" Foreground="{StaticResource SecondaryTextBrush}" Margin="0,12,0,0" />
     </Grid>
 </UserControl>
