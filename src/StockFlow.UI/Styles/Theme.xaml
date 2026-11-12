@@ -118,13 +118,6 @@
         <Setter Property="Foreground" Value="{StaticResource SecondaryTextBrush}"/>
         <Setter Property="Margin" Value="0,0,0,4"/>
     </Style>
-    <Style x:Key="FootnoteText" TargetType="TextBlock">
-        <Setter Property="FontFamily" Value="Segoe UI"/>
-        <Setter Property="FontSize" Value="13"/>
-        <Setter Property="FontStyle" Value="Italic"/>
-        <Setter Property="Foreground" Value="{StaticResource AccentTextBrush}"/>
-        <Setter Property="Margin" Value="0,12,0,0"/>
-    </Style>
     <Style x:Key="FormPanel" TargetType="Border">
         <Setter Property="Background" Value="{StaticResource PanelBackgroundBrush}"/>
         <Setter Property="BorderBrush" Value="{StaticResource GridBorderBrush}"/>

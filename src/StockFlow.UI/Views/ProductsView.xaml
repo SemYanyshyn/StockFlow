@@ -33,7 +33,6 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
-                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
             <Grid Grid.Row="0">
@@ -155,7 +154,7 @@
                         </DataGridTemplateColumn>
                         <DataGridTextColumn Header="Од. виміру" Binding="{Binding Unit}" Width="*" MinWidth="130" />
                         <DataGridTemplateColumn x:Name="ActionsColumn"
-                                                Header="Дії*"
+                                                Header="Дії"
                                                 HeaderStyle="{StaticResource ActionsColumnHeader}"
                                                 Width="Auto">
                             <DataGridTemplateColumn.CellTemplate>
@@ -187,10 +186,6 @@
                            Foreground="{StaticResource SecondaryTextBrush}"
                            Visibility="{Binding IsEmpty, Converter={StaticResource BooleanToVisibility}}" />
             </Grid>
-
-            <TextBlock Grid.Row="5"
-                       Text="* Додавання, редагування та видалення доступні лише ролі Адмін"
-                       Style="{StaticResource FootnoteText}" />
         </Grid>
     </Grid>
 </UserControl>
