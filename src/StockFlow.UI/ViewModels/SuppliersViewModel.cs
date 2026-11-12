@@ -3,6 +3,7 @@ using StockFlow.BusinessLogic.Products;
 using StockFlow.BusinessLogic.Suppliers;
 using StockFlow.BusinessLogic.Users;
 using StockFlow.Domain;
+using StockFlow.UI.Services;
 
 namespace StockFlow.UI.ViewModels;
 
@@ -12,6 +13,9 @@ public sealed class SuppliersViewModel : ViewModelBase
     private const string SaveErrorText = "Не вдалося зберегти постачальника. Перевірте підключення до бази даних.";
 
     private readonly SupplierService _service;
+    private readonly IConfirmationService _confirmation;
+    private int? _editingId;
+    public string EditorTitle => _editingId.HasValue ? "Редагування постачальника" : "Новий постачальник";
     private IReadOnlyList<Supplier> _allSuppliers = Array.Empty<Supplier>();
     private IReadOnlyList<Supplier> _suppliers = Array.Empty<Supplier>();
     private string _searchText = string.Empty;
@@ -23,19 +27,25 @@ public sealed class SuppliersViewModel : ViewModelBase
     private bool _isEditorOpen;
     private bool _isEmpty;
 
-    public SuppliersViewModel(SupplierService service, ICurrentUserContext user)
+    public SuppliersViewModel(SupplierService service, ICurrentUserContext user, IConfirmationService confirmation)
     {
         ArgumentNullException.ThrowIfNull(service);
         ArgumentNullException.ThrowIfNull(user);
+        ArgumentNullException.ThrowIfNull(confirmation);
         _service = service;
+        _confirmation = confirmation;
         CanManage = user.IsAdmin;
 
         ReloadCommand = new AsyncRelayCommand(LoadAsync);
         AddCommand = new AsyncRelayCommand(AddAsync);
         OpenEditorCommand = new RelayCommand(OpenEditor);
-        CancelEditorCommand = new RelayCommand(CancelEditor);
+        CancelEditorCommand = new RelayCommand(() => { if (!IsBusy) CancelEditor(); });
+        EditCommand = new RelayCommand<Supplier>(Edit);
+        DeleteCommand = new AsyncRelayCommand<Supplier>(DeleteAsync);
     }
 
+    public IRelayCommand<Supplier> EditCommand { get; }
+    public IAsyncRelayCommand<Supplier> DeleteCommand { get; }
     public bool CanManage { get; }
 
     public IAsyncRelayCommand ReloadCommand { get; }
@@ -128,12 +138,14 @@ public sealed class SuppliersViewModel : ViewModelBase
     private void OpenEditor()
     {
         if (!CanManage || IsBusy) return;
-        ErrorMessage = null;
+        CancelEditor();
         IsEditorOpen = true;
     }
 
     private void CancelEditor()
     {
+        _editingId = null;
+        OnPropertyChanged(nameof(EditorTitle));
         IsEditorOpen = false;
         ErrorMessage = null;
         NewName = string.Empty;
@@ -158,7 +170,8 @@ public sealed class SuppliersViewModel : ViewModelBase
             var name = NewName;
             var phone = NewPhone;
             var email = NewEmail;
-            added = await Task.Run(() => _service.Add(name, phone, email));
+            var id = _editingId;
+            added = await Task.Run(() => id.HasValue ? _service.Update(id.Value, name, phone, email) : _service.Add(name, phone, email));
         }
         catch (ValidationException error)
         {
@@ -180,16 +193,44 @@ public sealed class SuppliersViewModel : ViewModelBase
         }
         catch (Exception)
         {
-            // The INSERT succeeded. Keep the new record visible even if refresh fails.
-            _allSuppliers = _allSuppliers.Append(added).OrderBy(s => s.Name).ToArray();
-            ErrorMessage = "Постачальника додано, але оновити список з бази не вдалося.";
+            // The write succeeded. Keep the saved record visible even if refresh fails.
+            _allSuppliers = _allSuppliers.Where(s => s.Id != added.Id).Append(added).OrderBy(s => s.Name).ToArray();
+            ErrorMessage = "Постачальника збережено, але оновити список з бази не вдалося.";
         }
         finally
         {
             IsBusy = false;
-            SearchText = string.Empty;
             ApplyFilter();
         }
+    }
+
+    private void Edit(Supplier? supplier)
+    {
+        if (!CanManage || IsBusy || supplier is null) return;
+        CancelEditor();
+        _editingId = supplier.Id;
+        NewName = supplier.Name;
+        NewPhone = supplier.Phone ?? string.Empty;
+        NewEmail = supplier.Email ?? string.Empty;
+        OnPropertyChanged(nameof(EditorTitle));
+        IsEditorOpen = true;
+    }
+
+    private async Task DeleteAsync(Supplier? supplier)
+    {
+        if (!CanManage || IsBusy || supplier is null) return;
+        if (!_confirmation.Confirm($"Видалити постачальника «{supplier.Name}»?")) return;
+        IsBusy = true;
+        ErrorMessage = null;
+        try
+        {
+            await Task.Run(() => _service.Delete(supplier.Id));
+            _allSuppliers = _allSuppliers.Where(s => s.Id != supplier.Id).ToArray();
+            if (_editingId == supplier.Id) CancelEditor();
+        }
+        catch (ValidationException error) { ErrorMessage = error.Message; }
+        catch (Exception) { ErrorMessage = SaveErrorText; }
+        finally { IsBusy = false; ApplyFilter(); }
     }
 
     private void ApplyFilter()

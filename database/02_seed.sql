@@ -3,8 +3,8 @@ SET client_encoding = 'UTF8';
 BEGIN;
 
 INSERT INTO users (username, password_hash, full_name, role) VALUES
-    ('admin',    'placeholder-not-a-hash', 'Адміністратор',    'admin'),
-    ('employee', 'placeholder-not-a-hash', 'Працівник складу', 'employee');
+    ('admin',    'pbkdf2-sha256$v1$600000$DShpvjYycl8ADY3Rfuuk8A==$qcfgplxZe36zqZ350KUsd6O8YGuEQ+vWxiftmHr7hW4=', 'Адміністратор',    'admin'),
+    ('employee', 'pbkdf2-sha256$v1$600000$vxy7yG1O+MESp39AkBDnTQ==$hrpump8YZnOkZtmDz41+f5xGFYznriR1mzVHELiQyTc=', 'Працівник складу', 'employee');
 
 INSERT INTO categories (name) VALUES
     ('Молочні продукти'),

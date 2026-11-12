@@ -55,4 +55,27 @@ public sealed class SupplierRepository : ISupplierRepository
 
         return (int)command.ExecuteScalar()!;
     }
+    public bool Update(Supplier supplier)
+    {
+        using var connection = _connectionFactory.CreateConnection();
+        connection.Open();
+        using var command = new NpgsqlCommand(
+            "UPDATE suppliers SET name=@name, phone=@phone, email=@email WHERE id=@id", connection);
+        command.Parameters.AddWithValue("id", supplier.Id);
+        command.Parameters.AddWithValue("name", supplier.Name);
+        command.Parameters.Add("phone", NpgsqlDbType.Varchar).Value = (object?)supplier.Phone ?? DBNull.Value;
+        command.Parameters.Add("email", NpgsqlDbType.Varchar).Value = (object?)supplier.Email ?? DBNull.Value;
+        return command.ExecuteNonQuery() == 1;
+    }
+
+    public bool Delete(int id)
+    {
+        using var connection = _connectionFactory.CreateConnection();
+        connection.Open();
+        using var command = new NpgsqlCommand("DELETE FROM suppliers WHERE id=@id", connection);
+        command.Parameters.AddWithValue("id", id);
+        try { return command.ExecuteNonQuery() == 1; }
+        catch (PostgresException error) when (error.SqlState == PostgresErrorCodes.ForeignKeyViolation)
+        { throw new StockFlow.DataAccess.Products.RecordInUseException(); }
+    }
 }

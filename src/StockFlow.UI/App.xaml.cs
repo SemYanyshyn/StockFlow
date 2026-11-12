@@ -19,7 +19,7 @@ public partial class App : Application
         DispatcherUnhandledException += (sender, args) =>
         {
             MessageBox.Show(
-                $"Сталася неочікувана помилка: {args.Exception.Message}",
+                "Сталася неочікувана помилка. Спробуйте повторити дію.",
                 "Помилка",
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
@@ -31,6 +31,9 @@ public partial class App : Application
     {
         services.AddSingleton<INavigationService, NavigationService>();
         services.AddSingleton<IConfirmationService, ConfirmationService>();
+
+        services.AddTransient<LoginViewModel>();
+        services.AddTransient<LoginView>();
 
         services.AddSingleton<MainWindowViewModel>();
         services.AddSingleton<MainWindow>();
@@ -56,7 +59,17 @@ public partial class App : Application
             ConfigureServices(services);
             ServiceProvider = services.BuildServiceProvider();
 
+            ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            var login = ServiceProvider.GetRequiredService<LoginView>();
+            if (login.ShowDialog() != true)
+            {
+                Shutdown();
+                return;
+            }
+            // Construct the shell and all role-sensitive view models only after authentication.
             var mainWindow = ServiceProvider.GetRequiredService<MainWindow>();
+            MainWindow = mainWindow;
+            ShutdownMode = ShutdownMode.OnMainWindowClose;
             mainWindow.DataContext = ServiceProvider.GetRequiredService<MainWindowViewModel>();
             mainWindow.Show();
         }
