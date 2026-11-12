@@ -15,7 +15,9 @@ public partial class SuppliersView : UserControl
 
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {
-        if (_loaded || DataContext is not SuppliersViewModel viewModel) return;
+        if (DataContext is not SuppliersViewModel viewModel) return;
+        ActionsColumn.Visibility = viewModel.CanManage ? Visibility.Visible : Visibility.Collapsed;
+        if (_loaded) return;
         _loaded = true;
         await viewModel.LoadAsync();
     }
