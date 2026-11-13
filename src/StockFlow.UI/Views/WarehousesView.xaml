@@ -6,77 +6,126 @@
              xmlns:vm="clr-namespace:StockFlow.UI.ViewModels"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:WarehousesViewModel}">
-    <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BooleanToVisibility" />
-    </UserControl.Resources>
-    <Grid Margin="32">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
+  <UserControl.Resources>
+    <BooleanToVisibilityConverter x:Key="BooleanToVisibility"/>
+  </UserControl.Resources>
 
-        <TextBlock Grid.Row="0" Text="Склади" FontSize="20" FontWeight="Bold" Foreground="{StaticResource PrimaryTextBrush}" Margin="0,0,0,16" />
+  <Grid Background="{StaticResource BackgroundBrush}">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/>
+    </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="1"
-                    Orientation="Horizontal"
-                    Margin="0,0,0,12"
-                    Visibility="{Binding CanManage, Converter={StaticResource BooleanToVisibility}}">
-            <TextBlock Text="Назва:" VerticalAlignment="Center" Foreground="{StaticResource PrimaryTextBrush}" Margin="0,0,8,0" />
-            <TextBox Width="200"
-                     Text="{Binding NewWarehouseName, UpdateSourceTrigger=PropertyChanged}">
-                <TextBox.InputBindings>
-                    <KeyBinding Key="Enter" Command="{Binding AddWarehouseCommand}" />
-                </TextBox.InputBindings>
-            </TextBox>
-            <TextBlock Text="Адреса:" VerticalAlignment="Center" Foreground="{StaticResource PrimaryTextBrush}" Margin="16,0,8,0" />
-            <TextBox Width="240"
-                     Text="{Binding NewWarehouseAddress, UpdateSourceTrigger=PropertyChanged}">
-                <TextBox.InputBindings>
-                    <KeyBinding Key="Enter" Command="{Binding AddWarehouseCommand}" />
-                </TextBox.InputBindings>
-            </TextBox>
-            <Button Content="+ Додати склад"
-                    Command="{Binding AddWarehouseCommand}"
-                    Padding="12,4"
-                    Margin="8,0,0,0" />
+    <!-- Шапка -->
+    <Border Grid.Row="0" Style="{StaticResource PageHeader}">
+      <TextBlock Text="StockFlow — Склади" Style="{StaticResource PageHeaderText}"/>
+    </Border>
+
+    <!-- Контент -->
+    <Grid Grid.Row="1" Margin="24">
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="*"/>
+      </Grid.RowDefinitions>
+
+      <!-- Панель пошуку та кнопки додавання -->
+      <Grid Grid.Row="0" Margin="0,0,0,16">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="260"/>
+          <ColumnDefinition Width="16"/>
+          <ColumnDefinition Width="220"/>
+          <ColumnDefinition Width="*"/>
+          <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+
+        <TextBox Grid.Column="0"
+                 Style="{StaticResource SearchBox}"
+                 Tag="Пошук за назвою..."
+                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"/>
+
+        <Button Grid.Column="4"
+                Style="{StaticResource PrimaryButton}"
+                Content="+ Додати"
+                Command="{Binding OpenCreateFormCommand}"
+                Visibility="{Binding CanManage, Converter={StaticResource BooleanToVisibility}}"/>
+      </Grid>
+
+      <!-- Розгортувана форма додавання (лише для Адміна) -->
+      <Border Grid.Row="1"
+              Style="{StaticResource FormPanel}"
+              Margin="0,0,0,16"
+              Visibility="{Binding IsFormOpen, Converter={StaticResource BooleanToVisibility}}">
+        <StackPanel>
+          <TextBlock Text="{Binding FormTitle}"
+                     FontSize="15"
+                     FontWeight="Bold"
+                     Foreground="{StaticResource PrimaryTextBrush}"
+                     Margin="0,0,0,12"/>
+
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*"/>
+              <ColumnDefinition Width="16"/>
+              <ColumnDefinition Width="1.5*"/>
+              <ColumnDefinition Width="16"/>
+              <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0">
+              <TextBlock Text="Назва складу *" Style="{StaticResource FieldLabel}"/>
+              <TextBox Style="{StaticResource InputBox}"
+                       Text="{Binding FormName, UpdateSourceTrigger=PropertyChanged}"/>
+            </StackPanel>
+
+            <StackPanel Grid.Column="2">
+              <TextBlock Text="Адреса / Місто" Style="{StaticResource FieldLabel}"/>
+              <TextBox Style="{StaticResource InputBox}"
+                       Text="{Binding FormAddress, UpdateSourceTrigger=PropertyChanged}"/>
+            </StackPanel>
+
+            <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Bottom">
+              <Button Style="{StaticResource SecondaryButton}"
+                      Content="Скасувати"
+                      Command="{Binding CancelFormCommand}"
+                      Margin="0,0,8,0"/>
+              <Button Style="{StaticResource PrimaryButton}"
+                      Content="Зберегти"
+                      Command="{Binding SaveWarehouseCommand}"/>
+            </StackPanel>
+          </Grid>
         </StackPanel>
+      </Border>
 
-        <TextBlock Grid.Row="2"
-                   Text="{Binding ErrorMessage}"
-                   Foreground="{StaticResource ErrorTextBrush}"
-                   TextWrapping="Wrap"
-                   Margin="0,0,0,12">
-            <TextBlock.Style>
-                <Style TargetType="TextBlock">
-                    <Style.Triggers>
-                        <DataTrigger Binding="{Binding ErrorMessage}" Value="">
-                            <Setter Property="Visibility" Value="Collapsed" />
-                        </DataTrigger>
-                    </Style.Triggers>
-                </Style>
-            </TextBlock.Style>
-        </TextBlock>
+      <TextBlock Grid.Row="2"
+                 Text="{Binding ErrorMessage}"
+                 Foreground="{StaticResource ErrorTextBrush}"
+                 TextWrapping="Wrap"
+                 Margin="0,0,0,12">
+        <TextBlock.Style>
+          <Style TargetType="TextBlock">
+            <Style.Triggers>
+              <DataTrigger Binding="{Binding ErrorMessage}" Value="">
+                <Setter Property="Visibility" Value="Collapsed"/>
+              </DataTrigger>
+            </Style.Triggers>
+          </Style>
+        </TextBlock.Style>
+      </TextBlock>
 
-        <DataGrid Grid.Row="3"
-                  ItemsSource="{Binding Warehouses}"
-                  AutoGenerateColumns="False"
-                  IsReadOnly="True"
-                  CanUserAddRows="False"
-                  HeadersVisibility="Column">
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="Назва" Binding="{Binding Name}" Width="*" />
-                <DataGridTextColumn Header="Адреса" Binding="{Binding Address}" Width="2*" />
-            </DataGrid.Columns>
-        </DataGrid>
-
-        <TextBlock Grid.Row="4"
-                   Text="* Додавання складів доступне лише ролі Адмін"
-                   FontStyle="Italic"
-                   FontSize="11"
-                   Foreground="{StaticResource SecondaryTextBrush}"
-                   Margin="0,8,0,0" />
+      <!-- Таблиця складів -->
+      <DataGrid Grid.Row="3"
+                Style="{StaticResource ListDataGrid}"
+                ItemsSource="{Binding FilteredWarehouses}"
+                AutoGenerateColumns="False"
+                IsReadOnly="True"
+                CanUserAddRows="False">
+        <DataGrid.Columns>
+          <DataGridTextColumn Header="Назва" Binding="{Binding Name}" Width="1.3*"/>
+          <DataGridTextColumn Header="Адреса / Місто" Binding="{Binding Address}" Width="1.7*"/>
+        </DataGrid.Columns>
+      </DataGrid>
     </Grid>
+  </Grid>
 </UserControl>

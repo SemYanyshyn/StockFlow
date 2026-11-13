@@ -419,6 +419,49 @@
         <Setter Property="CellStyle" Value="{StaticResource ListCell}"/>
         <Setter Property="RowStyle" Value="{StaticResource ListRow}"/>
     </Style>
+  <SolidColorBrush x:Key="SuccessBackgroundBrush" Color="#DCFCE7"/>
+  <SolidColorBrush x:Key="SuccessBorderBrush" Color="#86EFAC"/>
+  <SolidColorBrush x:Key="SuccessTextBrush" Color="#166534"/>
+  <SolidColorBrush x:Key="CriticalBackgroundBrush" Color="#FEE2E2"/>
+  <SolidColorBrush x:Key="CriticalRowBackgroundBrush" Color="#FEF2F2"/>
+  <SolidColorBrush x:Key="CriticalBorderBrush" Color="#EF4444"/>
+  <SolidColorBrush x:Key="CriticalTextBrush" Color="#B91C1C"/>
+
+  <Style x:Key="CriticalFilterToggle" TargetType="ToggleButton">
+    <Setter Property="FontFamily" Value="Segoe UI"/>
+    <Setter Property="FontSize" Value="14"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="Background" Value="{StaticResource CriticalRowBackgroundBrush}"/>
+    <Setter Property="BorderBrush" Value="{StaticResource CriticalBorderBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="Foreground" Value="{StaticResource CriticalTextBrush}"/>
+    <Setter Property="Height" Value="40"/>
+    <Setter Property="Padding" Value="16,0"/>
+    <Setter Property="Cursor" Value="Hand"/>
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="ToggleButton">
+          <Border x:Name="Frame"
+                  Background="{TemplateBinding Background}"
+                  BorderBrush="{TemplateBinding BorderBrush}"
+                  BorderThickness="{TemplateBinding BorderThickness}"
+                  CornerRadius="4"
+                  Padding="{TemplateBinding Padding}">
+            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+          </Border>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsChecked" Value="True">
+              <Setter TargetName="Frame" Property="Background" Value="{StaticResource CriticalBackgroundBrush}"/>
+              <Setter TargetName="Frame" Property="BorderThickness" Value="1.5"/>
+            </Trigger>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Setter TargetName="Frame" Property="Background" Value="{StaticResource CriticalBackgroundBrush}"/>
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
 
     <!-- Opt-in styles for the supplier, user and login wireframes. -->
     <Style x:Key="DirectoryActionLink" TargetType="Button" BasedOn="{StaticResource LinkButton}">

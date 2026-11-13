@@ -31,7 +31,7 @@ public partial class App : Application
     {
         services.AddSingleton<INavigationService, NavigationService>();
         services.AddSingleton<IConfirmationService, ConfirmationService>();
-
+        
         services.AddTransient<LoginViewModel>();
         services.AddTransient<LoginView>();
 
@@ -60,6 +60,7 @@ public partial class App : Application
             ServiceProvider = services.BuildServiceProvider();
 
             ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            
             var login = ServiceProvider.GetRequiredService<LoginView>();
             if (login.ShowDialog() != true)
             {
