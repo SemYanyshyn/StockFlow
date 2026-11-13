@@ -1,10 +1,165 @@
 ﻿<UserControl x:Class="StockFlow.UI.Views.ReportsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <StackPanel Margin="32">
-        <TextBlock Text="Звітність" FontSize="20" FontWeight="Bold" Foreground="{StaticResource PrimaryTextBrush}" Margin="0,0,0,16"/>
-        <Border Background="{StaticResource BackgroundBrush}" Padding="24" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
-            <TextBlock Text="Розділ перебуває в розробці (Етап 5)" FontSize="16" Foreground="{StaticResource SecondaryTextBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:StockFlow.UI.ViewModels"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:ReportsViewModel}">
+  <UserControl.Resources>
+    <BooleanToVisibilityConverter x:Key="BooleanToVisibility"/>
+  </UserControl.Resources>
+
+  <Grid Background="{StaticResource BackgroundBrush}">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/>
+    </Grid.RowDefinitions>
+
+    <Border Grid.Row="0" Style="{StaticResource PageHeader}">
+      <TextBlock Text="StockFlow — Звіти" Style="{StaticResource PageHeaderText}"/>
+    </Border>
+
+    <Grid Grid.Row="1" Margin="24">
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="*"/>
+        <RowDefinition Height="Auto"/>
+      </Grid.RowDefinitions>
+
+      <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,16">
+        <ComboBox Width="260"
+                  Style="{StaticResource InputComboBox}"
+                  Tag="Тип:"
+                  ItemsSource="{Binding ReportTypes}"
+                  SelectedItem="{Binding SelectedReportType}"
+                  Margin="0,0,12,0"/>
+
+        <Border Background="{StaticResource BackgroundBrush}"
+                BorderBrush="{StaticResource InputBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="4"
+                Height="40"
+                Padding="12,0"
+                Margin="0,0,12,0"
+                Visibility="{Binding IsPeriodVisible, Converter={StaticResource BooleanToVisibility}}">
+          <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+            <TextBlock Text="Період:"
+                       FontSize="14"
+                       Foreground="{StaticResource PrimaryTextBrush}"
+                       VerticalAlignment="Center"
+                       Margin="0,0,6,0"/>
+            <DatePicker SelectedDate="{Binding DateFrom}"
+                        BorderThickness="0"
+                        VerticalAlignment="Center"/>
+            <TextBlock Text=" — "
+                       FontSize="14"
+                       Foreground="{StaticResource PrimaryTextBrush}"
+                       VerticalAlignment="Center"/>
+            <DatePicker SelectedDate="{Binding DateTo}"
+                        BorderThickness="0"
+                        VerticalAlignment="Center"/>
+          </StackPanel>
         </Border>
-    </StackPanel>
+
+        <Button Style="{StaticResource PrimaryButton}"
+                Content="Сформувати"
+                Command="{Binding GenerateReportCommand}"
+                Margin="0,0,12,0"/>
+
+        <Button Style="{StaticResource SecondaryButton}"
+                Command="{Binding ExportCsvCommand}">
+          <StackPanel Orientation="Horizontal">
+            <TextBlock Text="&#xE74E; " FontFamily="Segoe MDL2 Assets" VerticalAlignment="Center" Margin="0,0,4,0"/>
+            <TextBlock Text="Експорт" VerticalAlignment="Center"/>
+          </StackPanel>
+        </Button>
+      </StackPanel>
+
+      <TextBlock Grid.Row="1"
+                 Text="{Binding ErrorMessage}"
+                 Foreground="{StaticResource ErrorTextBrush}"
+                 Margin="0,0,0,12">
+        <TextBlock.Style>
+          <Style TargetType="TextBlock">
+            <Style.Triggers>
+              <DataTrigger Binding="{Binding ErrorMessage}" Value="">
+                <Setter Property="Visibility" Value="Collapsed"/>
+              </DataTrigger>
+            </Style.Triggers>
+          </Style>
+        </TextBlock.Style>
+      </TextBlock>
+
+      <DataGrid Grid.Row="2"
+                Style="{StaticResource ListDataGrid}"
+                ItemsSource="{Binding MovementRows}"
+                AutoGenerateColumns="False"
+                IsReadOnly="True"
+                CanUserAddRows="False"
+                Visibility="{Binding IsMovementReport, Converter={StaticResource BooleanToVisibility}}">
+        <DataGrid.Columns>
+          <DataGridTextColumn Header="Товар" Binding="{Binding ProductName}" Width="1.5*"/>
+          <DataGridTextColumn Header="Склад" Binding="{Binding WarehouseName}" Width="1.2*"/>
+          <DataGridTemplateColumn Header="Надходження" Width="130">
+            <DataGridTemplateColumn.CellTemplate>
+              <DataTemplate>
+                <TextBlock Text="{Binding IncomingDisplay}"
+                           Foreground="{StaticResource SuccessTextBrush}"
+                           FontWeight="SemiBold"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"/>
+              </DataTemplate>
+            </DataGridTemplateColumn.CellTemplate>
+          </DataGridTemplateColumn>
+          <DataGridTemplateColumn Header="Списання" Width="130">
+            <DataGridTemplateColumn.CellTemplate>
+              <DataTemplate>
+                <TextBlock Text="{Binding OutgoingDisplay}"
+                           Foreground="{StaticResource CriticalTextBrush}"
+                           FontWeight="SemiBold"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"/>
+              </DataTemplate>
+            </DataGridTemplateColumn.CellTemplate>
+          </DataGridTemplateColumn>
+          <DataGridTemplateColumn Header="Залишок" Width="130">
+            <DataGridTemplateColumn.CellTemplate>
+              <DataTemplate>
+                <TextBlock Text="{Binding BalanceDisplay}"
+                           Foreground="{StaticResource PrimaryTextBrush}"
+                           FontWeight="Bold"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"/>
+              </DataTemplate>
+            </DataGridTemplateColumn.CellTemplate>
+          </DataGridTemplateColumn>
+        </DataGrid.Columns>
+      </DataGrid>
+
+      <DataGrid Grid.Row="2"
+                Style="{StaticResource ListDataGrid}"
+                ItemsSource="{Binding StockRows}"
+                AutoGenerateColumns="False"
+                IsReadOnly="True"
+                CanUserAddRows="False"
+                Visibility="{Binding IsStockReport, Converter={StaticResource BooleanToVisibility}}">
+        <DataGrid.Columns>
+          <DataGridTextColumn Header="Товар" Binding="{Binding ProductName}" Width="1.5*"/>
+          <DataGridTextColumn Header="Склад" Binding="{Binding WarehouseName}" Width="1.2*"/>
+          <DataGridTextColumn Header="Поточний залишок" Binding="{Binding QuantityDisplay}" Width="150"/>
+          <DataGridTextColumn Header="Мін. норма" Binding="{Binding MinThresholdDisplay}" Width="130"/>
+          <DataGridTextColumn Header="Статус" Binding="{Binding StatusText}" Width="140"/>
+        </DataGrid.Columns>
+      </DataGrid>
+
+      <TextBlock Grid.Row="3"
+                 Text="* Формування та перегляд звітів доступні для ролей: Працівник, Адміністратор"
+                 FontStyle="Italic"
+                 FontSize="13"
+                 Foreground="{StaticResource AccentTextBrush}"
+                 Margin="0,14,0,0"/>
+    </Grid>
+  </Grid>
 </UserControl>
