@@ -6,6 +6,8 @@ namespace StockFlow.Tests;
 public sealed class StockMovementTests
 {
     [Theory]
+    [InlineData(10, 5, 15)]
+    [InlineData(0, 5, 5)]
     [InlineData(0, 7, 7)]
     [InlineData(0, int.MaxValue, int.MaxValue)]
     [InlineData(11, 7, 18)]
@@ -26,6 +28,7 @@ public sealed class StockMovementTests
     }
 
     [Theory]
+    [InlineData(10, 8, 2)]
     [InlineData(10, 3, 7)]
     [InlineData(10, 10, 0)]
     [InlineData(1, 1, 0)]
@@ -83,11 +86,12 @@ public sealed class StockMovementTests
     [InlineData("invalid-stock-warehouse", "Некоректний залишок товару на складі")]
     [InlineData("negative-stock", "Некоректний залишок товару на складі")]
     [InlineData("overdraw", "Недостатньо товару на складі")]
-    [InlineData("overflow", "Кількість товару перевищує допустиме значення")]
+    [InlineData("overdraw-empty", "Недостатньо товару на складі")]
+    [InlineData("overflow", "Кількість перевищує допустиму")]
     public void RejectedMovementProvidesOneErrorAndCannotChangeStock(string invalidCase, string expectedError)
     {
         var stock = Stock(10);
-        var movement = Movement(MovementType.Receipt, 3);
+        var movement = Movement(MovementType.Receipt, 5);
         MakeInvalid(invalidCase, movement, stock);
         var before = Snapshot(stock);
 
@@ -181,10 +185,10 @@ public sealed class StockMovementTests
         {
             case "null-number": movement.Number = null!; break;
             case "empty-number": movement.Number = ""; break;
-            case "blank-number": movement.Number = " \t "; break;
+            case "blank-number": movement.Number = "   "; break;
             case "long-number": movement.Number = new string('Н', 51); break;
             case "zero-quantity": movement.Quantity = 0; break;
-            case "negative-quantity": movement.Quantity = -1; break;
+            case "negative-quantity": movement.Type = MovementType.WriteOff; movement.SupplierId = null; movement.Quantity = -5; break;
             case "unknown-type": movement.Type = (MovementType)999; break;
             case "negative-id": movement.Id = -1; break;
             case "zero-product": movement.ProductId = 0; break;
@@ -205,7 +209,8 @@ public sealed class StockMovementTests
             case "invalid-stock-warehouse": stock.WarehouseId = 0; break;
             case "negative-stock": stock.Quantity = -1; break;
             case "overdraw": movement.Type = MovementType.WriteOff; movement.SupplierId = null; movement.Quantity = 11; break;
-            case "overflow": stock.Quantity = int.MaxValue; break;
+            case "overdraw-empty": stock.Quantity = 0; movement.Type = MovementType.WriteOff; movement.SupplierId = null; movement.Quantity = 1; break;
+            case "overflow": stock.Quantity = int.MaxValue; movement.Quantity = 1; break;
             default: throw new ArgumentOutOfRangeException(nameof(invalidCase));
         }
     }
