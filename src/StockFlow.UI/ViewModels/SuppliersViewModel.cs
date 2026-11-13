@@ -36,7 +36,6 @@ public sealed class SuppliersViewModel : ViewModelBase
         _confirmation = confirmation;
         CanManage = user.IsAdmin;
 
-        ReloadCommand = new AsyncRelayCommand(LoadAsync);
         AddCommand = new AsyncRelayCommand(AddAsync);
         OpenEditorCommand = new RelayCommand(OpenEditor);
         CancelEditorCommand = new RelayCommand(() => { if (!IsBusy) CancelEditor(); });
@@ -48,7 +47,6 @@ public sealed class SuppliersViewModel : ViewModelBase
     public IAsyncRelayCommand<Supplier> DeleteCommand { get; }
     public bool CanManage { get; }
 
-    public IAsyncRelayCommand ReloadCommand { get; }
     public IAsyncRelayCommand AddCommand { get; }
     public IRelayCommand OpenEditorCommand { get; }
     public IRelayCommand CancelEditorCommand { get; }

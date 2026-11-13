@@ -30,14 +30,6 @@
                     Command="{Binding OpenEditorCommand}"
                     Margin="16,0,0,0"
                     Visibility="{Binding CanManage, Converter={StaticResource VisibleIfTrue}}"/>
-                <Button DockPanel.Dock="Right"
-                    Content="&#xE72C;"
-                    FontFamily="Segoe MDL2 Assets"
-                    Style="{StaticResource SecondaryButton}"
-                    Command="{Binding ReloadCommand}"
-                    Padding="10,0"
-                    ToolTip="Оновити список"
-                    AutomationProperties.Name="Оновити постачальників"/>
                 <TextBox x:Name="SearchBox"
                     Style="{StaticResource SearchBox}"
                     MaxWidth="400"

@@ -65,7 +65,6 @@ public sealed partial class UsersViewModel : ViewModelBase
         catch (Exception) { _all = Array.Empty<User>(); ErrorMessage = DataErrorText.ConnectionFailed; }
         finally { IsBusy = false; ApplyFilter(); }
     }
-    [RelayCommand] private Task ReloadAsync() => LoadAsync();
     [RelayCommand]
     private void Create()
     {
