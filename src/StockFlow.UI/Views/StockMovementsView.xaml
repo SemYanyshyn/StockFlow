@@ -1,10 +1,114 @@
-﻿<UserControl x:Class="StockFlow.UI.Views.StockMovementsView"
+<UserControl x:Class="StockFlow.UI.Views.StockMovementsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <StackPanel Margin="32">
-        <TextBlock Text="Накладні" FontSize="20" FontWeight="Bold" Foreground="{StaticResource PrimaryTextBrush}" Margin="0,0,0,16"/>
-        <Border Background="{StaticResource BackgroundBrush}" Padding="24" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
-            <TextBlock Text="Розділ перебуває в розробці (Етап 5)" FontSize="16" Foreground="{StaticResource SecondaryTextBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Loaded="OnLoaded" DataContextChanged="OnDataContextChanged" Language="uk-UA"
+             Background="{StaticResource BackgroundBrush}" Foreground="{StaticResource PrimaryTextBrush}">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="VisibleIfTrue"/>
+        <Style x:Key="Message" TargetType="TextBlock">
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Margin" Value="0,4,0,8"/>
+            <Style.Triggers>
+                <Trigger Property="Text" Value="{x:Null}"><Setter Property="Visibility" Value="Collapsed"/></Trigger>
+                <Trigger Property="Text" Value=""><Setter Property="Visibility" Value="Collapsed"/></Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="MovementDatePicker" TargetType="DatePicker">
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Background" Value="{StaticResource BackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource InputBorderBrush}"/>
+            <Setter Property="SelectedDateFormat" Value="Short"/>
+        </Style>
+    </UserControl.Resources>
+    <Grid>
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+        <Border Style="{StaticResource PageHeader}">
+            <DockPanel>
+                <Button Content="← До списку" DockPanel.Dock="Right" Command="{Binding BackCommand}">
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource DirectoryActionLink}">
+                            <Style.Triggers><DataTrigger Binding="{Binding IsListOpen}" Value="True"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+                <TextBlock Text="{Binding Title}" Style="{StaticResource PageHeaderText}"/>
+            </DockPanel>
         </Border>
-    </StackPanel>
+        <Grid Grid.Row="1" Margin="24" Visibility="{Binding IsListOpen, Converter={StaticResource VisibleIfTrue}}">
+            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+            <StackPanel>
+                <WrapPanel>
+                    <StackPanel Width="210" Margin="0,0,12,12">
+                        <TextBlock Text="Номер накладної" Style="{StaticResource FieldLabel}"/>
+                        <TextBox Style="{StaticResource SearchBox}" Tag="Пошук за номером…" Text="{Binding SearchNumber, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Пошук за номером накладної"/>
+                    </StackPanel>
+                    <StackPanel Width="165" Margin="0,0,12,12">
+                        <TextBlock Text="Тип" Style="{StaticResource FieldLabel}"/>
+                        <ComboBox Style="{StaticResource InputComboBox}" ItemsSource="{Binding FilterTypes}" DisplayMemberPath="Name" SelectedItem="{Binding SelectedFilterType}"/>
+                    </StackPanel>
+                    <StackPanel Width="185" Margin="0,0,12,12">
+                        <TextBlock Text="Склад" Style="{StaticResource FieldLabel}"/>
+                        <ComboBox Style="{StaticResource InputComboBox}" ItemsSource="{Binding WarehouseOptions}" DisplayMemberPath="Name" SelectedItem="{Binding SelectedFilterWarehouse}"/>
+                    </StackPanel>
+                    <StackPanel Width="150" Margin="0,0,12,12">
+                        <TextBlock Text="Дата від" Style="{StaticResource FieldLabel}"/>
+                        <DatePicker Style="{StaticResource MovementDatePicker}" SelectedDate="{Binding DateFrom}"/>
+                    </StackPanel>
+                    <StackPanel Width="150" Margin="0,0,12,12">
+                        <TextBlock Text="Дата до" Style="{StaticResource FieldLabel}"/>
+                        <DatePicker Style="{StaticResource MovementDatePicker}" SelectedDate="{Binding DateTo}"/>
+                    </StackPanel>
+                </WrapPanel>
+                <WrapPanel Margin="0,0,0,8">
+                    <Button Content="Застосувати" Style="{StaticResource SecondaryButton}" Command="{Binding ApplyFiltersCommand}" Margin="0,0,10,8"/>
+                    <Button Content="Очистити" Style="{StaticResource SecondaryButton}" Command="{Binding ClearFiltersCommand}" Margin="0,0,10,8"/>
+                    <Button Content="+ Створити накладну" Style="{StaticResource PrimaryButton}" IsEnabled="False" Margin="0,0,0,8" Visibility="{Binding IsEmployee, Converter={StaticResource VisibleIfTrue}}"/>
+                </WrapPanel>
+            </StackPanel>
+            <StackPanel Grid.Row="1">
+                <TextBlock Text="{Binding CreationUnavailableMessage}" Style="{StaticResource Message}" Foreground="{StaticResource SecondaryTextBrush}"/>
+                <TextBlock Text="{Binding ListError}" Style="{StaticResource Message}" Foreground="{StaticResource ErrorTextBrush}"/>
+                <TextBlock Text="{Binding FilterError}" Style="{StaticResource Message}" Foreground="{StaticResource ErrorTextBrush}"/>
+                <TextBlock Text="Завантаження…" Margin="0,0,0,8" Visibility="{Binding IsBusy, Converter={StaticResource VisibleIfTrue}}" Foreground="{StaticResource SecondaryTextBrush}"/>
+            </StackPanel>
+            <Grid Grid.Row="2">
+                <DataGrid Style="{StaticResource ListDataGrid}" ItemsSource="{Binding Movements}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False" VerticalAlignment="Stretch">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Номер" Binding="{Binding Number}" Width="Auto" MinWidth="100"/>
+                        <DataGridTextColumn Header="Дата" Binding="{Binding Date, StringFormat=dd.MM.yyyy}" Width="Auto"/>
+                        <DataGridTextColumn Header="Тип" Binding="{Binding TypeText}" Width="Auto"/>
+                        <DataGridTextColumn Header="Товар" Binding="{Binding ProductName}" Width="*" MinWidth="150"/>
+                        <DataGridTextColumn Header="Кількість" Binding="{Binding QuantityText}" Width="Auto"/>
+                        <DataGridTextColumn Header="Склад" Binding="{Binding WarehouseName}" Width="Auto"/>
+                        <DataGridTextColumn Header="Відповідальний" Binding="{Binding ResponsibleName}" Width="*" MinWidth="170"/>
+                        <DataGridTemplateColumn Header="Дії" HeaderStyle="{StaticResource ActionsColumnHeader}" Width="Auto">
+                            <DataGridTemplateColumn.CellTemplate><DataTemplate>
+                                <Button Content="Переглянути" Style="{StaticResource DirectoryActionLink}" Command="{Binding DataContext.ViewCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                            </DataTemplate></DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+                <TextBlock Text="{Binding EmptyMessage}" Style="{StaticResource Message}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource SecondaryTextBrush}" IsHitTestVisible="False"/>
+            </Grid>
+        </Grid>
+        <ScrollViewer Grid.Row="1" Margin="24" VerticalScrollBarVisibility="Auto">
+            <ScrollViewer.Style><Style TargetType="ScrollViewer"><Style.Triggers><DataTrigger Binding="{Binding Details}" Value="{x:Null}"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></ScrollViewer.Style>
+            <Border Style="{StaticResource FormPanel}" VerticalAlignment="Top">
+                <StackPanel DataContext="{Binding Details}">
+                    <TextBlock Text="{Binding Number}" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,20"/>
+                    <TextBlock Text="Дата" Style="{StaticResource FieldLabel}"/><TextBlock Text="{Binding Date, StringFormat=dd.MM.yyyy HH:mm:ss}" Margin="0,0,0,16"/>
+                    <TextBlock Text="Тип" Style="{StaticResource FieldLabel}"/><TextBlock Text="{Binding TypeText}" Margin="0,0,0,16"/>
+                    <TextBlock Text="Товар" Style="{StaticResource FieldLabel}"/><TextBlock Text="{Binding ProductName}" TextWrapping="Wrap" Margin="0,0,0,16"/>
+                    <TextBlock Text="Кількість" Style="{StaticResource FieldLabel}"/><TextBlock Text="{Binding QuantityText}" Margin="0,0,0,16"/>
+                    <TextBlock Text="Склад" Style="{StaticResource FieldLabel}"/><TextBlock Text="{Binding WarehouseName}" TextWrapping="Wrap" Margin="0,0,0,16"/>
+                    <TextBlock Text="Відповідальна особа" Style="{StaticResource FieldLabel}"/><TextBlock Text="{Binding ResponsibleName}" TextWrapping="Wrap" Margin="0,0,0,16"/>
+                    <StackPanel Visibility="{Binding HasSupplier, Converter={StaticResource VisibleIfTrue}}">
+                        <TextBlock Text="Постачальник" Style="{StaticResource FieldLabel}"/><TextBlock Text="{Binding Data.SupplierName}" TextWrapping="Wrap" Margin="0,0,0,16"/>
+                    </StackPanel>
+                    <TextBlock Text="Примітка" Style="{StaticResource FieldLabel}"/><TextBlock Text="{Binding NoteText}" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+        </ScrollViewer>
+    </Grid>
 </UserControl>
