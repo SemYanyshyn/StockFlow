@@ -1,60 +1,192 @@
-<UserControl x:Class="StockFlow.UI.Views.UsersView"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Loaded="OnLoaded" Background="{StaticResource BackgroundBrush}" Foreground="{StaticResource PrimaryTextBrush}">
-    <UserControl.Resources><BooleanToVisibilityConverter x:Key="VisibleIfTrue" /></UserControl.Resources>
-    <Grid Margin="32">
+<UserControl xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    x:Class="StockFlow.UI.Views.UsersView"
+    Loaded="OnLoaded"
+    Background="{StaticResource BackgroundBrush}"
+    Foreground="{StaticResource PrimaryTextBrush}">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="VisibleIfTrue"/>
+    </UserControl.Resources>
+    <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" /><RowDefinition Height="*" />
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        <TextBlock Text="Користувачі" FontSize="20" FontWeight="Bold" Foreground="{StaticResource PrimaryTextBrush}" Margin="0,0,0,16" />
-        <WrapPanel Grid.Row="1" Margin="0,0,0,16" IsEnabled="{Binding IsIdle}">
-            <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Width="240" ToolTip="Пошук за логіном або ПІБ" AutomationProperties.Name="Пошук користувачів" Margin="0,0,12,0" />
-            <ComboBox ItemsSource="{Binding FilterRoles}" SelectedItem="{Binding FilterRole}" DisplayMemberPath="Title" Width="160" Margin="0,0,12,0" AutomationProperties.Name="Фільтр за роллю" />
-            <Button Content="Оновити" Command="{Binding ReloadCommand}" Margin="0,0,12,0" />
-            <Button Content="+ Створити користувача" Command="{Binding CreateCommand}" Visibility="{Binding CanManage, Converter={StaticResource VisibleIfTrue}}" />
-        </WrapPanel>
-        <Border Grid.Row="2" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="16" Margin="0,0,0,12"
-                IsEnabled="{Binding IsIdle}" Visibility="{Binding IsEditorOpen, Converter={StaticResource VisibleIfTrue}}">
-            <StackPanel>
-                <TextBlock Text="{Binding EditorTitle}" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,10" />
-                <WrapPanel>
-                    <StackPanel Width="170" Margin="0,0,12,12"><TextBlock Text="Логін *" /><TextBox Text="{Binding EditorUsername, UpdateSourceTrigger=PropertyChanged}" IsReadOnly="{Binding IsEditing}" MaxLength="50" AutomationProperties.Name="Логін користувача" /></StackPanel>
-                    <StackPanel Width="240" Margin="0,0,12,12"><TextBlock Text="ПІБ *" /><TextBox Text="{Binding EditorFullName, UpdateSourceTrigger=PropertyChanged}" MaxLength="100" AutomationProperties.Name="ПІБ користувача" /></StackPanel>
-                    <StackPanel Width="160" Margin="0,0,12,12"><TextBlock Text="Роль *" /><ComboBox ItemsSource="{Binding Roles}" SelectedItem="{Binding EditorRole}" DisplayMemberPath="Title" AutomationProperties.Name="Роль користувача" /></StackPanel>
-                    <StackPanel Width="180" Margin="0,0,12,12" Visibility="{Binding IsCreating, Converter={StaticResource VisibleIfTrue}}">
-                        <TextBlock Text="Пароль *" /><PasswordBox x:Name="Password" MaxLength="1024" Padding="6,4" AutomationProperties.Name="Пароль нового користувача" BorderBrush="{StaticResource BorderBrush}" Background="{StaticResource BackgroundBrush}" Foreground="{StaticResource PrimaryTextBrush}" />
-                    </StackPanel>
-                </WrapPanel>
-                <StackPanel Orientation="Horizontal"><Button Content="Зберегти" Click="OnSave" Margin="0,0,12,0" /><Button Content="Скасувати" Command="{Binding CancelCommand}" /></StackPanel>
-            </StackPanel>
+        <Border Style="{StaticResource PageHeader}">
+            <TextBlock Text="Користувачі" Style="{StaticResource PageHeaderText}"/>
         </Border>
-        <StackPanel Grid.Row="3" Margin="0,0,0,12">
-            <TextBlock Text="Завантаження..." Visibility="{Binding IsBusy, Converter={StaticResource VisibleIfTrue}}" />
-            <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource ErrorTextBrush}" TextWrapping="Wrap" />
-        </StackPanel>
-        <Grid Grid.Row="4">
-            <DataGrid ItemsSource="{Binding Users}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" IsEnabled="{Binding IsIdle}">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="Логін" Binding="{Binding Username}" Width="*" />
-                    <DataGridTextColumn Header="ПІБ" Binding="{Binding FullName}" Width="1.5*" />
-                    <DataGridTextColumn Header="Роль" Binding="{Binding RoleText}" Width="*" />
-                    <DataGridTextColumn Header="Статус" Binding="{Binding StatusText}" Width="*" />
-                    <DataGridTemplateColumn Header="Дії" Width="185">
-                        <DataGridTemplateColumn.CellTemplate><DataTemplate>
-                            <StackPanel Visibility="{Binding DataContext.CanManage, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource VisibleIfTrue}}">
-                                <StackPanel Orientation="Horizontal">
-                                    <Button Content="Редагувати" Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Margin="2" />
-                                    <Button Content="Видалити" Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Margin="2" />
-                                </StackPanel>
-                                <Button Content="{Binding ToggleText}" Command="{Binding DataContext.ToggleCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Margin="2" HorizontalAlignment="Left" />
-                            </StackPanel>
-                        </DataTemplate></DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-                </DataGrid.Columns>
-            </DataGrid>
-            <TextBlock Text="Користувачів не знайдено" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False"
-                       Foreground="{StaticResource SecondaryTextBrush}" Visibility="{Binding IsEmpty, Converter={StaticResource VisibleIfTrue}}" />
+        <Grid Grid.Row="1" Margin="24">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <DockPanel Grid.Row="1" LastChildFill="True" Margin="0,0,0,16" IsEnabled="{Binding IsIdle}">
+                <Button DockPanel.Dock="Right"
+                    Content="+ Додати користувача"
+                    Style="{StaticResource PrimaryButton}"
+                    Command="{Binding CreateCommand}"
+                    Margin="16,0,0,0"
+                    Visibility="{Binding CanManage, Converter={StaticResource VisibleIfTrue}}"/>
+                <Button DockPanel.Dock="Right"
+                    Content="&#xE72C;"
+                    FontFamily="Segoe MDL2 Assets"
+                    Style="{StaticResource SecondaryButton}"
+                    Command="{Binding ReloadCommand}"
+                    Padding="10,0"
+                    ToolTip="Оновити список"
+                    AutomationProperties.Name="Оновити користувачів"/>
+                <WrapPanel>
+                    <TextBox Style="{StaticResource SearchBox}"
+                        Width="260"
+                        Margin="0,0,12,8"
+                        Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                        Tag="Пошук за логіном або ПІБ..."
+                        AutomationProperties.Name="Пошук користувачів"/>
+                    <ComboBox Style="{StaticResource InputComboBox}"
+                        Width="180"
+                        Margin="0,0,12,8"
+                        Tag="Роль:"
+                        ItemsSource="{Binding FilterRoles}"
+                        SelectedItem="{Binding FilterRole}"
+                        DisplayMemberPath="Title"
+                        AutomationProperties.Name="Фільтр за роллю"/>
+                </WrapPanel>
+            </DockPanel>
+            <Border Grid.Row="2"
+                Style="{StaticResource FormPanel}"
+                Padding="16"
+                Margin="0,0,0,12"
+                IsEnabled="{Binding IsIdle}"
+                Visibility="{Binding IsEditorOpen, Converter={StaticResource VisibleIfTrue}}">
+                <StackPanel>
+                    <TextBlock Text="{Binding EditorTitle}" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,10"/>
+                    <WrapPanel>
+                        <StackPanel Width="170" Margin="0,0,12,12">
+                            <TextBlock Text="Логін *"/>
+                            <TextBox Style="{StaticResource InputBox}"
+                                Text="{Binding EditorUsername, UpdateSourceTrigger=PropertyChanged}"
+                                IsReadOnly="{Binding IsEditing}"
+                                MaxLength="50"
+                                AutomationProperties.Name="Логін користувача"/>
+                        </StackPanel>
+                        <StackPanel Width="240" Margin="0,0,12,12">
+                            <TextBlock Text="ПІБ *"/>
+                            <TextBox Style="{StaticResource InputBox}"
+                                Text="{Binding EditorFullName, UpdateSourceTrigger=PropertyChanged}"
+                                MaxLength="100"
+                                AutomationProperties.Name="ПІБ користувача"/>
+                        </StackPanel>
+                        <StackPanel Width="160" Margin="0,0,12,12">
+                            <TextBlock Text="Роль *"/>
+                            <ComboBox Style="{StaticResource InputComboBox}"
+                                ItemsSource="{Binding Roles}"
+                                SelectedItem="{Binding EditorRole}"
+                                DisplayMemberPath="Title"
+                                AutomationProperties.Name="Роль користувача"/>
+                        </StackPanel>
+                        <StackPanel Width="180"
+                            Margin="0,0,12,12"
+                            Visibility="{Binding IsCreating, Converter={StaticResource VisibleIfTrue}}">
+                            <TextBlock Text="Пароль *"/>
+                            <PasswordBox Style="{StaticResource DirectoryPasswordBox}"
+                                x:Name="Password"
+                                MaxLength="1024"
+                                AutomationProperties.Name="Пароль нового користувача"/>
+                        </StackPanel>
+                    </WrapPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <Button Style="{StaticResource PrimaryButton}" Content="Зберегти" Click="OnSave" Margin="0,0,12,0"/>
+                        <Button Style="{StaticResource SecondaryButton}"
+                            Content="Скасувати"
+                            Command="{Binding CancelCommand}"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+            <StackPanel Grid.Row="3" Margin="0,0,0,12">
+                <TextBlock Text="Завантаження..." Visibility="{Binding IsBusy, Converter={StaticResource VisibleIfTrue}}"/>
+                <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource ErrorTextBrush}" TextWrapping="Wrap"/>
+            </StackPanel>
+            <Grid Grid.Row="4">
+                <DataGrid Style="{StaticResource ListDataGrid}"
+                    RowHeight="60"
+                    ItemsSource="{Binding Users}"
+                    AutoGenerateColumns="False"
+                    IsReadOnly="True"
+                    CanUserAddRows="False"
+                    IsEnabled="{Binding IsIdle}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Логін" Binding="{Binding Username}" Width="*" MinWidth="110"/>
+                        <DataGridTextColumn Header="ПІБ" Binding="{Binding FullName}" Width="1.5*" MinWidth="160"/>
+                        <DataGridTextColumn Header="Роль" Binding="{Binding RoleText}" Width="*" MinWidth="140"/>
+                        <DataGridTemplateColumn Header="Статус" Width="160">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Border Padding="12,4"
+                                        CornerRadius="16"
+                                        BorderThickness="1"
+                                        HorizontalAlignment="Left"
+                                        MinWidth="120">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="#E6F4EB"/>
+                                                <Setter Property="BorderBrush" Value="#24945F"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding User.IsActive}" Value="False">
+                                                        <Setter Property="Background" Value="#FCECEC"/>
+                                                        <Setter Property="BorderBrush" Value="#C62828"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <TextBlock Text="{Binding StatusText}" HorizontalAlignment="Center" FontSize="13"/>
+                                    </Border>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn x:Name="ActionsColumn"
+                            Header="Дії"
+                            HeaderStyle="{StaticResource ActionsColumnHeader}"
+                            Width="Auto"
+                            MinWidth="190">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Visibility="{Binding DataContext.CanManage, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource VisibleIfTrue}}">
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                            <Button Content="Редагувати"
+                                                Style="{StaticResource DirectoryActionLink}"
+                                                Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"/>
+                                            <TextBlock Text="·"
+                                                Foreground="{StaticResource AccentTextBrush}"
+                                                VerticalAlignment="Center"
+                                                Margin="6,0"/>
+                                            <Button Content="Видалити"
+                                                Style="{StaticResource DirectoryActionLink}"
+                                                Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"/>
+                                        </StackPanel>
+                                        <Button Style="{StaticResource DirectoryActionLink}"
+                                            Content="{Binding ToggleText}"
+                                            Command="{Binding DataContext.ToggleCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}"
+                                            Margin="0,2,0,0"
+                                            HorizontalAlignment="Right"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+                <TextBlock Text="Користувачів не знайдено"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    IsHitTestVisible="False"
+                    Foreground="{StaticResource SecondaryTextBrush}"
+                    Visibility="{Binding IsEmpty, Converter={StaticResource VisibleIfTrue}}"/>
+            </Grid>
         </Grid>
     </Grid>
 </UserControl>

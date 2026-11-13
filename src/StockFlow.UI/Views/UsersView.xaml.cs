@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using StockFlow.UI.ViewModels;
@@ -13,11 +14,22 @@ public partial class UsersView : UserControl
         InitializeComponent();
         Unloaded += (_, _) =>
         {
-            if (_viewModel is not null) _viewModel.FormReset -= ClearPassword;
+            if (_viewModel is not null)
+            {
+                _viewModel.FormReset -= ClearPassword;
+                _viewModel.PropertyChanged -= OnViewModelChanged;
+            }
             Password.Clear();
             _loaded = false;
         };
     }
+    private void OnViewModelChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(UsersViewModel.CanManage)) UpdateActionsColumn();
+    }
+    private void UpdateActionsColumn() =>
+        ActionsColumn.Visibility = _viewModel?.CanManage == true ? Visibility.Visible : Visibility.Collapsed;
+
     private void ClearPassword() => Password.Clear();
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {
@@ -25,6 +37,8 @@ public partial class UsersView : UserControl
         _loaded = true;
         _viewModel = viewModel;
         _viewModel.FormReset += ClearPassword;
+        _viewModel.PropertyChanged += OnViewModelChanged;
+        UpdateActionsColumn();
         await viewModel.LoadAsync();
     }
     private async void OnSave(object sender, RoutedEventArgs e)
