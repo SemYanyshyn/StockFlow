@@ -192,13 +192,6 @@
           </DataGridTemplateColumn>
         </DataGrid.Columns>
       </DataGrid>
-
-      <TextBlock Grid.Row="2"
-                 Text="* Позиції, фактичний залишок яких є нижчим за встановлену мінімальну норму, автоматично маркуються індикатором «Критично»"
-                 FontStyle="Italic"
-                 FontSize="13"
-                 Foreground="{StaticResource AccentTextBrush}"
-                 Margin="0,14,0,0"/>
     </Grid>
   </Grid>
 </UserControl>

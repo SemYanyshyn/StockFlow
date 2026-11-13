@@ -153,13 +153,6 @@
           <DataGridTextColumn Header="Статус" Binding="{Binding StatusText}" Width="140"/>
         </DataGrid.Columns>
       </DataGrid>
-
-      <TextBlock Grid.Row="3"
-                 Text="* Формування та перегляд звітів доступні для ролей: Працівник, Адміністратор"
-                 FontStyle="Italic"
-                 FontSize="13"
-                 Foreground="{StaticResource AccentTextBrush}"
-                 Margin="0,14,0,0"/>
     </Grid>
   </Grid>
 </UserControl>
