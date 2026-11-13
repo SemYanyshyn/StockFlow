@@ -46,7 +46,7 @@ public sealed class StockMovement
         if (Type == MovementType.WriteOff && Quantity > stock.Quantity)
             return "Недостатньо товару на складі";
         if (Type == MovementType.Receipt && Quantity > int.MaxValue - stock.Quantity)
-            return "Кількість товару перевищує допустиме значення";
+            return "Кількість перевищує допустиму";
 
         return null;
     }
