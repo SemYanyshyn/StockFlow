@@ -26,11 +26,11 @@
       <Grid.RowDefinitions>
         <RowDefinition Height="Auto"/>
         <RowDefinition Height="Auto"/>
-        <RowDefinition Height="*"/>
         <RowDefinition Height="Auto"/>
+        <RowDefinition Height="*"/>
       </Grid.RowDefinitions>
 
-      <!-- Панель пошуку, фільтра та кнопки додавання -->
+      <!-- Панель пошуку та кнопки додавання -->
       <Grid Grid.Row="0" Margin="0,0,0,16">
         <Grid.ColumnDefinitions>
           <ColumnDefinition Width="260"/>
@@ -45,12 +45,6 @@
                  Tag="Пошук за назвою..."
                  Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"/>
 
-        <ComboBox Grid.Column="2"
-                  Style="{StaticResource InputComboBox}"
-                  Tag="Локація:"
-                  ItemsSource="{Binding Locations}"
-                  SelectedItem="{Binding SelectedLocation}"/>
-
         <Button Grid.Column="4"
                 Style="{StaticResource PrimaryButton}"
                 Content="+ Додати"
@@ -58,7 +52,7 @@
                 Visibility="{Binding CanManage, Converter={StaticResource BooleanToVisibility}}"/>
       </Grid>
 
-      <!-- Розгортувана форма додавання / редагування (лише для Адміна) -->
+      <!-- Розгортувана форма додавання (лише для Адміна) -->
       <Border Grid.Row="1"
               Style="{StaticResource FormPanel}"
               Margin="0,0,0,16"
@@ -101,26 +95,27 @@
                       Command="{Binding SaveWarehouseCommand}"/>
             </StackPanel>
           </Grid>
-
-          <TextBlock Text="{Binding ErrorMessage}"
-                     Foreground="{StaticResource ErrorTextBrush}"
-                     TextWrapping="Wrap"
-                     Margin="0,10,0,0">
-            <TextBlock.Style>
-              <Style TargetType="TextBlock">
-                <Style.Triggers>
-                  <DataTrigger Binding="{Binding ErrorMessage}" Value="">
-                    <Setter Property="Visibility" Value="Collapsed"/>
-                  </DataTrigger>
-                </Style.Triggers>
-              </Style>
-            </TextBlock.Style>
-          </TextBlock>
         </StackPanel>
       </Border>
 
+      <TextBlock Grid.Row="2"
+                 Text="{Binding ErrorMessage}"
+                 Foreground="{StaticResource ErrorTextBrush}"
+                 TextWrapping="Wrap"
+                 Margin="0,0,0,12">
+        <TextBlock.Style>
+          <Style TargetType="TextBlock">
+            <Style.Triggers>
+              <DataTrigger Binding="{Binding ErrorMessage}" Value="">
+                <Setter Property="Visibility" Value="Collapsed"/>
+              </DataTrigger>
+            </Style.Triggers>
+          </Style>
+        </TextBlock.Style>
+      </TextBlock>
+
       <!-- Таблиця складів -->
-      <DataGrid Grid.Row="2"
+      <DataGrid Grid.Row="3"
                 Style="{StaticResource ListDataGrid}"
                 ItemsSource="{Binding FilteredWarehouses}"
                 AutoGenerateColumns="False"
@@ -129,29 +124,6 @@
         <DataGrid.Columns>
           <DataGridTextColumn Header="Назва" Binding="{Binding Name}" Width="1.3*"/>
           <DataGridTextColumn Header="Адреса / Місто" Binding="{Binding Address}" Width="1.7*"/>
-          <DataGridTemplateColumn Header="Дії"
-                                  Width="200"
-                                  HeaderStyle="{StaticResource ActionsColumnHeader}">
-            <DataGridTemplateColumn.CellTemplate>
-              <DataTemplate>
-                <StackPanel Orientation="Horizontal"
-                            HorizontalAlignment="Right"
-                            Visibility="{Binding DataContext.CanManage, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibility}}">
-                  <Button Style="{StaticResource LinkButton}"
-                          Content="Редагувати"
-                          Command="{Binding DataContext.OpenEditFormCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                          CommandParameter="{Binding}"/>
-                  <TextBlock Text=" · "
-                             Foreground="{StaticResource AccentTextBrush}"
-                             VerticalAlignment="Center"/>
-                  <Button Style="{StaticResource LinkButton}"
-                          Content="Видалити"
-                          Command="{Binding DataContext.DeleteWarehouseCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                          CommandParameter="{Binding}"/>
-                </StackPanel>
-              </DataTemplate>
-            </DataGridTemplateColumn.CellTemplate>
-          </DataGridTemplateColumn>
         </DataGrid.Columns>
       </DataGrid>
     </Grid>
