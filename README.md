@@ -116,6 +116,7 @@
 - [scenarios.md](documentation/scenarios.md) — сценарії використання;
 - [architecture.md](documentation/architecture.md) — архітектура, структура рішення, модель даних, обґрунтування рішень;
 - [stage5-integration.md](documentation/stage5-integration.md) — контракти між модулями й технічні нотатки каркаса;
+- [us21-verification.md](documentation/us21-verification.md) — список накладних, фактичні перевірки та передача на Windows;
 - [diagrams/](documentation/diagrams/) — UML, ER-діаграма, wireframes.
 
 ## Налаштування бази даних
