@@ -39,6 +39,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<SupplierService>();
         services.AddSingleton<IWarehouseRepository, WarehouseRepository>();
         services.AddSingleton<WarehouseService>();
+        // Read-only invoices do not depend on the stock registration module.
+        services.AddSingleton<IStockMovementReadRepository, StockMovementReadRepository>();
+        services.AddSingleton<StockMovementQueryService>();
         return services;
     }
 }
