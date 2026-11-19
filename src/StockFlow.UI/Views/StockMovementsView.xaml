@@ -39,7 +39,7 @@
             <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
             <StackPanel>
                 <WrapPanel>
-                    <StackPanel Width="210" Margin="0,0,12,12">
+                    <StackPanel Margin="0,0,12,12">
                         <TextBlock Text="Номер накладної" Style="{StaticResource FieldLabel}"/>
                         <TextBox Style="{StaticResource SearchBox}" Tag="Пошук за номером…" Text="{Binding SearchNumber, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Пошук за номером накладної"/>
                     </StackPanel>

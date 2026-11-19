@@ -225,6 +225,8 @@
         </Setter>
     </Style>
     <Style x:Key="SearchBox" TargetType="TextBox" BasedOn="{StaticResource InputBox}">
+        <Setter Property="Width" Value="300"/>
+        <Setter Property="HorizontalAlignment" Value="Left"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="TextBox">
