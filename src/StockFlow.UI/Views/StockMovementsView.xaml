@@ -38,32 +38,37 @@
         <Grid Grid.Row="1" Margin="24" Visibility="{Binding IsListOpen, Converter={StaticResource VisibleIfTrue}}">
             <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
             <StackPanel>
-                <WrapPanel>
-                    <StackPanel Margin="0,0,12,12">
-                        <TextBlock Text="Номер накладної" Style="{StaticResource FieldLabel}"/>
-                        <TextBox Style="{StaticResource SearchBox}" Tag="Пошук за номером…" Text="{Binding SearchNumber, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Пошук за номером накладної"/>
+                <DockPanel LastChildFill="True">
+                    <StackPanel DockPanel.Dock="Right" Margin="16,0,0,12" VerticalAlignment="Top" Visibility="{Binding IsEmployee, Converter={StaticResource VisibleIfTrue}}">
+                        <TextBlock Text=" " Style="{StaticResource FieldLabel}"/>
+                        <Button Content="+ Створити" Style="{StaticResource PrimaryButton}" IsEnabled="False"/>
                     </StackPanel>
-                    <StackPanel Width="165" Margin="0,0,12,12">
-                        <TextBlock Text="Тип" Style="{StaticResource FieldLabel}"/>
-                        <ComboBox Style="{StaticResource InputComboBox}" ItemsSource="{Binding FilterTypes}" DisplayMemberPath="Name" SelectedItem="{Binding SelectedFilterType}"/>
-                    </StackPanel>
-                    <StackPanel Width="185" Margin="0,0,12,12">
-                        <TextBlock Text="Склад" Style="{StaticResource FieldLabel}"/>
-                        <ComboBox Style="{StaticResource InputComboBox}" ItemsSource="{Binding WarehouseOptions}" DisplayMemberPath="Name" SelectedItem="{Binding SelectedFilterWarehouse}"/>
-                    </StackPanel>
-                    <StackPanel Width="150" Margin="0,0,12,12">
-                        <TextBlock Text="Дата від" Style="{StaticResource FieldLabel}"/>
-                        <DatePicker Style="{StaticResource MovementDatePicker}" SelectedDate="{Binding DateFrom}"/>
-                    </StackPanel>
-                    <StackPanel Width="150" Margin="0,0,12,12">
-                        <TextBlock Text="Дата до" Style="{StaticResource FieldLabel}"/>
-                        <DatePicker Style="{StaticResource MovementDatePicker}" SelectedDate="{Binding DateTo}"/>
-                    </StackPanel>
-                </WrapPanel>
+                    <WrapPanel>
+                        <StackPanel Margin="0,0,12,12">
+                            <TextBlock Text="Номер накладної" Style="{StaticResource FieldLabel}"/>
+                            <TextBox Style="{StaticResource SearchBox}" Tag="Пошук за номером…" Text="{Binding SearchNumber, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Пошук за номером накладної"/>
+                        </StackPanel>
+                        <StackPanel Width="165" Margin="0,0,12,12">
+                            <TextBlock Text="Тип" Style="{StaticResource FieldLabel}"/>
+                            <ComboBox Style="{StaticResource InputComboBox}" ItemsSource="{Binding FilterTypes}" DisplayMemberPath="Name" SelectedItem="{Binding SelectedFilterType}"/>
+                        </StackPanel>
+                        <StackPanel Width="185" Margin="0,0,12,12">
+                            <TextBlock Text="Склад" Style="{StaticResource FieldLabel}"/>
+                            <ComboBox Style="{StaticResource InputComboBox}" ItemsSource="{Binding WarehouseOptions}" DisplayMemberPath="Name" SelectedItem="{Binding SelectedFilterWarehouse}"/>
+                        </StackPanel>
+                        <StackPanel Width="150" Margin="0,0,12,12">
+                            <TextBlock Text="Дата від" Style="{StaticResource FieldLabel}"/>
+                            <DatePicker Style="{StaticResource MovementDatePicker}" SelectedDate="{Binding DateFrom}"/>
+                        </StackPanel>
+                        <StackPanel Width="150" Margin="0,0,12,12">
+                            <TextBlock Text="Дата до" Style="{StaticResource FieldLabel}"/>
+                            <DatePicker Style="{StaticResource MovementDatePicker}" SelectedDate="{Binding DateTo}"/>
+                        </StackPanel>
+                    </WrapPanel>
+                </DockPanel>
                 <WrapPanel Margin="0,0,0,8">
                     <Button Content="Застосувати" Style="{StaticResource SecondaryButton}" Command="{Binding ApplyFiltersCommand}" Margin="0,0,10,8"/>
-                    <Button Content="Очистити" Style="{StaticResource SecondaryButton}" Command="{Binding ClearFiltersCommand}" Margin="0,0,10,8"/>
-                    <Button Content="+ Створити накладну" Style="{StaticResource PrimaryButton}" IsEnabled="False" Margin="0,0,0,8" Visibility="{Binding IsEmployee, Converter={StaticResource VisibleIfTrue}}"/>
+                    <Button Content="Очистити" Style="{StaticResource SecondaryButton}" Command="{Binding ClearFiltersCommand}" Margin="0,0,0,8"/>
                 </WrapPanel>
             </StackPanel>
             <StackPanel Grid.Row="1">
