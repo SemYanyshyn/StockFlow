@@ -55,6 +55,8 @@ void Execute(string sql, params (string Name, object Value)[] parameters)
     command.ExecuteNonQuery();
 }
 
+SchemaConstraintChecks.Run(factory, Check);
+
 Check(((ICurrentUserContext)adminContext).IsAdmin && adminId > 0, "seed admin login and role");
 var employeeContext = new AuthenticatedUserContext();
 var employeeAuth = new AuthService(() => users, hasher, employeeContext);
