@@ -26,6 +26,9 @@ jobs:
       - name: Restore
         run: dotnet restore StockFlow.sln
 
+      - name: Verify formatting
+        run: dotnet format StockFlow.sln --verify-no-changes --no-restore
+
       - name: Build
         run: dotnet build StockFlow.sln -c Release --no-restore
 
