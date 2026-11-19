@@ -25,7 +25,7 @@
             </Grid.RowDefinitions>
             <DockPanel Grid.Row="1" LastChildFill="True" Margin="0,0,0,16">
                 <Button DockPanel.Dock="Right"
-                    Content="+ Додати постачальника"
+                    Content="+ Додати"
                     Style="{StaticResource PrimaryButton}"
                     Command="{Binding OpenEditorCommand}"
                     Margin="16,0,0,0"

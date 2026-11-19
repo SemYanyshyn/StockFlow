@@ -39,7 +39,7 @@
                          Tag="Пошук за назвою..."
                          Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
                 <Button Grid.Column="2"
-                        Content="+ Додати категорію"
+                        Content="+ Додати"
                         Style="{StaticResource PrimaryButton}"
                         Command="{Binding OpenAddFormCommand}"
                         Visibility="{Binding CanManage, Converter={StaticResource BooleanToVisibility}}" />
