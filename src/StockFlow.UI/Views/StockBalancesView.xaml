@@ -35,7 +35,7 @@
 
         <TextBox Grid.Column="0"
                  Style="{StaticResource SearchBox}"
-                 Tag="Пошук за назвою товару..."
+                 Tag="Пошук за назвою..."
                  Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"/>
 
         <ComboBox Grid.Column="2"

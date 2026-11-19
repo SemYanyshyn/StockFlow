@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using StockFlow.BusinessLogic.Products;
 using StockFlow.BusinessLogic.Suppliers;
@@ -42,6 +42,8 @@ public static class ServiceCollectionExtensions
         // Read-only invoices do not depend on the stock registration module.
         services.AddSingleton<IStockMovementReadRepository, StockMovementReadRepository>();
         services.AddSingleton<StockMovementQueryService>();
+        services.AddSingleton<StockReportingQueryService>();
         return services;
     }
 }
+

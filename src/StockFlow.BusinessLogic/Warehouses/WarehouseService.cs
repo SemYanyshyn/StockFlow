@@ -39,4 +39,32 @@ public sealed class WarehouseService
 
         return _warehouseRepository.Add(warehouse);
     }
+
+    public bool Update(Warehouse warehouse)
+    {
+        if (!_currentUserContext.IsAdmin)
+            throw new InvalidOperationException("Редагувати склади може лише Адміністратор.");
+
+        ArgumentNullException.ThrowIfNull(warehouse);
+
+        var name = warehouse.Name?.Trim();
+        var address = string.IsNullOrWhiteSpace(warehouse.Address) ? null : warehouse.Address.Trim();
+
+        if (string.IsNullOrWhiteSpace(name))
+            throw new ValidationException("Назва складу обов'язкова.");
+
+        warehouse.Name = name;
+        warehouse.Address = address;
+
+        return _warehouseRepository.Update(warehouse);
+    }
+
+    public bool Delete(int id)
+    {
+        if (!_currentUserContext.IsAdmin)
+            throw new InvalidOperationException("Видаляти склади може лише Адміністратор.");
+
+        return _warehouseRepository.Delete(id);
+    }
+
 }
