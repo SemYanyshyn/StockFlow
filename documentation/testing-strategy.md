@@ -12,9 +12,9 @@
 
 | Рівень | Проєкт | Що перевіряє | Інструмент | Кількість | Де запускається |
 |---|---|---|---|---|---|
-| Модульні | `tests/StockFlow.Tests` | домен, сервіси, реєстрація DI, конфігурація; без бази | xUnit, ручні фейки | 360 тестів | CI на кожен PR і push у `main`; локально `dotnet test` |
-| Перевірки БД | `tests/StockFlow.DatabaseChecks` | репозиторії на справжній PostgreSQL, обмеження схеми, ICU-унікальність, конкурентні зміни, міграції | консольна програма, Npgsql | 32 перевірки | вручну, `scripts/Verify-Isolated.ps1` |
-| Перевірки WPF | `tests/StockFlow.WindowsChecks` | ViewModel і XAML реальних екранів: вхід, постачальники, користувачі, права ролей, помилки підключення | консольна програма, WPF Dispatcher | 27 перевірок | вручну, той самий скрипт (Windows) |
+| Модульні | `tests/StockFlow.Tests` | домен, сервіси, реєстрація DI, конфігурація; без бази | xUnit, ручні фейки | 360 тестів | CI для PR у `main` і push у `main`; локально `dotnet test` |
+| Перевірки БД | `tests/StockFlow.DatabaseChecks` | репозиторії на справжній PostgreSQL, обмеження схеми, ICU-унікальність, конкурентні зміни | консольна програма, Npgsql | 32 перевірки | ізольований локальний прогін і пілотний job `database-checks` |
+| Перевірки WPF | `tests/StockFlow.WindowsChecks` | ViewModel і XAML реальних екранів: вхід, постачальники, користувачі, права ролей, помилки підключення | консольна програма, WPF Dispatcher | 27 перевірок | `scripts/Verify-Isolated.ps1` і пілотний job `windows-checks` |
 | Перевірки накладних | `tests/StockFlow.MovementChecks` | запити списку накладних на справжній PostgreSQL | консольна програма, Npgsql | 15 перевірок | вручну, `scripts/Verify-Movements-Isolated.sh` |
 
 Перевірки БД і WPF запускаються окремо від `StockFlow.sln` з PostgreSQL із підтримкою ICU. Для WPF потрібна Windows. Обидві програми приймають лише рядок підключення до БД `stockflow_isolated_*` на loopback-адресі.
@@ -90,13 +90,13 @@ dotnet test StockFlow.sln --filter "FullyQualifiedName~CategoryServiceTests"
 
 ## 8. CI
 
-Workflow [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) на кожен PR і push у `main` виконує restore, Release-збірку й модульні тести. Перевірка `build-and-test` обов'язкова для `main`: без неї PR не змерджити.
+Workflow `CI` запускається для PR у `main` та push у `main`. Перевірка `build-and-test` обов’язкова для злиття у `main`. [Конфігурація workflow](../.github/workflows/ci.yml)
 
-На `main` станом на `b7683c7` діє `build-and-test`. MA7-2 додає до цього job форматування, збірку з `-warnaserror` і звіт про покриття xUnit. Порядок локального запуску та шлях до звіту наведено в [README](../README.md#ci).
+У базовій конфігурації `main` (`b7683c7`) `build-and-test` на Windows виконує restore, Release-збірку й xUnit. PR #248 додає перевірку форматування, збірку з `-warnaserror` і звіт про покриття xUnit. GitHub-прогін зупинився на форматуванні. Для наступного прогону потрібен #252. [Прогін #248](https://github.com/SemYanyshyn/StockFlow/actions/runs/44612737011) · [Локальний запуск і звіт](../README.md#ci)
 
-Для MA7-5 обрано варіант A. `DatabaseChecks` та її залежності мають цільову платформу `net8.0`. В окремому job `database-checks` на Ubuntu PostgreSQL 16 з ICU працює як сервіс. `psql` застосовує схему та seed, після чого `dotnet run` використовує `STOCKFLOW_TEST_CONNECTION` з loopback-адресою й іменем `stockflow_isolated_ci`. Локально підтверджено на Ubuntu 24.04 у WSL з PostgreSQL 16.15 та locale C.
+Для MA7-5 обрано варіант A. `DatabaseChecks` та її залежності мають цільову платформу `net8.0`. В окремому job `database-checks` на Ubuntu PostgreSQL 16 з ICU працює як сервіс. `psql` застосовує схему та seed, після чого `dotnet run` використовує `STOCKFLOW_TEST_CONNECTION` з loopback-адресою й іменем `stockflow_isolated_ci`. У пілотному прогоні #249 цей job успішно виконав 55 перевірок БД. [Журнал `database-checks`](https://github.com/SemYanyshyn/StockFlow/actions/runs/44612768357/job/135873402995)
 
-У `windows-checks` скрипт `Verify-Isolated.ps1` створює тимчасовий кластер і запускає перевірки БД, WPF та міграцій. `WindowsChecks` має цільову платформу `net8.0-windows` і програмно рендерить WPF через STA Dispatcher. Локально пройшли 27 WPF-перевірок. Кожному новому job потрібні п’ять успішних запусків поспіль на GitHub Actions для рішення про його обов’язковість.
+У `windows-checks` скрипт `Verify-Isolated.ps1` створює тимчасовий кластер і запускає перевірки БД, WPF та міграцій. `WindowsChecks` має цільову платформу `net8.0-windows` і програмно рендерить WPF через STA Dispatcher. У пілотному прогоні #249 пройшли 55 перевірок БД, 27 WPF-перевірок і міграції. Кожному новому job потрібні п’ять успішних запусків поспіль на GitHub Actions для рішення про його обов’язковість. [Журнал `windows-checks`](https://github.com/SemYanyshyn/StockFlow/actions/runs/44612768357/job/135873402588)
 
 ## 9. Баги й регресії
 

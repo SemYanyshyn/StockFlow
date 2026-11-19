@@ -247,7 +247,7 @@ dotnet run --project src/StockFlow.UI/StockFlow.UI.csproj -c Release --no-build
 
 [![CI](https://github.com/SemYanyshyn/StockFlow/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/SemYanyshyn/StockFlow/actions/workflows/ci.yml?query=branch%3Amain)
 
-На `main` станом на `b7683c7` job `build-and-test` на `windows-latest` виконує restore, Release-збірку й xUnit для PR у `main` та push у `main`. Гілка `feature/ci-quality-checks` додає перевірку форматування, сувору збірку та покриття. Гілка `feature/ci-integration-checks` містить окремі jobs для пілотних прогонів PostgreSQL і WPF.
+Workflow `CI` запускається для PR у `main` і push у `main`. У базовій конфігурації `main` (`b7683c7`) job `build-and-test` на `windows-latest` виконує restore, Release-збірку й xUnit. PR #248 додає перевірку форматування, збірку з `-warnaserror` і звіт про покриття. Його прогін очікує форматування з #252. PR #249 додає окремі jobs для PostgreSQL і WPF. Обидва jobs пройшли пілотний прогін, у якому `build-and-test` зупинився на форматуванні. [PR #248](https://github.com/SemYanyshyn/StockFlow/pull/248) · [Прогін #249](https://github.com/SemYanyshyn/StockFlow/actions/runs/44612768357)
 
 У PowerShell з кореня репозиторію виконайте команди для гілки з оновленим workflow і `coverlet.collector`.
 
@@ -258,7 +258,7 @@ dotnet build StockFlow.sln -c Release --no-restore -warnaserror
 dotnet test tests/StockFlow.Tests/StockFlow.Tests.csproj -c Release --no-build --no-restore --collect 'XPlat Code Coverage' --results-directory TestResults/ci
 ```
 
-Після успішного запуску в GitHub Actions відкрийте **Summary**, щоб переглянути покриття. У **Artifacts** завантажте `coverage-html`, розпакуйте архів і відкрийте `index.html`. Артефакт зберігається 14 днів. Покриття публікується як метрика без порога.
+Після успішного `build-and-test` за workflow з #248 відкрийте **Summary**, щоб переглянути покриття. У **Artifacts** завантажте `coverage-html`, розпакуйте архів і відкрийте `index.html`. Артефакт зберігається 14 днів. Покриття публікується як метрика без порога.
 
 Для локального HTML-звіту використайте той самий ReportGenerator. Запускайте збір покриття з порожнім каталогом результатів, щоб звіт охоплював один прогін.
 
@@ -271,4 +271,4 @@ dotnet tool install dotnet-reportgenerator-globaltool --version 5.4.12 --tool-pa
 
 Якщо CI падає, відкрийте перший червоний крок і відтворіть його команду локально. Для форматування застосуйте `dotnet format StockFlow.sln` і перегляньте diff. Для збірки виправте причину за кодом діагностики. Для xUnit відтворіть тест із `--filter 'FullyQualifiedName~НазваТесту'`, виправте причину й повторіть повний прогін. Надішліть виправлення в той самий PR і дочекайтеся зеленого запуску.
 
-Для перевірок БД обрано PostgreSQL 16 з ICU в окремому Linux job. Він завантажує `01_schema.sql` і `02_seed.sql` у `stockflow_isolated_ci`, а потім запускає `StockFlow.DatabaseChecks` через `STOCKFLOW_TEST_CONNECTION` на `127.0.0.1`. Для Windows job використовується `Verify-Isolated.ps1` і бінарні файли PostgreSQL з `PGBIN`. WPF-прогін працює з STA Dispatcher і зберігає PNG-рендери локально в `TestResults/windows-checks`. Для кожного пілотного job потрібні п’ять послідовних успішних запусків GitHub Actions перед додаванням до обов’язкових перевірок. [Стратегія тестування](documentation/testing-strategy.md#8-ci)
+Job `database-checks` використовує PostgreSQL 16 з ICU на Ubuntu. Він завантажує `01_schema.sql` і `02_seed.sql` у `stockflow_isolated_ci`, а потім запускає `StockFlow.DatabaseChecks` через `STOCKFLOW_TEST_CONNECTION` на `127.0.0.1`. Job `windows-checks` запускає `Verify-Isolated.ps1` з бінарними файлами PostgreSQL з `PGBIN` і перевіряє БД, WPF та міграції. WPF-прогін працює з STA Dispatcher і зберігає PNG-рендери в `TestResults/windows-checks`. Для кожного пілотного job потрібні п’ять послідовних успішних запусків GitHub Actions перед додаванням до обов’язкових перевірок. [Стратегія тестування](documentation/testing-strategy.md#8-ci)
