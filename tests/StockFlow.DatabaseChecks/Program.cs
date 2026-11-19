@@ -112,6 +112,59 @@ catch (DuplicateNameException) { Check(true, "ICU unique index rejects Напо�
 Check((bool)Scalar("SELECT 'ЇЄІҐ' COLLATE stockflow_case_insensitive = 'їєіґ' COLLATE stockflow_case_insensitive"), "Ukrainian Cyrillic case mapping");
 Check(!(bool)Scalar("SELECT 'ї' COLLATE stockflow_case_insensitive = 'і' COLLATE stockflow_case_insensitive"), "ICU keeps Ukrainian accents distinct");
 
+// Product and category repositories against the real schema, with their services where they read repository data.
+var products = new ProductRepository(factory);
+var categoryService = new CategoryService(categories, adminContext);
+var productService = new ProductService(products, adminContext);
+void ExpectRejected<TException>(Action action, string description, Func<TException, bool>? matches = null) where TException : Exception
+{
+    try { action(); throw new InvalidOperationException("Expected rejection: " + description); }
+    catch (TException error) when (matches is null || matches(error)) { Check(true, description); }
+}
+
+var categoryId = categories.Add(new Category { Name = "Категорія " + suffix });
+Check(categories.GetAll().Any(c => c.Id == categoryId && c.Name == "Категорія " + suffix), "category Add returns id, GetAll reads it");
+Check(categories.Update(new Category { Id = categoryId, Name = "Перейменована " + suffix }) &&
+    categories.GetAll().Single(c => c.Id == categoryId).Name == "Перейменована " + suffix, "category Update saves new name");
+Check(!categories.Update(new Category { Id = -1, Name = "Немає " + suffix }), "category Update of missing id returns false");
+ExpectRejected<DuplicateNameException>(() => categories.Update(new Category { Id = categoryId, Name = "НАПОЇ" }),
+    "category Update to Напої in other case: 23505 translated");
+
+var productId = products.Add(new Product { Name = "Товар " + suffix, Unit = UnitOfMeasure.Kilogram, CategoryId = categoryId });
+var storedProduct = products.GetById(productId);
+Check(storedProduct is { Unit: UnitOfMeasure.Kilogram } && storedProduct.Name == "Товар " + suffix && storedProduct.CategoryId == categoryId &&
+    (string)Scalar("SELECT unit FROM products WHERE id=@id", ("id", productId)) == "kg", "product Add and GetById map unit kg both ways");
+Check(products.GetAll().Any(p => p.Id == productId), "product GetAll reads new product");
+Check(products.GetById(-1) is null, "product GetById of missing id returns null");
+Check(products.Update(new Product { Id = productId, Name = "Оновлений " + suffix, Unit = UnitOfMeasure.Liter, CategoryId = categoryId }) &&
+    products.GetById(productId) is { Unit: UnitOfMeasure.Liter } updated && updated.Name == "Оновлений " + suffix, "product Update saves name and unit");
+Check(!products.Update(new Product { Id = -1, Name = "Немає " + suffix, Unit = UnitOfMeasure.Piece, CategoryId = categoryId }),
+    "product Update of missing id returns false");
+ExpectRejected<PostgresException>(() => products.Add(new Product { Name = "Без категорії " + suffix, Unit = UnitOfMeasure.Piece, CategoryId = -1 }),
+    "product with missing category rejected by FK 23503", error => error.SqlState == PostgresErrorCodes.ForeignKeyViolation);
+
+Check(categories.CountProducts(categoryId) == 1, "CountProducts counts products of the category");
+ExpectRejected<RecordInUseException>(() => categories.Delete(categoryId), "category with products: RESTRICT 23503 translated");
+ExpectValidation(() => categoryService.Delete(categoryId), "Категорію не можна видалити: у ній 1 товар.");
+
+Check(!products.HasRelatedRecords(productId), "HasRelatedRecords is false without stock and movements");
+Execute("INSERT INTO stock(product_id, warehouse_id, quantity) VALUES(@product, (SELECT min(id) FROM warehouses), 5)", ("product", productId));
+Check(products.HasRelatedRecords(productId), "HasRelatedRecords is true with stock");
+ExpectValidation(() => productService.Update(productId, "Оновлений " + suffix, categoryId, UnitOfMeasure.Piece), ProductService.UnitLockedMessage);
+ExpectRejected<RecordInUseException>(() => products.Delete(productId), "product with stock: RESTRICT 23503 translated");
+Execute("DELETE FROM stock WHERE product_id=@product", ("product", productId));
+Execute("INSERT INTO stock_movements(number,type,product_id,warehouse_id,user_id,quantity,movement_date) VALUES(@number,'write_off',@product,(SELECT min(id) FROM warehouses),@user,1,CURRENT_TIMESTAMP)",
+    ("number", "product_check_" + suffix), ("product", productId), ("user", adminId));
+Check(products.HasRelatedRecords(productId), "HasRelatedRecords is true with a movement only");
+ExpectRejected<RecordInUseException>(() => products.Delete(productId), "product with movement: RESTRICT 23503 translated");
+Execute("DELETE FROM stock_movements WHERE product_id=@product", ("product", productId));
+
+Check(products.Delete(productId) && products.GetById(productId) is null, "unused product deleted");
+Check(!products.Delete(productId), "product Delete of missing id returns false");
+Check(categories.CountProducts(categoryId) == 0 && categories.Delete(categoryId) && categories.GetAll().All(c => c.Id != categoryId),
+    "empty category deleted");
+Check(!categories.Delete(categoryId), "category Delete of missing id returns false");
+
 // Every pair starts with exactly two active admins. Both threads begin together, on independent connections.
 foreach (var operation in new[] { "demote", "block", "delete" })
 {
