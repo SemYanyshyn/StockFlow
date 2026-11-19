@@ -3,10 +3,12 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:StockFlow.UI.ViewModels"
         xmlns:views="clr-namespace:StockFlow.UI.Views"
+        xmlns:converters="clr-namespace:StockFlow.UI.Converters"
         Title="StockFlow" Height="600" Width="1000"
         WindowStartupLocation="CenterScreen">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <converters:ActiveSectionConverter x:Key="ActiveSectionConverter"/>
         <DataTemplate DataType="{x:Type vm:ProductsViewModel}">
             <views:ProductsView/>
         </DataTemplate>
@@ -39,17 +41,25 @@
         </Grid.ColumnDefinitions>
         <StackPanel Grid.Column="0" Background="{StaticResource SidebarBackgroundBrush}" VerticalAlignment="Stretch">
             <TextBlock Text="StockFlow" FontSize="18" FontWeight="Bold" Foreground="{StaticResource PrimaryTextBrush}" Margin="24,32,0,32"/>
-            <Button Style="{StaticResource SidebarButton}" Content="Товари" Command="{Binding NavigateProductsCommand}" Margin="16,0,0,4"/>
-            <Button Style="{StaticResource SidebarButton}" Content="Категорії" Command="{Binding NavigateCategoriesCommand}" Margin="16,0,0,4"/>
-            <Button Style="{StaticResource SidebarButton}" Content="Постачальники" Command="{Binding NavigateSuppliersCommand}" Margin="16,0,0,4"/>
-            <Button Style="{StaticResource SidebarButton}" Content="Накладні" Command="{Binding NavigateMovementsCommand}" Margin="16,0,0,4"/>
-            <Button Style="{StaticResource SidebarButton}" Content="Залишки" Command="{Binding NavigateStockCommand}" Margin="16,0,0,4"/>
-            <Button Style="{StaticResource SidebarButton}" Content="Склади" Command="{Binding NavigateWarehousesCommand}" Margin="16,0,0,4"/>
-            <Button Style="{StaticResource SidebarButton}" Content="Звітність" Command="{Binding NavigateReportsCommand}" Margin="16,0,0,4"/>
+            <TextBlock Style="{StaticResource SidebarCaption}" Text="Розділи"/>
+            <Button Style="{StaticResource SidebarButton}" Content="Товари" Command="{Binding NavigateProductsCommand}"
+                    Tag="{Binding Navigation.CurrentView, Converter={StaticResource ActiveSectionConverter}, ConverterParameter={x:Type vm:ProductsViewModel}}"/>
+            <Button Style="{StaticResource SidebarButton}" Content="Категорії" Command="{Binding NavigateCategoriesCommand}"
+                    Tag="{Binding Navigation.CurrentView, Converter={StaticResource ActiveSectionConverter}, ConverterParameter={x:Type vm:CategoriesViewModel}}"/>
+            <Button Style="{StaticResource SidebarButton}" Content="Постачальники" Command="{Binding NavigateSuppliersCommand}"
+                    Tag="{Binding Navigation.CurrentView, Converter={StaticResource ActiveSectionConverter}, ConverterParameter={x:Type vm:SuppliersViewModel}}"/>
+            <Button Style="{StaticResource SidebarButton}" Content="Накладні" Command="{Binding NavigateMovementsCommand}"
+                    Tag="{Binding Navigation.CurrentView, Converter={StaticResource ActiveSectionConverter}, ConverterParameter={x:Type vm:StockMovementsViewModel}}"/>
+            <Button Style="{StaticResource SidebarButton}" Content="Залишки" Command="{Binding NavigateStockCommand}"
+                    Tag="{Binding Navigation.CurrentView, Converter={StaticResource ActiveSectionConverter}, ConverterParameter={x:Type vm:StockBalancesViewModel}}"/>
+            <Button Style="{StaticResource SidebarButton}" Content="Склади" Command="{Binding NavigateWarehousesCommand}"
+                    Tag="{Binding Navigation.CurrentView, Converter={StaticResource ActiveSectionConverter}, ConverterParameter={x:Type vm:WarehousesViewModel}}"/>
+            <Button Style="{StaticResource SidebarButton}" Content="Звітність" Command="{Binding NavigateReportsCommand}"
+                    Tag="{Binding Navigation.CurrentView, Converter={StaticResource ActiveSectionConverter}, ConverterParameter={x:Type vm:ReportsViewModel}}"/>
             <Button Style="{StaticResource SidebarButton}" Content="Користувачі"
                     Command="{Binding NavigateUsersCommand}"
-                    Visibility="{Binding IsAdmin, Converter={StaticResource BooleanToVisibilityConverter}}"
-                    Margin="16,0,0,4"/>
+                    Tag="{Binding Navigation.CurrentView, Converter={StaticResource ActiveSectionConverter}, ConverterParameter={x:Type vm:UsersViewModel}}"
+                    Visibility="{Binding IsAdmin, Converter={StaticResource BooleanToVisibilityConverter}}"/>
         </StackPanel>
         <Border Grid.Column="1" Background="{StaticResource BackgroundBrush}" Padding="0">
             <ContentControl Content="{Binding Navigation.CurrentView}"/>
