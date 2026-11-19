@@ -55,3 +55,70 @@ jobs:
             !TestResults/coverage/SummaryGithub.md
           if-no-files-found: error
           retention-days: 14
+
+  database-checks:
+    name: database-checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    services:
+      postgres:
+        image: postgres:16-bookworm
+        env:
+          POSTGRES_USER: stockflow_check
+          POSTGRES_PASSWORD: stockflow_ci
+          POSTGRES_DB: stockflow_isolated_ci
+          POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+        ports:
+          - "127.0.0.1:55432:5432"
+        options: >-
+          --health-cmd "pg_isready -h 127.0.0.1 -U stockflow_check -d stockflow_isolated_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 55432
+      PGDATABASE: stockflow_isolated_ci
+      PGUSER: stockflow_check
+      PGPASSWORD: stockflow_ci
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Initialize isolated database
+        run: psql -X -v ON_ERROR_STOP=1 -f database/01_schema.sql -f database/02_seed.sql
+
+      - name: Run database checks
+        run: |
+          export STOCKFLOW_TEST_CONNECTION="Host=$PGHOST;Port=$PGPORT;Database=$PGDATABASE;Username=$PGUSER;Password=$PGPASSWORD;Timeout=3;Command Timeout=15"
+          dotnet run --project tests/StockFlow.DatabaseChecks/StockFlow.DatabaseChecks.csproj -c Release
+
+  windows-checks:
+    name: windows-checks
+    runs-on: windows-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Run isolated PostgreSQL and WPF checks
+        shell: powershell
+        run: |
+          if (-not $env:PGBIN -or -not (Test-Path (Join-Path $env:PGBIN 'initdb.exe'))) {
+            throw 'The Windows runner must provide PostgreSQL binaries in PGBIN.'
+          }
+          .\scripts\Verify-Isolated.ps1 -PostgreSqlBin $env:PGBIN
