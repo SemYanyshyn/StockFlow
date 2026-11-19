@@ -1,46 +1,36 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="2000" height="1100" viewBox="0 0 2000 1100" role="img" aria-labelledby="title description">
 <title id="title">StockFlow — Головне меню</title>
-<desc id="description">Редагований макет StockFlow. Світла палітра; створення руху доступне лише Працівнику.</desc>
+<desc id="description">Редагований макет StockFlow. Головне вікно з бічним навігаційним меню та відкритим розділом «Склади»; «Користувачі» та «+ Додати» бачить лише Адміністратор.</desc>
 <g font-family="Arial, sans-serif">
 <rect x="0" y="0" width="2000" height="1100" rx="0" fill="white" stroke="none" stroke-width="2"/>
 <rect x="40" y="40" width="1920" height="960" rx="0" fill="white" stroke="#999" stroke-width="2"/>
-<rect x="40" y="40" width="1920" height="112" rx="0" fill="#f5f4f0" stroke="#999" stroke-width="2"/>
-<text x="72" y="116" font-size="40" font-weight="700" fill="#29323a">StockFlow — Головне меню</text>
-<text x="72" y="212" font-size="30" font-weight="700" fill="#29323a">Швидкі дії</text>
-<rect x="72" y="240" width="580" height="220" rx="12" fill="#fffdf8" stroke="#cc7900" stroke-width="2"/>
-<text x="104" y="300" font-size="30" font-weight="700" fill="#29323a">Надходження товару*</text>
-<text x="104" y="345" font-size="25" fill="#7e858b">Зареєструвати надходження</text>
-<rect x="104" y="372" width="238" height="62" rx="8" fill="#fceacb" stroke="#cc7900" stroke-width="2"/><text x="134" y="412.0" font-size="26" font-weight="700" fill="#8f5300">+ Створити</text>
-<rect x="692" y="240" width="580" height="220" rx="12" fill="white" stroke="#999" stroke-width="2"/>
-<text x="724" y="300" font-size="30" font-weight="700" fill="#29323a">Списання товару*</text>
-<text x="724" y="345" font-size="25" fill="#7e858b">Зареєструвати списання</text>
-<rect x="724" y="372" width="238" height="62" rx="8" fill="white" stroke="#999" stroke-width="2"/><text x="754" y="412.0" font-size="26" fill="#29323a">+ Створити</text>
-<rect x="1312" y="240" width="580" height="220" rx="12" fill="white" stroke="#999" stroke-width="2"/>
-<text x="1344" y="300" font-size="30" font-weight="700" fill="#29323a">Накладні</text>
-<text x="1344" y="345" font-size="25" fill="#7e858b">Переглянути та знайти накладну</text>
-<rect x="1344" y="372" width="238" height="62" rx="8" fill="white" stroke="#999" stroke-width="2"/><text x="1374" y="412.0" font-size="26" fill="#29323a">Відкрити →</text>
-<text x="72" y="520" font-size="30" font-weight="700" fill="#29323a">Останні операції</text>
-<rect x="72" y="560" width="1820" height="64" rx="0" fill="#eeeee9" stroke="#ccc" stroke-width="2"/>
-<text x="104" y="603" font-size="26" font-weight="700" fill="#29323a">№ накладної</text>
-<text x="560" y="603" font-size="26" font-weight="700" fill="#29323a">Дата</text>
-<text x="980" y="603" font-size="26" font-weight="700" fill="#29323a">Тип</text>
-<text x="1460" y="603" font-size="26" font-weight="700" fill="#29323a">Склад</text>
-<rect x="72" y="624" width="1820" height="72" rx="0" fill="white" stroke="#ddd" stroke-width="2"/>
-<text x="104" y="670" font-size="26" fill="#29323a">НК-016</text>
-<text x="560" y="670" font-size="26" fill="#29323a">30.10.2026</text>
-<text x="980" y="670" font-size="26" fill="#29323a">Надходження</text>
-<text x="1460" y="670" font-size="26" fill="#29323a">Склад №1</text>
-<rect x="72" y="696" width="1820" height="72" rx="0" fill="#f7f7f4" stroke="#ddd" stroke-width="2"/>
-<text x="104" y="742" font-size="26" fill="#29323a">НК-015</text>
-<text x="560" y="742" font-size="26" fill="#29323a">29.10.2026</text>
-<text x="980" y="742" font-size="26" fill="#29323a">Списання</text>
-<text x="1460" y="742" font-size="26" fill="#29323a">Склад №1</text>
-<rect x="72" y="768" width="1820" height="72" rx="0" fill="white" stroke="#ddd" stroke-width="2"/>
-<text x="104" y="814" font-size="26" fill="#29323a">НК-014</text>
-<text x="560" y="814" font-size="26" fill="#29323a">29.10.2026</text>
-<text x="980" y="814" font-size="26" fill="#29323a">Надходження</text>
-<text x="1460" y="814" font-size="26" fill="#29323a">Склад №2</text>
-<rect x="1580" y="880" width="312" height="72" rx="8" fill="#fceacb" stroke="#cc7900" stroke-width="2"/><text x="1610" y="925.0" font-size="26" font-weight="700" fill="#8f5300">Усі накладні →</text>
-<text x="72" y="1044" font-size="25" font-style="italic" fill="#666">* Дія доступна лише Працівнику. Адміністратор переглядає рухи, але не створює їх.</text>
+<rect x="40" y="40" width="400" height="960" rx="0" fill="#f9f9f6" stroke="#999" stroke-width="2"/>
+<text x="72" y="116" font-size="36" font-weight="700" fill="#29323a">StockFlow</text>
+<text x="96" y="196" font-size="25" fill="#7e858b">Розділи</text>
+<text x="96" y="266" font-size="28" font-weight="700" fill="#29323a">Товари</text>
+<text x="96" y="350" font-size="28" font-weight="700" fill="#29323a">Категорії</text>
+<text x="96" y="434" font-size="28" font-weight="700" fill="#29323a">Постачальники</text>
+<text x="96" y="518" font-size="28" font-weight="700" fill="#29323a">Накладні</text>
+<text x="96" y="602" font-size="28" font-weight="700" fill="#29323a">Залишки</text>
+<rect x="64" y="640" width="352" height="68" rx="8" fill="#fceacb" stroke="#cc7900" stroke-width="2"/><text x="96" y="686" font-size="28" font-weight="700" fill="#8f5300">Склади</text>
+<text x="96" y="770" font-size="28" font-weight="700" fill="#29323a">Звітність</text>
+<rect x="64" y="808" width="352" height="68" rx="8" fill="none" stroke="#999" stroke-width="2" stroke-dasharray="8 6"/><text x="96" y="854" font-size="28" font-weight="700" fill="#29323a">Користувачі*</text>
+<rect x="440" y="40" width="1520" height="112" rx="0" fill="#f5f4f0" stroke="#999" stroke-width="2"/>
+<text x="480" y="116" font-size="40" font-weight="700" fill="#29323a">StockFlow — Склади</text>
+<rect x="480" y="192" width="520" height="72" rx="8" fill="white" stroke="#999" stroke-width="2"/>
+<circle cx="520" cy="224" r="11" fill="none" stroke="#7e858b" stroke-width="2.5"/>
+<line x1="512" y1="232" x2="502" y2="243" stroke="#7e858b" stroke-width="2.5" stroke-linecap="round"/>
+<text x="550" y="237" font-size="25" font-style="italic" fill="#999">Пошук за назвою…</text>
+<rect x="1652" y="192" width="240" height="72" rx="8" fill="#fceacb" stroke="#cc7900" stroke-width="2"/><text x="1684" y="238" font-size="26" font-weight="700" fill="#8f5300">+ Додати*</text>
+<rect x="480" y="300" width="1412" height="64" rx="0" fill="#eeeee9" stroke="#ccc" stroke-width="2"/>
+<text x="512" y="343" font-size="26" font-weight="700" fill="#29323a">Назва</text>
+<text x="1112" y="343" font-size="26" font-weight="700" fill="#29323a">Адреса / Місто</text>
+<rect x="480" y="364" width="1412" height="72" rx="0" fill="white" stroke="#ddd" stroke-width="2"/>
+<text x="512" y="410" font-size="26" fill="#29323a">Основний склад</text>
+<text x="1112" y="410" font-size="26" fill="#29323a">м. Київ, вул. Складська, 1</text>
+<rect x="480" y="436" width="1412" height="72" rx="0" fill="#f7f7f4" stroke="#ddd" stroke-width="2"/>
+<text x="512" y="482" font-size="26" fill="#29323a">Склад №2</text>
+<text x="72" y="1040" font-size="25" font-style="italic" fill="#666">* Пункт «Користувачі» та кнопку «+ Додати» бачить лише Адміністратор.</text>
+<text x="72" y="1076" font-size="25" font-style="italic" fill="#666">Кожен пункт меню відкриває свій розділ праворуч; після входу відкриваються «Склади».</text>
 </g>
 </svg>

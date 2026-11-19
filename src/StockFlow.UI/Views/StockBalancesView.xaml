@@ -14,7 +14,7 @@
     </Grid.RowDefinitions>
 
     <Border Grid.Row="0" Style="{StaticResource PageHeader}">
-      <TextBlock Text="StockFlow — Залишки" Style="{StaticResource PageHeaderText}"/>
+      <TextBlock Text="Залишки" Style="{StaticResource PageHeaderText}"/>
     </Border>
 
     <Grid Grid.Row="1" Margin="24">

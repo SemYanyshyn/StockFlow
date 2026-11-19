@@ -181,8 +181,11 @@ private void NavigateExample()
 <Button
     Command="{Binding NavigateExampleCommand}"
     Content="Назва розділу"
-    Style="{StaticResource SidebarButton}"/>
+    Style="{StaticResource SidebarButton}"
+    Tag="{Binding Navigation.CurrentView, Converter={StaticResource ActiveSectionConverter}, ConverterParameter={x:Type vm:ExampleViewModel}}"/>
 ```
+
+Прив'язка `Tag` підсвічує пункт меню, коли відкрито його розділ.
 
 ---
 
