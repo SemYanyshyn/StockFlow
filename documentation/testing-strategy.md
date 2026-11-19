@@ -17,7 +17,7 @@
 | Перевірки WPF | `tests/StockFlow.WindowsChecks` | ViewModel і XAML реальних екранів: вхід, постачальники, користувачі, права ролей, помилки підключення | консольна програма, WPF Dispatcher | 27 перевірок | вручну, той самий скрипт (Windows) |
 | Перевірки накладних | `tests/StockFlow.MovementChecks` | запити списку накладних на справжній PostgreSQL | консольна програма, Npgsql | 15 перевірок | вручну, `scripts/Verify-Movements-Isolated.sh` |
 
-Перевірки БД і WPF навмисно не входять у `StockFlow.sln` і CI: їм потрібні PostgreSQL з ICU і Windows. Кожна працює лише з тимчасовою базою `stockflow_isolated_*` на loopback-адресі й відмовляється запускатися з іншим рядком підключення.
+Перевірки БД і WPF запускаються окремо від `StockFlow.sln` з PostgreSQL із підтримкою ICU. Для WPF потрібна Windows. Обидві програми приймають лише рядок підключення до БД `stockflow_isolated_*` на loopback-адресі.
 
 ## 3. Що де тестуємо
 
@@ -67,11 +67,36 @@ dotnet test StockFlow.sln --filter "FullyQualifiedName~CategoryServiceTests"
 
 `-SkipWindowsChecks` пропускає WPF-перевірки. Журнали й рендери скрипт кладе в `TestResults/`, Git їх ігнорує.
 
+Для ручного прогону на Linux потрібні .NET SDK 8, Python 3 і бінарні файли PostgreSQL 16 з ICU. Запустіть з кореня репозиторію.
+
+```bash
+(
+  set -e
+  pg_bin=$(pg_config --bindir)
+  cluster=$(mktemp -d)
+  port=$(python3 -c 'import socket; s = socket.socket(); s.bind(("127.0.0.1", 0)); print(s.getsockname()[1])')
+  "$pg_bin/initdb" -D "$cluster/data" --encoding=UTF8 --locale=C --auth=trust -U stockflow_check
+  "$pg_bin/pg_ctl" -D "$cluster/data" -l "$cluster/server.log" -o "-h 127.0.0.1 -p $port -k $cluster" -w start
+  trap '"$pg_bin/pg_ctl" -D "$cluster/data" -m fast -w stop' EXIT
+  export PGHOST=127.0.0.1 PGPORT="$port" PGUSER=stockflow_check PGDATABASE=stockflow_isolated_ci
+  "$pg_bin/createdb" "$PGDATABASE"
+  "$pg_bin/psql" -X -v ON_ERROR_STOP=1 -f database/01_schema.sql -f database/02_seed.sql
+  export STOCKFLOW_TEST_CONNECTION="Host=$PGHOST;Port=$PGPORT;Database=$PGDATABASE;Username=$PGUSER;Timeout=3;Command Timeout=15"
+  dotnet run --project tests/StockFlow.DatabaseChecks/StockFlow.DatabaseChecks.csproj -c Release
+)
+```
+
+Після завершення PostgreSQL зупиниться. Шлях до тимчасового каталогу покаже `initdb`.
+
 ## 8. CI
 
 Workflow [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) на кожен PR і push у `main` виконує restore, Release-збірку й модульні тести. Перевірка `build-and-test` обов'язкова для `main`: без неї PR не змерджити.
 
-Перевірки БД і WPF у CI не запускаються (див. розділ 2). Чи можна їх туди перенести, з'ясовує задача MA7-5; додаткові перевірки якості (попередження як помилки, форматування, покриття) додає MA7-2. Розділ оновимо за їхніми результатами.
+На `main` станом на `b7683c7` діє `build-and-test`. MA7-2 додає до цього job форматування, збірку з `-warnaserror` і звіт про покриття xUnit. Порядок локального запуску та шлях до звіту наведено в [README](../README.md#ci).
+
+Для MA7-5 обрано варіант A. `DatabaseChecks` та її залежності мають цільову платформу `net8.0`. В окремому job `database-checks` на Ubuntu PostgreSQL 16 з ICU працює як сервіс. `psql` застосовує схему та seed, після чого `dotnet run` використовує `STOCKFLOW_TEST_CONNECTION` з loopback-адресою й іменем `stockflow_isolated_ci`. Локально підтверджено на Ubuntu 24.04 у WSL з PostgreSQL 16.15 та locale C.
+
+У `windows-checks` скрипт `Verify-Isolated.ps1` створює тимчасовий кластер і запускає перевірки БД, WPF та міграцій. `WindowsChecks` має цільову платформу `net8.0-windows` і програмно рендерить WPF через STA Dispatcher. Локально пройшли 27 WPF-перевірок. Кожному новому job потрібні п’ять успішних запусків поспіль на GitHub Actions для рішення про його обов’язковість.
 
 ## 9. Баги й регресії
 
@@ -84,7 +109,7 @@ Workflow [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) на коже
 ## 11. Обмеження й прогалини
 
 - Екрани «Товари» й «Категорії» не мають WPF-перевірок: їх перевіряли вручну в PR (скріншоти) і UI Automation-скриптами, які в репозиторій не входять.
-- Перевірки БД і WPF не запускаються автоматично (розділ 8).
+- До підтвердження стабільності нових jobs для контрольного прогону БД і WPF використовуйте локальний скрипт (розділи 7 і 8).
 - Модулі залишків і звітів на момент написання ще без бізнес-логіки, тож і без тестів (задачі SA7-1 – SA7-4).
 - Покриття коду показуємо як інформацію, а не як вимогу (після MA7-2).
 
