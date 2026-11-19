@@ -32,7 +32,6 @@
                     Visibility="{Binding CanManage, Converter={StaticResource VisibleIfTrue}}"/>
                 <WrapPanel>
                     <TextBox Style="{StaticResource SearchBox}"
-                        Width="260"
                         Margin="0,0,12,8"
                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                         Tag="Пошук за логіном або ПІБ..."
