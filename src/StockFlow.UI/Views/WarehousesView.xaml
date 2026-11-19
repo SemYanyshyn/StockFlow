@@ -18,7 +18,7 @@
 
     <!-- Шапка -->
     <Border Grid.Row="0" Style="{StaticResource PageHeader}">
-      <TextBlock Text="StockFlow — Склади" Style="{StaticResource PageHeaderText}"/>
+      <TextBlock Text="Склади" Style="{StaticResource PageHeaderText}"/>
     </Border>
 
     <!-- Контент -->
