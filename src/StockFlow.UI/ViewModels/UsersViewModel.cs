@@ -124,7 +124,11 @@ public sealed partial class UsersViewModel : ViewModelBase
             _service.SetActive(row.Id, !row.User.IsActive);
             return _all.Select(u => u.Id == row.Id ? new User
             {
-                Id = u.Id, Username = u.Username, FullName = u.FullName, Role = u.Role, IsActive = !u.IsActive
+                Id = u.Id,
+                Username = u.Username,
+                FullName = u.FullName,
+                Role = u.Role,
+                IsActive = !u.IsActive
             } : u).ToArray();
         });
     }

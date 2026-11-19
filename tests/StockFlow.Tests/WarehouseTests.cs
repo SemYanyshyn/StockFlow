@@ -1,4 +1,4 @@
-﻿using StockFlow.Domain;
+using StockFlow.Domain;
 using Xunit;
 
 namespace StockFlow.Tests;
