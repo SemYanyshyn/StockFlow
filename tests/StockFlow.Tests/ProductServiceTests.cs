@@ -13,6 +13,7 @@ public sealed class ProductServiceTests
         public List<Product> Products { get; } = new();
         public HashSet<int> ProductsWithRecords { get; } = new();
         public bool ThrowInUseOnDelete { get; set; }
+        public bool DeleteBeforeUpdate { get; set; }
         public int AddCalls { get; private set; }
         public int UpdateCalls { get; private set; }
         public int DeleteCalls { get; private set; }
@@ -34,6 +35,11 @@ public sealed class ProductServiceTests
         public bool Update(Product product)
         {
             UpdateCalls++;
+            if (DeleteBeforeUpdate)
+            {
+                Products.RemoveAll(p => p.Id == product.Id);
+            }
+
             var existing = Products.FirstOrDefault(p => p.Id == product.Id);
             if (existing is null)
             {
@@ -263,9 +269,21 @@ public sealed class ProductServiceTests
     [Fact]
     public void EditOfMissingProductReportsNotFound()
     {
-        var (service, _) = CreateWithMilk();
+        var (service, repository) = CreateWithMilk();
         var error = Assert.Throws<ValidationException>(() => service.Update(99, "Сир", 1, UnitOfMeasure.Kilogram));
         Assert.Equal(ProductService.NotFoundMessage, error.Message);
+        Assert.Equal(0, repository.UpdateCalls);
+    }
+
+    [Fact]
+    public void Update_ProductDeletedAfterItWasRead_ReportsNotFound()
+    {
+        var (service, repository) = CreateWithMilk();
+        repository.DeleteBeforeUpdate = true;
+        var error = Assert.Throws<ValidationException>(() => service.Update(1, "Молоко 3,2%", 1, UnitOfMeasure.Liter));
+        Assert.Equal(ProductService.NotFoundMessage, error.Message);
+        Assert.Equal(1, repository.UpdateCalls);
+        Assert.Empty(repository.Products);
     }
 
     [Fact]
