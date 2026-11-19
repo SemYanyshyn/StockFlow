@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using StockFlow.BusinessLogic.Products;
 using StockFlow.DataAccess.Warehouses;
