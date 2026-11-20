@@ -123,6 +123,10 @@ public sealed class UserService
     }
     private static User PublicUser(User user) => new()
     {
-        Id = user.Id, Username = user.Username, FullName = user.FullName, Role = user.Role, IsActive = user.IsActive
+        Id = user.Id,
+        Username = user.Username,
+        FullName = user.FullName,
+        Role = user.Role,
+        IsActive = user.IsActive
     };
 }

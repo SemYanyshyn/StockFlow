@@ -19,7 +19,10 @@ public sealed class AuthenticatedUserContext : ICurrentUserContext
     internal void Clear() => _user = null;
     private static User Snapshot(User user) => new()
     {
-        Id = user.Id, Username = user.Username, FullName = user.FullName,
-        Role = user.Role, IsActive = user.IsActive
+        Id = user.Id,
+        Username = user.Username,
+        FullName = user.FullName,
+        Role = user.Role,
+        IsActive = user.IsActive
     };
 }
