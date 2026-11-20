@@ -29,8 +29,11 @@ public sealed class UserRepository : IUserRepository
         var users = new List<User>();
         while (reader.Read()) users.Add(new User
         {
-            Id = reader.GetInt32(0), Username = reader.GetString(1), FullName = reader.GetString(2),
-            Role = ParseRole(reader.GetString(3)), IsActive = reader.GetBoolean(4)
+            Id = reader.GetInt32(0),
+            Username = reader.GetString(1),
+            FullName = reader.GetString(2),
+            Role = ParseRole(reader.GetString(3)),
+            IsActive = reader.GetBoolean(4)
         });
         return users;
     }
@@ -39,7 +42,8 @@ public sealed class UserRepository : IUserRepository
 
     private static UserRole ParseRole(string role) => role switch
     {
-        "admin" => UserRole.Admin, "employee" => UserRole.Employee,
+        "admin" => UserRole.Admin,
+        "employee" => UserRole.Employee,
         _ => throw new InvalidOperationException("Невідома роль користувача в базі даних.")
     };
 
@@ -71,8 +75,11 @@ public sealed class UserRepository : IUserRepository
             var users = new List<User>();
             while (reader.Read()) users.Add(new User
             {
-                Id = reader.GetInt32(0), Username = reader.GetString(1), FullName = reader.GetString(2),
-                Role = ParseRole(reader.GetString(3)), IsActive = reader.GetBoolean(4)
+                Id = reader.GetInt32(0),
+                Username = reader.GetString(1),
+                FullName = reader.GetString(2),
+                Role = ParseRole(reader.GetString(3)),
+                IsActive = reader.GetBoolean(4)
             });
             return users;
         }
@@ -139,7 +146,9 @@ public sealed class UserRepository : IUserRepository
 
     private static User Read(NpgsqlDataReader reader) => new()
     {
-        Id = reader.GetInt32(0), Username = reader.GetString(1), PasswordHash = reader.GetString(2),
+        Id = reader.GetInt32(0),
+        Username = reader.GetString(1),
+        PasswordHash = reader.GetString(2),
         FullName = reader.GetString(3),
         Role = ParseRole(reader.GetString(4)),
         IsActive = reader.GetBoolean(5)
