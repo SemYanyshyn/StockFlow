@@ -209,61 +209,78 @@ internal static class Program
         await denied.LoadAsync();
         Check(denied.ErrorMessage == UserService.AdminOnlyMessage && denied.Users.Count == 0, "employee user-screen access denied by service");
 
-        var emptyStockBalances = provider.GetRequiredService<StockBalancesViewModel>();
-        var emptyBalancesView = new StockBalancesView { DataContext = emptyStockBalances };
-        await Render(emptyBalancesView, "stock-balances-empty");
-        var emptyStateText = Descendants<TextBlock>(emptyBalancesView).Single(t => t.Name == "EmptyStateText");
-        Check(emptyStockBalances.FilteredRows.Count == 0 && emptyStockBalances.IsEmpty && emptyStateText.Visibility == Visibility.Visible,
-            "stock balances empty database sets IsEmpty and shows empty state");
-
         var stockRepo = provider.GetRequiredService<StockFlow.DataAccess.IStockRepository>();
         var productRepo = provider.GetRequiredService<StockFlow.DataAccess.Products.IProductRepository>();
         var warehouseRepo = provider.GetRequiredService<StockFlow.DataAccess.Warehouses.IWarehouseRepository>();
-        var allProducts = productRepo.GetAll();
-        var allWarehouses = warehouseRepo.GetAll();
-        if (allProducts.Count >= 2 && allWarehouses.Count >= 2)
+        var existingStock = stockRepo.GetAll().ToList();
+
+        try
         {
-            using (var seedConn = new NpgsqlConnection(connection))
+            using (var clearConn = new NpgsqlConnection(connection))
             {
-                seedConn.Open();
-                using var seedTx = seedConn.BeginTransaction();
-                stockRepo.Save(new StockFlow.Domain.Stock { ProductId = allProducts[0].Id, WarehouseId = allWarehouses[0].Id, Quantity = 2, MinThreshold = 10 }, seedTx);
-                stockRepo.Save(new StockFlow.Domain.Stock { ProductId = allProducts[1].Id, WarehouseId = allWarehouses[1].Id, Quantity = 25, MinThreshold = 10 }, seedTx);
-                seedTx.Commit();
+                clearConn.Open();
+                using var clearCmd = new NpgsqlCommand("DELETE FROM stock;", clearConn);
+                clearCmd.ExecuteNonQuery();
             }
 
-            try
+            var emptyStockBalances = provider.GetRequiredService<StockBalancesViewModel>();
+            var emptyBalancesView = new StockBalancesView { DataContext = emptyStockBalances };
+            await Render(emptyBalancesView, "stock-balances-empty");
+            var emptyStateText = Descendants<TextBlock>(emptyBalancesView).Single(t => t.Name == "EmptyStateText");
+            Check(emptyStockBalances.FilteredRows.Count == 0 && emptyStockBalances.IsEmpty && emptyStateText.Visibility == Visibility.Visible,
+                "stock balances empty database sets IsEmpty and shows empty state");
+
+            var allProducts = productRepo.GetAll();
+            var allWarehouses = warehouseRepo.GetAll();
+            if (allProducts.Count >= 2 && allWarehouses.Count >= 2)
             {
+                using (var seedConn = new NpgsqlConnection(connection))
+                {
+                    seedConn.Open();
+                    using var seedTx = seedConn.BeginTransaction();
+                    stockRepo.Save(new StockFlow.Domain.Stock { ProductId = allProducts[0].Id, WarehouseId = allWarehouses[0].Id, Quantity = 2, MinThreshold = 10 }, seedTx);
+                    stockRepo.Save(new StockFlow.Domain.Stock { ProductId = allProducts[1].Id, WarehouseId = allWarehouses[1].Id, Quantity = 25, MinThreshold = 10 }, seedTx);
+                    seedTx.Commit();
+                }
+
                 var stockBalances = provider.GetRequiredService<StockBalancesViewModel>();
                 var balancesView = new StockBalancesView { DataContext = stockBalances };
                 await Render(balancesView, "stock-balances-list");
 
-                Check(stockBalances.SelectedWarehouse?.Name == "Усі склади" && stockBalances.FilteredRows.Count >= 2 && !stockBalances.IsEmpty,
+                Check(stockBalances.SelectedWarehouse?.Name == "Усі склади" && stockBalances.FilteredRows.Count == 2 && !stockBalances.IsEmpty,
                     "stock balances default filter 'Усі склади' displays all rows");
 
                 var gridRows = Descendants<DataGridRow>(balancesView).ToList();
-                var lowRow = gridRows.First(r => ((StockBalanceRowItem)r.Item).IsLow);
-                var normalRow = gridRows.First(r => !((StockBalanceRowItem)r.Item).IsLow);
+                var lowRow = gridRows.Single(r => ((StockBalanceRowItem)r.Item).IsLow);
+                var normalRow = gridRows.Single(r => !((StockBalanceRowItem)r.Item).IsLow);
                 Check(lowRow.Background is SolidColorBrush lowBrush &&
                       lowBrush.Color.A > 0 &&
                       !Equals(lowRow.Background, normalRow.Background),
                     "stock balances highlights rows below minimum threshold");
 
                 stockBalances.SelectedWarehouse = stockBalances.Warehouses.First(w => w.Id == allWarehouses[1].Id);
-                Check(stockBalances.FilteredRows.Count >= 1 && stockBalances.FilteredRows.All(r => r.WarehouseName == allWarehouses[1].Name),
+                Check(stockBalances.FilteredRows.Count == 1 && stockBalances.FilteredRows[0].WarehouseName == allWarehouses[1].Name,
                     "stock balances filters by specific warehouse");
 
                 stockBalances.SelectedWarehouse = stockBalances.Warehouses.First(w => w.Id == 0);
-                Check(stockBalances.FilteredRows.Count >= 2,
+                Check(stockBalances.FilteredRows.Count == 2,
                     "stock balances restores all rows when 'Усі склади' is selected again");
             }
-            finally
+        }
+        finally
+        {
+            using var restoreConn = new NpgsqlConnection(connection);
+            restoreConn.Open();
+            using var restoreTx = restoreConn.BeginTransaction();
+            using (var delCmd = new NpgsqlCommand("DELETE FROM stock;", restoreConn, restoreTx))
             {
-                using var cleanupConn = new NpgsqlConnection(connection);
-                cleanupConn.Open();
-                using var cleanupCmd = new NpgsqlCommand("DELETE FROM stock;", cleanupConn);
-                cleanupCmd.ExecuteNonQuery();
+                delCmd.ExecuteNonQuery();
             }
+            foreach (var item in existingStock)
+            {
+                stockRepo.Save(item, restoreTx);
+            }
+            restoreTx.Commit();
         }
 
         settings.Port = 1; settings.Timeout = 1;
