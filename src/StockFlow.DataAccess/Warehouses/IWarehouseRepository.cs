@@ -7,4 +7,7 @@ public interface IWarehouseRepository
 {
     IReadOnlyList<Warehouse> GetAll();
     int Add(Warehouse warehouse);
+    bool Update(Warehouse warehouse);
+    bool Delete(int id);
+
 }

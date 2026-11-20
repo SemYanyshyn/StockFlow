@@ -40,7 +40,7 @@ public sealed class StockMovementListTests
             new Dictionary<string, string?> { ["ConnectionStrings:StockFlow"] = "Host=127.0.0.1;Port=1;Database=test;Username=test" }).Build());
         using var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
         Assert.NotNull(provider.GetRequiredService<StockMovementQueryService>());
-        Assert.Null(provider.GetService<IStockRepository>());
+        Assert.IsType<StockRepository>(provider.GetService<IStockRepository>());
     }
 
     [Fact]
@@ -166,5 +166,7 @@ public sealed class StockMovementListTests
         }
         public IReadOnlyList<Warehouse> GetAll() => WarehouseError ? throw new IOException() : new[] { new Warehouse { Id = 1, Name = "Склад" } };
         public int Add(Warehouse warehouse) => throw new NotSupportedException();
+        public bool Update(Warehouse warehouse) => throw new NotSupportedException();
+        public bool Delete(int id) => throw new NotSupportedException();
     }
 }
