@@ -16,7 +16,9 @@ public sealed class StockMovementQueryService(IStockMovementReadRepository repos
             throw new ValidationException("Оберіть склад.");
         return repository.Search(filter with
         {
-            Number = filter.Number?.Trim(), DateFrom = filter.DateFrom?.Date, DateTo = filter.DateTo?.Date
+            Number = filter.Number?.Trim(),
+            DateFrom = filter.DateFrom?.Date,
+            DateTo = filter.DateTo?.Date
         });
     }
 
