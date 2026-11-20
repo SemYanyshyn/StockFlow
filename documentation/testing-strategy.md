@@ -1,6 +1,6 @@
 # Стратегія тестування StockFlow
 
-Документ описує, як і що ми тестуємо, як запускати перевірки та де їхні межі. Числа зафіксовано на коміті `11d2aa8` (17.11.2026) і будуть оновлені після прогону на чистому клоні (TA7-5).
+Документ описує, як і що ми тестуємо, як запускати перевірки та де їхні межі. Числа взято з прогону на чистому клоні на коміті `3288910` (20.11.2026), див. [«Результати прогону»](#результати-прогону).
 
 ## 1. Мета й обсяг
 
@@ -12,12 +12,29 @@
 
 | Рівень | Проєкт | Що перевіряє | Інструмент | Кількість | Де запускається |
 |---|---|---|---|---|---|
-| Модульні | `tests/StockFlow.Tests` | домен, сервіси, реєстрація DI, конфігурація; без бази | xUnit, ручні фейки | 360 тестів | CI для PR у `main` і push у `main`; локально `dotnet test` |
-| Перевірки БД | `tests/StockFlow.DatabaseChecks` | репозиторії на справжній PostgreSQL, обмеження схеми, ICU-унікальність, конкурентні зміни | консольна програма, Npgsql | 32 перевірки | ізольований локальний прогін і пілотний job `database-checks` |
-| Перевірки WPF | `tests/StockFlow.WindowsChecks` | ViewModel і XAML реальних екранів: вхід, постачальники, користувачі, права ролей, помилки підключення | консольна програма, WPF Dispatcher | 27 перевірок | `scripts/Verify-Isolated.ps1` і пілотний job `windows-checks` |
-| Перевірки накладних | `tests/StockFlow.MovementChecks` | запити списку накладних на справжній PostgreSQL | консольна програма, Npgsql | 15 перевірок | вручну, `scripts/Verify-Movements-Isolated.sh` |
+| Модульні | `tests/StockFlow.Tests` | домен, сервіси, реєстрація DI, конфігурація; без бази | xUnit, ручні фейки | 367 тестів | job `build-and-test`; локально `dotnet test` |
+| Перевірки БД | `tests/StockFlow.DatabaseChecks` | репозиторії на справжній PostgreSQL, обмеження схеми, ICU-унікальність, конкурентні зміни | консольна програма, Npgsql | 169 перевірок | jobs `database-checks` і `windows-checks`; локально `scripts/Verify-Isolated.ps1` |
+| Перевірки WPF | `tests/StockFlow.WindowsChecks` | ViewModel і XAML реальних екранів: вхід, постачальники, користувачі, права ролей, помилки підключення | консольна програма, WPF Dispatcher | 27 перевірок | job `windows-checks`; локально `scripts/Verify-Isolated.ps1` |
+| Перевірки накладних | `tests/StockFlow.MovementChecks` | запити списку накладних на справжній PostgreSQL | консольна програма, Npgsql | 15 перевірок | вручну, `scripts/Verify-Movements-Isolated.sh` (macOS, Linux) |
 
 Перевірки БД і WPF запускаються окремо від `StockFlow.sln` з PostgreSQL із підтримкою ICU. Для WPF потрібна Windows. Обидві програми приймають лише рядок підключення до БД `stockflow_isolated_*` на loopback-адресі.
+
+### Результати прогону
+
+Чистий клон `main`, без `appsettings.json` і локальних налаштувань, .NET SDK 8.0.427, PostgreSQL 17 на Windows 10.
+
+| Набір | Кількість | Результат | Дата | Коміт |
+|---|---|---|---|---|
+| Модульні (`dotnet test -c Release`) | 367 | усі пройшли | 20.11.2026 | `3288910` |
+| `DatabaseChecks` (`Verify-Isolated.ps1`) | 169 | усі пройшли | 20.11.2026 | `3288910` |
+| `WindowsChecks` (`Verify-Isolated.ps1`) | 27 | усі пройшли | 20.11.2026 | `3288910` |
+| Міграції (`Verify-Isolated.ps1`) | — | пройшли | 20.11.2026 | `3288910` |
+| `MovementChecks` | 15 | усі пройшли | 20.11.2026 | `3288910` |
+| Покриття рядків: Domain / BusinessLogic | 96,7 % / 99,1 % | гілки BusinessLogic 93,2 % | 20.11.2026 | `3288910` |
+
+Збірка з `-warnaserror` дала 0 попереджень, `dotnet format --verify-no-changes` змін не знайшов. Той самий коміт у CI: усі три jobs зелені. [Прогін на `main`](https://github.com/SemYanyshyn/StockFlow/actions/runs/44693221947)
+
+Покриття рахує лише модульні тести, тому DataAccess має 12,8 %: репозиторії перевіряють `DatabaseChecks` на справжньому PostgreSQL. `Verify-Movements-Isolated.sh` розрахований на macOS і Linux, тож на Windows ті самі кроки (тимчасовий кластер, схема, seed, `dotnet run`) виконано вручну.
 
 ## 3. Що де тестуємо
 
@@ -90,13 +107,15 @@ dotnet test StockFlow.sln --filter "FullyQualifiedName~CategoryServiceTests"
 
 ## 8. CI
 
-Workflow `CI` запускається для PR у `main` та push у `main`. Перевірка `build-and-test` обов’язкова для злиття у `main`. [Конфігурація workflow](../.github/workflows/ci.yml)
+Workflow `CI` запускається для PR у `main` та push у `main` і має три jobs. Обов’язковий для злиття у `main` лише `build-and-test`. [Конфігурація workflow](../.github/workflows/ci.yml) · [Прогін на `main`](https://github.com/SemYanyshyn/StockFlow/actions/runs/44693221947)
 
-У базовій конфігурації `main` (`b7683c7`) `build-and-test` на Windows виконує restore, Release-збірку й xUnit. PR #248 додає перевірку форматування, збірку з `-warnaserror` і звіт про покриття xUnit. GitHub-прогін зупинився на форматуванні. Для наступного прогону потрібен #252. [Прогін #248](https://github.com/SemYanyshyn/StockFlow/actions/runs/44612737011) · [Локальний запуск і звіт](../README.md#ci)
+`build-and-test` на Windows виконує restore, перевірку форматування (`dotnet format --verify-no-changes`), Release-збірку з `-warnaserror` і xUnit зі збором покриття. Резюме покриття видно на сторінці запуску (**Summary**), HTML-звіт — в артефакті `coverage-html`, який зберігається 14 днів. Порога покриття немає. [Локальний запуск і звіт](../README.md#ci)
 
-Для MA7-5 обрано варіант A. `DatabaseChecks` та її залежності мають цільову платформу `net8.0`. В окремому job `database-checks` на Ubuntu PostgreSQL 16 з ICU працює як сервіс. `psql` застосовує схему та seed, після чого `dotnet run` використовує `STOCKFLOW_TEST_CONNECTION` з loopback-адресою й іменем `stockflow_isolated_ci`. У пілотному прогоні #249 цей job успішно виконав 55 перевірок БД. [Журнал `database-checks`](https://github.com/SemYanyshyn/StockFlow/actions/runs/44612768357/job/135873402995)
+Для MA7-5 обрано варіант A. `DatabaseChecks` та її залежності мають цільову платформу `net8.0`. В окремому job `database-checks` на Ubuntu PostgreSQL 16 з ICU працює як сервіс. `psql` застосовує схему та seed, після чого `dotnet run` використовує `STOCKFLOW_TEST_CONNECTION` з loopback-адресою й іменем `stockflow_isolated_ci`.
 
-У `windows-checks` скрипт `Verify-Isolated.ps1` створює тимчасовий кластер і запускає перевірки БД, WPF та міграцій. `WindowsChecks` має цільову платформу `net8.0-windows` і програмно рендерить WPF через STA Dispatcher. У пілотному прогоні #249 пройшли 55 перевірок БД, 27 WPF-перевірок і міграції. Кожному новому job потрібні п’ять успішних запусків поспіль на GitHub Actions для рішення про його обов’язковість. [Журнал `windows-checks`](https://github.com/SemYanyshyn/StockFlow/actions/runs/44612768357/job/135873402588)
+У `windows-checks` скрипт `Verify-Isolated.ps1` створює тимчасовий кластер і запускає перевірки БД, WPF та міграцій. `WindowsChecks` має цільову платформу `net8.0-windows` і програмно рендерить WPF через STA Dispatcher.
+
+`database-checks` і `windows-checks` стануть обов’язковими після п’яти успішних запусків поспіль на GitHub Actions.
 
 ## 9. Баги й регресії
 
@@ -109,9 +128,9 @@ Workflow `CI` запускається для PR у `main` та push у `main`. 
 ## 11. Обмеження й прогалини
 
 - Екрани «Товари» й «Категорії» не мають WPF-перевірок: їх перевіряли вручну в PR (скріншоти) і UI Automation-скриптами, які в репозиторій не входять.
-- До підтвердження стабільності нових jobs для контрольного прогону БД і WPF використовуйте локальний скрипт (розділи 7 і 8).
-- Модулі залишків і звітів на момент написання ще без бізнес-логіки, тож і без тестів (задачі SA7-1 – SA7-4).
-- Покриття коду показуємо як інформацію, а не як вимогу (після MA7-2).
+- `database-checks` і `windows-checks` поки не обов’язкові для злиття (розділ 8). `MovementChecks` у CI не запускаються.
+- Для залишків є доменні тести (`StockTests`), а `StockRepository` і звіти ще в роботі (задачі SA7-1 – SA7-4).
+- Покриття коду показуємо як інформацію, а не як вимогу. Воно не враховує перевірки БД і WPF.
 
 ---
 
