@@ -26,8 +26,32 @@ jobs:
       - name: Restore
         run: dotnet restore StockFlow.sln
 
-      - name: Build
-        run: dotnet build StockFlow.sln -c Release --no-restore
+      - name: Verify formatting
+        run: dotnet format StockFlow.sln --verify-no-changes --no-restore
 
-      - name: Test
-        run: dotnet test tests/StockFlow.Tests/StockFlow.Tests.csproj -c Release --no-build --no-restore
+      - name: Build with warnings as errors
+        run: dotnet build StockFlow.sln -c Release --no-restore -warnaserror
+
+      - name: Test with coverage
+        run: dotnet test tests/StockFlow.Tests/StockFlow.Tests.csproj -c Release --no-build --no-restore --collect "XPlat Code Coverage" --results-directory TestResults/ci
+
+      - name: Generate coverage report
+        shell: pwsh
+        run: |
+          dotnet tool install dotnet-reportgenerator-globaltool --version 5.4.12 --tool-path "$env:RUNNER_TEMP/stockflow-tools"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & "$env:RUNNER_TEMP/stockflow-tools/reportgenerator.exe" "-reports:TestResults/ci/**/coverage.cobertura.xml" "-targetdir:TestResults/coverage" "-reporttypes:Html;MarkdownSummaryGithub"
+
+      - name: Publish coverage summary
+        shell: pwsh
+        run: Get-Content -Raw TestResults/coverage/SummaryGithub.md >> $env:GITHUB_STEP_SUMMARY
+
+      - name: Upload HTML coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-html
+          path: |
+            TestResults/coverage/
+            !TestResults/coverage/SummaryGithub.md
+          if-no-files-found: error
+          retention-days: 14
