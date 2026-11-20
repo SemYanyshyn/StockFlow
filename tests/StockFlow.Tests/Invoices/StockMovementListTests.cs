@@ -166,5 +166,7 @@ public sealed class StockMovementListTests
         }
         public IReadOnlyList<Warehouse> GetAll() => WarehouseError ? throw new IOException() : new[] { new Warehouse { Id = 1, Name = "Склад" } };
         public int Add(Warehouse warehouse) => throw new NotSupportedException();
+        public bool Update(Warehouse warehouse) => throw new NotSupportedException();
+        public bool Delete(int id) => throw new NotSupportedException();
     }
 }

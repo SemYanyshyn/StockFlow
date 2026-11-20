@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Data;
 using StockFlow.DataAccess;
 using StockFlow.Domain;
+using Npgsql;
+
 
 namespace StockFlow.DataAccess.Warehouses;
 
@@ -57,5 +59,55 @@ public class WarehouseRepository : IWarehouseRepository
         command.Parameters.Add(pAddress);
 
         return Convert.ToInt32(command.ExecuteScalar());
+    }
+
+    public bool Update(Warehouse warehouse)
+    {
+        using var connection = _connectionFactory.CreateConnection();
+        if (connection.State != ConnectionState.Open)
+            connection.Open();
+
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+        UPDATE warehouses
+        SET name = @name,
+            address = @address
+        WHERE id = @id;
+        """;
+
+        AddParameter(command, "@id", warehouse.Id);
+        AddParameter(command, "@name", warehouse.Name);
+        AddParameter(command, "@address", (object?)warehouse.Address ?? DBNull.Value);
+
+        return command.ExecuteNonQuery() > 0;
+    }
+
+    public bool Delete(int id)
+    {
+        using var connection = _connectionFactory.CreateConnection();
+        if (connection.State != ConnectionState.Open)
+            connection.Open();
+
+        using var command = connection.CreateCommand();
+        command.CommandText = "DELETE FROM warehouses WHERE id = @id;";
+        AddParameter(command, "@id", id);
+
+        try
+        {
+            return command.ExecuteNonQuery() > 0;
+        }
+        catch (PostgresException ex) when (ex.SqlState == "23503")
+        {
+            throw new InvalidOperationException(
+                "Неможливо видалити склад, оскільки на ньому є залишки або рухи товарів.", ex);
+        }
+    }
+
+    private static void AddParameter(IDbCommand command, string name, object value)
+    {
+        var parameter = command.CreateParameter();
+        parameter.ParameterName = name;
+        parameter.Value = value;
+        command.Parameters.Add(parameter);
     }
 }
