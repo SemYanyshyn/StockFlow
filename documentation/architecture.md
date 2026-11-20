@@ -20,10 +20,13 @@ StockFlow побудовано за **шаровою (layered) архітект�
 ```text
 StockFlow.sln
 global.json
-.github/workflows/ci.yml            # restore → build → test на windows-latest
+.github/workflows/ci.yml            # build-and-test, database-checks, windows-checks
 database/
   01_schema.sql                     # таблиці, ключі, ON DELETE RESTRICT, CHECK
   02_seed.sql                       # тестові користувачі, довідники, залишки
+scripts/
+  Verify-Isolated.ps1               # тимчасовий кластер для DatabaseChecks і WindowsChecks
+  Verify-Movements-Isolated.sh      # тимчасовий кластер для MovementChecks
 src/
   StockFlow.Domain/                 # net8.0, незалежна модель
     Product.cs, Category.cs, UnitOfMeasure.cs
@@ -51,8 +54,12 @@ src/
 tests/
   StockFlow.Tests/                  # net8.0, xUnit, без WPF і PostgreSQL
     *Tests.cs                       # домен, сервіси з фейковими репозиторіями, DI, конфігурація
+  StockFlow.DatabaseChecks/         # net8.0, репозиторії й обмеження схеми на PostgreSQL
+  StockFlow.WindowsChecks/          # net8.0-windows, ViewModels і XAML екранів
+  StockFlow.MovementChecks/         # net8.0, запити списку накладних на PostgreSQL
 documentation/
   architecture.md
+  testing-strategy.md               # рівні тестування, угоди, крайові ситуації
   requirements.md, user-stories.md, scenarios.md
   stage5-integration.md             # контракти, перевірки й залежності команди
   diagrams/                         # актуальні UML та ER
@@ -71,11 +78,15 @@ documentation/
 | BusinessLogic | Domain, DataAccess |
 | UI | BusinessLogic, Domain |
 | Tests | Domain, BusinessLogic, DataAccess |
+| DatabaseChecks, MovementChecks | BusinessLogic, DataAccess |
+| WindowsChecks | UI, BusinessLogic, DataAccess, Domain |
 
 `DisableTransitiveProjectReferences=true` у UI забороняє доступ до публічних
 типів DataAccess через BusinessLogic. `EnableWindowsTargeting=true` тільки в UI
 дозволяє cross-build на macOS; запуск WPF потребує Windows. Tests не посилається
 на UI. Domain не містить Npgsql, WPF, DI чи пакетів конфігурації.
+DatabaseChecks, WindowsChecks і MovementChecks не входять у `StockFlow.sln`
+і запускаються окремими скриптами або jobs CI.
 
 Npgsql 8.0.9 використовується в DataAccess; CommunityToolkit.Mvvm 8.4.2 — у UI.
 Tests використовує xUnit 2.9.3, runner 3.1.5 і Microsoft.NET.Test.Sdk 17.14.1.
@@ -199,7 +210,7 @@ JSON. `appsettings.example.json` ніколи не використовуєть�
 
 MVVM у UI-шарі обрано, бо:
 
-- ViewModel не залежить від вікна, тож її можна тестувати окремим проєктом пізніше; зараз проєкт `Tests` не посилається на UI, тому автоматичними тестами покриті домен і сервіси;
+- ViewModel не залежить від вікна, тож її перевіряють без ручного прогону: `StockFlow.WindowsChecks` створює ViewModels і XAML реальних екранів і перевіряє права ролей, фільтри й повідомлення, а домен і сервіси покриває `StockFlow.Tests` (див. [стратегію тестування](testing-strategy.md));
 - видимість елементів залежно від ролі користувача задається властивістю ViewModel і прив'язується до інтерфейсу, а не прописується вручну в кожному вікні;
 - бізнес-логіка не потрапляє в code-behind вікон, що зберігає межі між шарами.
 
