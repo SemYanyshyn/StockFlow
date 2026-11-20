@@ -5,7 +5,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:StockFlow.UI.ViewModels"
              mc:Ignorable="d"
-             d:DataContext="{d:DesignInstance Type=vm:StockBalancesViewModel}">
+             d:DataContext="{d:DesignInstance Type=vm:StockBalancesViewModel}"><UserControl.Resources><BooleanToVisibilityConverter x:Key="BoolToVis"/></UserControl.Resources>
 
   <Grid Background="{StaticResource BackgroundBrush}">
     <Grid.RowDefinitions>
@@ -192,6 +192,7 @@
           </DataGridTemplateColumn>
         </DataGrid.Columns>
       </DataGrid>
+<TextBlock Grid.Row="1" x:Name="EmptyStateText" Text="Записів про залишки не знайдено." HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource SecondaryTextBrush}" FontSize="15" Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVis}}"/><TextBlock Grid.Row="2" x:Name="ErrorMessageText" Text="{Binding ErrorMessage}" Foreground="{StaticResource CriticalTextBrush}" FontWeight="SemiBold" Margin="0,12,0,0"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Visible"/><Style.Triggers><DataTrigger Binding="{Binding ErrorMessage}" Value=""><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
     </Grid>
   </Grid>
 </UserControl>
