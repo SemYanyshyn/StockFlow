@@ -3,15 +3,24 @@ using CommunityToolkit.Mvvm.Input;
 using StockFlow.BusinessLogic.Products;
 using StockFlow.BusinessLogic.Users;
 using StockFlow.Domain;
+using StockFlow.UI.Services;
 
 namespace StockFlow.UI.ViewModels;
 
 public sealed partial class CategoriesViewModel : ViewModelBase
 {
     private readonly CategoryService _categoryService;
+    private readonly IConfirmationService _confirmation;
+    private IReadOnlyList<Category> _allCategories = Array.Empty<Category>();
 
     [ObservableProperty]
     private IReadOnlyList<Category> _categories = Array.Empty<Category>();
+
+    [ObservableProperty]
+    private string _searchText = string.Empty;
+
+    [ObservableProperty]
+    private bool _isEmpty;
 
     [ObservableProperty]
     private string _newCategoryName = string.Empty;
@@ -19,15 +28,32 @@ public sealed partial class CategoriesViewModel : ViewModelBase
     [ObservableProperty]
     private string? _errorMessage;
 
-    public CategoriesViewModel(CategoryService categoryService, ICurrentUserContext currentUser)
+    [ObservableProperty]
+    private bool _isFormOpen;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsEditing), nameof(FormLabel), nameof(SaveButtonText))]
+    private Category? _editingCategory;
+
+    public CategoriesViewModel(CategoryService categoryService, ICurrentUserContext currentUser, IConfirmationService confirmation)
     {
         ArgumentNullException.ThrowIfNull(categoryService);
         ArgumentNullException.ThrowIfNull(currentUser);
+        ArgumentNullException.ThrowIfNull(confirmation);
         _categoryService = categoryService;
+        _confirmation = confirmation;
         CanManage = currentUser.IsAdmin;
     }
 
     public bool CanManage { get; }
+
+    public bool IsEditing => EditingCategory is not null;
+
+    public string FormLabel => IsEditing ? "Редагування категорії" : "Нова категорія";
+
+    public string SaveButtonText => IsEditing ? "Зберегти" : "Додати";
+
+    partial void OnSearchTextChanged(string value) => ApplyFilter();
 
     [RelayCommand]
     private async Task LoadAsync()
@@ -35,23 +61,41 @@ public sealed partial class CategoriesViewModel : ViewModelBase
         ErrorMessage = null;
         try
         {
-            Categories = await Task.Run(() => _categoryService.GetAll());
+            _allCategories = await Task.Run(() => _categoryService.GetAll());
         }
         catch (Exception error)
         {
+            _allCategories = Array.Empty<Category>();
             ErrorMessage = DataErrorText.From(error);
         }
+
+        ApplyFilter();
+    }
+
+    private void ApplyFilter()
+    {
+        Categories = CategoryService.Filter(_allCategories, SearchText);
+        IsEmpty = Categories.Count == 0 && ErrorMessage is null;
     }
 
     [RelayCommand]
-    private async Task AddAsync()
+    private async Task SaveAsync()
     {
         ErrorMessage = null;
         try
         {
             var name = NewCategoryName;
-            await Task.Run(() => _categoryService.Add(name));
-            NewCategoryName = string.Empty;
+            var editing = EditingCategory;
+            if (editing is null)
+            {
+                await Task.Run(() => _categoryService.Add(name));
+            }
+            else
+            {
+                await Task.Run(() => _categoryService.Update(editing.Id, name));
+            }
+
+            CloseForm();
         }
         catch (ValidationException error)
         {
@@ -62,6 +106,65 @@ public sealed partial class CategoriesViewModel : ViewModelBase
         {
             ErrorMessage = DataErrorText.From(error);
             return;
+        }
+
+        await LoadAsync();
+    }
+
+    [RelayCommand]
+    private void OpenAddForm()
+    {
+        CloseForm();
+        IsFormOpen = true;
+    }
+
+    [RelayCommand]
+    private void Edit(Category category)
+    {
+        ErrorMessage = null;
+        EditingCategory = category;
+        NewCategoryName = category.Name;
+        IsFormOpen = true;
+    }
+
+    [RelayCommand]
+    private void CancelEdit() => CloseForm();
+
+    private void CloseForm()
+    {
+        ErrorMessage = null;
+        EditingCategory = null;
+        NewCategoryName = string.Empty;
+        IsFormOpen = false;
+    }
+
+    [RelayCommand]
+    private async Task DeleteAsync(Category category)
+    {
+        ErrorMessage = null;
+        if (!_confirmation.Confirm($"Видалити категорію «{category.Name}»?"))
+        {
+            return;
+        }
+
+        try
+        {
+            await Task.Run(() => _categoryService.Delete(category.Id));
+        }
+        catch (ValidationException error)
+        {
+            ErrorMessage = error.Message;
+            return;
+        }
+        catch (Exception error)
+        {
+            ErrorMessage = DataErrorText.From(error);
+            return;
+        }
+
+        if (EditingCategory?.Id == category.Id)
+        {
+            CancelEdit();
         }
 
         await LoadAsync();

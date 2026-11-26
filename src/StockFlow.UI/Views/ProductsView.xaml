@@ -9,62 +9,183 @@
              Loaded="OnLoaded">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibility" />
+        <Style x:Key="ErrorText" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource ErrorTextBrush}" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="Margin" Value="0,12,0,0" />
+        </Style>
     </UserControl.Resources>
-    <Grid Margin="32">
+    <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Text="Товари" FontSize="20" FontWeight="Bold" Foreground="{StaticResource PrimaryTextBrush}" Margin="0,0,0,16" />
+        <Border Grid.Row="0" Style="{StaticResource PageHeader}">
+            <TextBlock Text="Товари" Style="{StaticResource PageHeaderText}" />
+        </Border>
 
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,12">
-            <TextBlock Text="Пошук за назвою:" VerticalAlignment="Center" Foreground="{StaticResource PrimaryTextBrush}" Margin="0,0,8,0" />
-            <TextBox Width="240"
-                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
-            <TextBlock Text="Категорія:" VerticalAlignment="Center" Foreground="{StaticResource PrimaryTextBrush}" Margin="24,0,8,0" />
-            <ComboBox Width="200"
-                      ItemsSource="{Binding Categories}"
-                      SelectedItem="{Binding SelectedCategory}"
-                      DisplayMemberPath="Name" />
-        </StackPanel>
+        <Grid Grid.Row="1" Margin="24">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="2"
-                   Text="{Binding ErrorMessage}"
-                   Foreground="{StaticResource ErrorTextBrush}"
-                   TextWrapping="Wrap"
-                   Margin="0,0,0,12">
-            <TextBlock.Style>
-                <Style TargetType="TextBlock">
-                    <Style.Triggers>
-                        <DataTrigger Binding="{Binding ErrorMessage}" Value="{x:Null}">
-                            <Setter Property="Visibility" Value="Collapsed" />
-                        </DataTrigger>
-                    </Style.Triggers>
-                </Style>
-            </TextBlock.Style>
-        </TextBlock>
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="220" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBox Grid.Column="0"
+                         Style="{StaticResource SearchBox}"
+                         Tag="Пошук за назвою..."
+                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
+                <ComboBox Grid.Column="1"
+                          Margin="16,0,0,0"
+                          Style="{StaticResource InputComboBox}"
+                          Tag="Категорія:"
+                          ItemsSource="{Binding Categories}"
+                          SelectedItem="{Binding SelectedCategory}"
+                          DisplayMemberPath="Name" />
+                <Button Grid.Column="3"
+                        Content="+ Додати"
+                        Style="{StaticResource PrimaryButton}"
+                        Command="{Binding OpenAddFormCommand}"
+                        Visibility="{Binding CanManage, Converter={StaticResource BooleanToVisibility}}" />
+            </Grid>
 
-        <Grid Grid.Row="3">
-            <DataGrid ItemsSource="{Binding Products}"
-                      AutoGenerateColumns="False"
-                      IsReadOnly="True"
-                      CanUserAddRows="False"
-                      HeadersVisibility="Column">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="Назва" Binding="{Binding Name}" Width="2*" />
-                    <DataGridTextColumn Header="Категорія" Binding="{Binding CategoryName}" Width="2*" />
-                    <DataGridTextColumn Header="Од. виміру" Binding="{Binding Unit}" Width="*" />
-                </DataGrid.Columns>
-            </DataGrid>
-            <TextBlock Text="Товари не знайдено"
-                       HorizontalAlignment="Center"
-                       VerticalAlignment="Center"
-                       FontStyle="Italic"
-                       Foreground="{StaticResource SecondaryTextBrush}"
-                       Visibility="{Binding IsEmpty, Converter={StaticResource BooleanToVisibility}}" />
+            <Border Grid.Row="1"
+                    Margin="0,16,0,0"
+                    Style="{StaticResource FormPanel}"
+                    Visibility="{Binding IsFormOpen, Converter={StaticResource BooleanToVisibility}}">
+                <StackPanel>
+                    <TextBlock Text="{Binding FormLabel}"
+                               FontSize="15"
+                               FontWeight="Bold"
+                               Foreground="{StaticResource PrimaryTextBrush}"
+                               Margin="0,0,0,12" />
+                    <WrapPanel>
+                        <StackPanel Width="260" Margin="0,0,16,0">
+                            <TextBlock Text="Назва" Style="{StaticResource FieldLabel}" />
+                            <TextBox Style="{StaticResource InputBox}"
+                                     Text="{Binding NewProductName, UpdateSourceTrigger=PropertyChanged}">
+                                <TextBox.InputBindings>
+                                    <KeyBinding Key="Enter" Command="{Binding SaveCommand}" />
+                                    <KeyBinding Key="Escape" Command="{Binding CancelEditCommand}" />
+                                </TextBox.InputBindings>
+                            </TextBox>
+                        </StackPanel>
+                        <StackPanel Width="220" Margin="0,0,16,0">
+                            <TextBlock Text="Категорія" Style="{StaticResource FieldLabel}" />
+                            <ComboBox Style="{StaticResource InputComboBox}"
+                                      ItemsSource="{Binding ProductCategories}"
+                                      SelectedItem="{Binding NewProductCategory}"
+                                      DisplayMemberPath="Name" />
+                        </StackPanel>
+                        <StackPanel Width="120">
+                            <TextBlock Text="Од. виміру" Style="{StaticResource FieldLabel}" />
+                            <ComboBox Style="{StaticResource InputComboBox}"
+                                      ItemsSource="{Binding Units}"
+                                      SelectedItem="{Binding NewProductUnit}"
+                                      DisplayMemberPath="Name" />
+                        </StackPanel>
+                    </WrapPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+                        <Button Content="Скасувати"
+                                Style="{StaticResource SecondaryButton}"
+                                Command="{Binding CancelEditCommand}"
+                                Margin="0,0,8,0" />
+                        <Button Content="{Binding SaveButtonText}"
+                                Style="{StaticResource PrimaryButton}"
+                                Command="{Binding SaveCommand}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <TextBlock Grid.Row="2" Text="{Binding FormErrorMessage}">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock" BasedOn="{StaticResource ErrorText}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding FormErrorMessage}" Value="{x:Null}">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+
+            <TextBlock Grid.Row="3" Text="{Binding ErrorMessage}">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock" BasedOn="{StaticResource ErrorText}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ErrorMessage}" Value="{x:Null}">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+
+            <Grid Grid.Row="4" Margin="0,16,0,0">
+                <DataGrid Style="{StaticResource ListDataGrid}"
+                          ItemsSource="{Binding Products}"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          CanUserAddRows="False">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Назва" Binding="{Binding Name}" Width="2*" />
+                        <DataGridTemplateColumn Header="Категорія" Width="2*">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Content="{Binding CategoryName}"
+                                            Style="{StaticResource CategoryLinkButton}"
+                                            HorizontalAlignment="Left"
+                                            ToolTip="Показати товари цієї категорії"
+                                            Command="{Binding DataContext.FilterByCategoryCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="Од. виміру" Binding="{Binding Unit}" Width="*" MinWidth="130" />
+                        <DataGridTemplateColumn x:Name="ActionsColumn"
+                                                Header="Дії"
+                                                HeaderStyle="{StaticResource ActionsColumnHeader}"
+                                                Width="Auto">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                        <Button Content="Редагувати"
+                                                Style="{StaticResource LinkButton}"
+                                                Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}" />
+                                        <TextBlock Text="·"
+                                                   FontSize="14"
+                                                   Foreground="{StaticResource AccentTextBrush}"
+                                                   VerticalAlignment="Center"
+                                                   Margin="6,0" />
+                                        <Button Content="Видалити"
+                                                Style="{StaticResource LinkButton}"
+                                                Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+                <TextBlock Text="Товари не знайдено"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           FontStyle="Italic"
+                           Foreground="{StaticResource SecondaryTextBrush}"
+                           Visibility="{Binding IsEmpty, Converter={StaticResource BooleanToVisibility}}" />
+            </Grid>
         </Grid>
     </Grid>
 </UserControl>

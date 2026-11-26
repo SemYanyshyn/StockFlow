@@ -85,4 +85,14 @@ public sealed class UserTests
         user.FullName = new string('п', User.MaxFullNameLength + 1);
         Assert.False(user.Validate());
     }
+    [Theory]
+    [InlineData("ІВАН", true)]
+    [InlineData(" demo ", true)]
+    [InlineData("missing", false)]
+    [InlineData(null, true)]
+    public void SearchUsesUsernameAndFullNameWithoutCase(string? query, bool expected)
+    {
+        var user = new User { Username = "Demo", FullName = "Іван Петренко" };
+        Assert.Equal(expected, user.MatchesSearch(query));
+    }
 }

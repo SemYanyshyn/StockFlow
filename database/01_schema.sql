@@ -1,9 +1,17 @@
+SET client_encoding = 'UTF8';
 BEGIN;
+
+-- ICU supplies Unicode case handling even when the database uses locale C.
+CREATE COLLATION IF NOT EXISTS stockflow_case_insensitive
+    (provider = icu, locale = 'und-u-ks-level2', deterministic = false);
 
 CREATE TABLE categories (
     id   SERIAL       PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE
 );
+
+CREATE UNIQUE INDEX categories_name_case_insensitive_key
+    ON categories (name COLLATE stockflow_case_insensitive);
 
 CREATE TABLE products (
     id          SERIAL       PRIMARY KEY,

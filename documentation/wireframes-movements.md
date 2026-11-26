@@ -1,0 +1,42 @@
+# SE-7: макети руху товару
+
+Оновлено головне меню, список накладних і форму створення відповідно до
+`requirements.md`, UML/ER і плану етапу 6. Це макети, а не скриншоти запущеного WPF.
+
+- Використано назви «Надходження» та «Списання»; прибрано колонку статусу.
+- У формі номер `НК-017` позначено як автоматичний і нередагований; «НК» кирилицею.
+- Відповідальна особа береться з поточного користувача і не редагується.
+- Збережено підпис «Постачальник (для надходження)». Уточнено обов'язковість для
+  надходження та приховування й очищення значення для списання.
+- У списку є товар, кількість з одиницею виміру, склад і відповідальний; перегляд
+  запису лише для читання. Створює рух лише Працівник, переглядають обидві ролі.
+- Світла палітра, структура шапки, карток, таблиць та бурштинові акценти збережені.
+
+## Редагування й експорт
+
+Редагованих drawio/SVG-джерел раніше не було. Додані SVG з окремими векторними
+елементами та текстом у `documentation/diagrams/wireframes/`:
+
+- `wireframe-mainmenu.svg` → `wireframe-mainmenu.png` (2000 × 1100);
+- `wireframe-invoicelist.svg` → `wireframe-invoicelist.png` (2000 × 1300);
+- `wireframe-movementform.svg` → `wireframe-movementform.png` (2000 × 1140).
+
+SVG можна редагувати у векторному редакторі або як XML. Чинні шляхи PNG збережено.
+Для відтворення експорту потрібні Node.js, системний шрифт Arial та
+[@resvg/resvg-js](https://github.com/thx/resvg-js) 2.6.2. З кореня репозиторію на macOS:
+
+```sh
+npm install --prefix /private/tmp/stockflow-svg-render --save-exact @resvg/resvg-js@2.6.2
+NODE_PATH=/private/tmp/stockflow-svg-render/node_modules node documentation/diagrams/wireframes/render-movements.cjs
+```
+
+Пакет встановлюється поза репозиторієм і не стає залежністю застосунку.
+Усі три PNG експортовано й візуально перевірено: український текст читається,
+підписи та компоненти не обрізані. SVG перевірено XML-парсером; розміри PNG
+відповідають SVG і попереднім PNG. WPF-код не змінювався, Windows-прогін не виконувався.
+
+Після звичайного злиття актуального main `723e656` виконано `dotnet restore`,
+`dotnet build StockFlow.sln -c Release --no-restore` (0 warnings, 0 errors) та
+`dotnet test tests/StockFlow.Tests/StockFlow.Tests.csproj -c Release --no-build --no-restore`:
+146 passed, 0 failed, 0 skipped на macOS ARM64, SDK 8.0.427. Усі шість SVG/PNG
+побайтово незмінні після злиття; diff від main містить лише ці 8 файлів документації.

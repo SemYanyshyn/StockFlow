@@ -20,33 +20,47 @@ StockFlow побудовано за **шаровою (layered) архітект�
 ```text
 StockFlow.sln
 global.json
+.github/workflows/ci.yml            # restore → build → test на windows-latest
+database/
+  01_schema.sql                     # таблиці, ключі, ON DELETE RESTRICT, CHECK
+  02_seed.sql                       # тестові користувачі, довідники, залишки
 src/
-  StockFlow.Domain/
-    StockFlow.Domain.csproj          # net8.0, незалежна модель
-    MovementType.cs                 # Receipt / WriteOff
-  StockFlow.DataAccess/
-    StockFlow.DataAccess.csproj      # net8.0, ADO.NET / Npgsql
+  StockFlow.Domain/                 # net8.0, незалежна модель
+    Product.cs, Category.cs, UnitOfMeasure.cs
+    Supplier.cs, User.cs, UserRole.cs
+    Stock.cs, Warehouse.cs, MovementType.cs
+  StockFlow.DataAccess/             # net8.0, ADO.NET / Npgsql
     DbConnectionFactory.cs          # нове закрите з'єднання на кожну операцію
-  StockFlow.BusinessLogic/
-    StockFlow.BusinessLogic.csproj   # net8.0, майбутні сервіси
+    IStockRepository.cs             # контракт залишків (модуль Саші)
+    Products/                       # CategoryRepository, ProductRepository, UnitOfMeasureColumn
+    Suppliers/                      # SupplierRepository
+  StockFlow.BusinessLogic/          # net8.0, сервіси й правила
     ServiceCollectionExtensions.cs  # AddStockFlow: межа реєстрації DI
     StockFlowConfiguration.cs       # JSON біля executable + STOCKFLOW_ environment
-  StockFlow.UI/
-    StockFlow.UI.csproj             # net8.0-windows, UseWPF=true
-    App.xaml / App.xaml.cs          # виклик BusinessLogic для конфігурації й DI
-    MainWindow.xaml / .xaml.cs       # стандартне порожнє вікно
+    Products/                       # CategoryService, ProductService, ValidationException
+    Suppliers/                      # SupplierService
+    Users/                          # ICurrentUserContext, TemporaryUserContext
+  StockFlow.UI/                     # net8.0-windows, WPF, MVVM
+    App.xaml / App.xaml.cs          # конфігурація, AddStockFlow, DI екранів
+    Services/                       # NavigationService
+    Styles/Theme.xaml               # кольори, кнопки, таблиці
+    ViewModels/                     # MainWindowViewModel, ProductsViewModel, CategoriesViewModel, SuppliersViewModel, ...
+    Views/                          # MainWindow, ProductsView, CategoriesView, SuppliersView, екрани-заглушки
     appsettings.example.json        # лише безпечний приклад; не завантажується
     appsettings.json                # тільки локально, ігнорується Git
 tests/
-  StockFlow.Tests/
-    StockFlow.Tests.csproj          # net8.0, xUnit, без WPF і PostgreSQL
-    DbConnectionFactoryTests.cs
-    StockFlowConfigurationTests.cs
+  StockFlow.Tests/                  # net8.0, xUnit, без WPF і PostgreSQL
+    *Tests.cs                       # домен, сервіси з фейковими репозиторіями, DI, конфігурація
 documentation/
   architecture.md
+  requirements.md, user-stories.md, scenarios.md
   stage5-integration.md             # контракти, перевірки й залежності команди
-  diagrams/                        # актуальні UML та ER
+  diagrams/                         # актуальні UML та ER
 ```
+
+Модулі в DataAccess і BusinessLogic лежать у власних папках (`Products/`, `Suppliers/`, `Users/`).
+В UI екрани розкладено за типом: `Views/` і `ViewModels/`; новий екран реєструється
+в `App.xaml.cs` (ViewModel у DI) і в `MainWindow.xaml` (DataTemplate).
 
 Фактичні **прямі** `ProjectReference`:
 
@@ -81,17 +95,9 @@ JSON. `appsettings.example.json` ніколи не використовуєть�
 мінімальне вікно можуть бути створені; перше отримання фабрики дає зрозумілу
 помилку без пароля. Некоректний JSON також дає очищену від вмісту файлу помилку.
 
-**Реалізовано:** каркас, фабрика, конфігурація, реєстрація DI, `MovementType`
-та юніт-тести інфраструктури. `StockMovement` і тести `Validate(stock)` /
-`Apply(stock)` ще не додані: у main і доступних гілках немає `Stock` Саші.
-Мінімальний контракт наведено в [інтеграційних нотатках](stage5-integration.md).
-Production-заглушки й альтернативного типу Stock немає.
-
-**Залишається команді:** Саша — `Stock`, `Warehouse`, `IStockRepository`, оболонка,
-меню та стилі; Мар'ян — `database/`, користувачі, постачальники, тимчасовий контекст
-користувача та `.github/workflows/ci.yml`; Таня — товари, категорії, їхній
-наскрізний зріз і загальний README. Цих майбутніх папок/модулів поки немає в коді.
-Інші розділи цього документа описують цільову архітектуру.
+Поточний стан реалізованих модулів наведено в розділі «Поточний стан» у
+[README](../README.md). Розділи 3–6 описують цільову архітектуру, зокрема
+сервіси й репозиторії модулів, які ще в роботі.
 
 ## 3. Основні компоненти та їх відповідальність
 
@@ -193,7 +199,7 @@ Production-заглушки й альтернативного типу Stock н�
 
 MVVM у UI-шарі обрано, бо:
 
-- ViewModel — звичайний клас без вікна, тож логіку екранів можна покрити тестами xUnit;
+- ViewModel не залежить від вікна, тож її можна тестувати окремим проєктом пізніше; зараз проєкт `Tests` не посилається на UI, тому автоматичними тестами покриті домен і сервіси;
 - видимість елементів залежно від ролі користувача задається властивістю ViewModel і прив'язується до інтерфейсу, а не прописується вручну в кожному вікні;
 - бізнес-логіка не потрапляє в code-behind вікон, що зберігає межі між шарами.
 
@@ -215,6 +221,14 @@ MVVM у UI-шарі обрано, бо:
 
 Обмеження рішення — відсутність окремого набору прав для власника. Якщо надалі йому знадобляться специфічні можливості, модель доступу можна розширити, узгоджено оновивши `UserRole`, допустимі значення в БД, перевірки прав та інтерфейс.
 
+### Пряма робота з базою даних замість окремого API
+
+StockFlow — настільний застосунок для одного магазину й невеликої команди, тому він звертається до PostgreSQL напряму через шар `DataAccess`, без окремого серверного API. Це прибирає з проєкту окремий сервер, його розгортання та протокол обміну, а транзакції (наприклад, рух товару разом зі зміною залишку) виконуються в одному процесі.
+
+Межі шарів при цьому зберігаються: UI не бачить `DataAccess` (`DisableTransitiveProjectReferences`), SQL є лише в репозиторіях, правила й перевірка ролі — у сервісах `BusinessLogic`.
+
+Обмеження: кожен комп'ютер із застосунком потребує мережевого доступу до бази та власного рядка підключення в локальній конфігурації, а права доступу до даних перевіряє сам застосунок. Якщо знадобляться вебклієнт або віддалені користувачі, сервіси `BusinessLogic` можна винести за API, не змінюючи домен і репозиторії.
+
 ### ADO.NET замість Entity Framework
 
 ADO.NET передбачено вимогами курсу. У межах навчального проєкту явні параметризовані SQL-запити допомагають побачити, як застосунок звертається до PostgreSQL і як контролюється доступ до даних. У шарі `DataAccess` підключення надає `DbConnectionFactory`, а репозиторії виконують запити; бізнес-правила залишаються в `BusinessLogic`, відображення даних — у WPF-інтерфейсі.
@@ -231,6 +245,14 @@ Entity Framework також підтримує транзакції та міг 
 
 Обмеження моделі полягає в тому, що поставку з кількома товарами доведеться зареєструвати кількома записами `StockMovement`; ці записи не будуть об’єднані в одну накладну. Якщо в майбутньому з’явиться вимога оформлювати один документ із багатьма товарними позиціями, модель можна розширити сутністю накладної та пов’язаними з нею рядками.
 
+### Товар без ціни
+
+Сутність `Product` і таблиця `products` не мають ціни. StockFlow облікує кількість товару на складах, а не його вартість. У вимогах ціна не згадується ні для вікна «Товари», ні для звітів: звіти про залишки та рух товару оперують лише кількостями. Жодна операція системи ціну не використовує, тож таке поле лише змушувало б адміністратора підтримувати дані, які ніде не застосовуються.
+
+Крім того, одна ціна в довіднику товарів не відповідає реальному обліку. Закупівельна ціна змінюється від поставки до поставки, а роздрібна стосується продажів, яких StockFlow не веде. Тому значення, збережене в `Product`, швидко б застаріло й вводило б в оману.
+
+Обмеження рішення: система не показує вартість залишків і суми закупівель. Якщо з'явиться така вимога, ціну за одиницю варто зберігати в надходженні (`StockMovement` типу `Receipt`), а не в `Product`. Тоді кожен рух матиме ціну, за якою товар фактично надійшов, а вартість залишків можна буде обчислювати у звітах. Це потребує узгодженої зміни ER-моделі, схеми БД, сутності `StockMovement`, форми руху товару та звітів.
+
 ### PostgreSQL як СУБД
 
 PostgreSQL обрано як СУБД проєкту, бо вона:
@@ -241,3 +263,10 @@ PostgreSQL обрано як СУБД проєкту, бо вона:
 - ефективно виконує агрегатні запити (`SUM`, `COUNT`, `GROUP BY`) та фільтрацію за діапазонами дат, що критично для швидкодії модуля «Звіти»;
 - має нативний високопродуктивний ADO.NET-провайдер для .NET (`Npgsql`), який підтримує повну параметризацію запитів і вбудоване керування пулом підключень;
 - є відкритою системою з вільною ліцензією (PostgreSQL License) і легко розгортається локально або в Docker-контейнерах.
+## 7. Реалізовані MA-8–MA-10
+
+`UserRepository` і `AuthService` забезпечують справжній вхід. `AuthenticatedUserContext` реєструється singleton замість тимчасового контексту; головне вікно та залежні від ролі ViewModels створюються після входу. Контекст не видає хеш пароля й повертає копію даних сесії. `Pbkdf2PasswordHasher` зберігає версію, ітерації, випадкову сіль і хеш в одному рядку.
+
+Для керування користувачами `UserService` володіє `IUserManagementTransaction`: репозиторій відкриває незалежне з’єднання та транзакцію READ COMMITTED і бере SHARE ROW EXCLUSIVE на users до читання guard-даних. Сервіс у цій транзакції перевіряє роль виконавця, себе, останнього активного Адміна та зв’язки, викликає запис і Commit. Dispose без Commit відкочує зміни. Так дві копії застосунку не можуть одночасно пройти застарілий COUNT і прибрати обох Адмінів. SQL та блокування залишаються у DataAccess.
+
+MA-8 розширює існуючий SupplierService та екран без заміни командних модулів. PostgreSQL FK 23503 перетворюється у DataAccess на типізовану помилку, а BusinessLogic на українське повідомлення. Міграція категорій додає ICU-індекс для регістронезалежної унікальності без видалення чи об’єднання даних. Докладні команди й результати — у README та ma8-ma10-report.md. Попередні розділи цього документа зі згадками тимчасового контексту/екранів користувачів описують історичний каркас.

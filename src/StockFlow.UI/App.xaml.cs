@@ -14,16 +14,33 @@ public partial class App : Application
     private IConfigurationRoot? _configuration;
 
     public static IServiceProvider ServiceProvider { get; private set; } = null!;
+    public App()
+    {
+        DispatcherUnhandledException += (sender, args) =>
+        {
+            MessageBox.Show(
+                "Сталася неочікувана помилка. Спробуйте повторити дію.",
+                "Помилка",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+            args.Handled = true;
+        };
+    }
 
     private void ConfigureServices(IServiceCollection services)
     {
         services.AddSingleton<INavigationService, NavigationService>();
+        services.AddSingleton<IConfirmationService, ConfirmationService>();
+
+        services.AddTransient<LoginViewModel>();
+        services.AddTransient<LoginView>();
 
         services.AddSingleton<MainWindowViewModel>();
         services.AddSingleton<MainWindow>();
 
         services.AddTransient<ProductsViewModel>();
         services.AddTransient<CategoriesViewModel>();
+        services.AddTransient<SuppliersViewModel>();
         services.AddTransient<WarehousesViewModel>();
         services.AddTransient<StockBalancesViewModel>();
         services.AddTransient<ReportsViewModel>();
@@ -42,7 +59,18 @@ public partial class App : Application
             ConfigureServices(services);
             ServiceProvider = services.BuildServiceProvider();
 
+            ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
+            var login = ServiceProvider.GetRequiredService<LoginView>();
+            if (login.ShowDialog() != true)
+            {
+                Shutdown();
+                return;
+            }
+            // Construct the shell and all role-sensitive view models only after authentication.
             var mainWindow = ServiceProvider.GetRequiredService<MainWindow>();
+            MainWindow = mainWindow;
+            ShutdownMode = ShutdownMode.OnMainWindowClose;
             mainWindow.DataContext = ServiceProvider.GetRequiredService<MainWindowViewModel>();
             mainWindow.Show();
         }

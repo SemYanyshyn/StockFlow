@@ -15,6 +15,7 @@ public partial class CategoriesView : UserControl
     {
         if (DataContext is CategoriesViewModel viewModel)
         {
+            ActionsColumn.Visibility = viewModel.CanManage ? Visibility.Visible : Visibility.Collapsed;
             viewModel.LoadCommand.Execute(null);
         }
     }

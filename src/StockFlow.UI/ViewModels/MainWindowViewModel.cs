@@ -8,10 +8,12 @@ namespace StockFlow.UI.ViewModels
     public class MainWindowViewModel : ViewModelBase
     {
         public INavigationService Navigation { get; }
-        public bool IsAdmin { get; }
+        private readonly ICurrentUserContext _currentUser;
+        public bool IsAdmin => _currentUser.IsAdmin;
 
         public IRelayCommand NavigateProductsCommand { get; }
         public IRelayCommand NavigateCategoriesCommand { get; }
+        public IRelayCommand NavigateSuppliersCommand { get; }
         public IRelayCommand NavigateMovementsCommand { get; }
         public IRelayCommand NavigateStockCommand { get; }
         public IRelayCommand NavigateWarehousesCommand { get; }
@@ -21,10 +23,13 @@ namespace StockFlow.UI.ViewModels
         public MainWindowViewModel(INavigationService navigation, ICurrentUserContext currentUser)
         {
             Navigation = navigation;
-            IsAdmin = currentUser.IsAdmin;
+            _currentUser = currentUser;
+            if (currentUser is AuthenticatedUserContext context)
+                context.UserChanged += () => OnPropertyChanged(nameof(IsAdmin));
 
             NavigateProductsCommand = new RelayCommand(() => Navigation.NavigateTo<ProductsViewModel>());
             NavigateCategoriesCommand = new RelayCommand(() => Navigation.NavigateTo<CategoriesViewModel>());
+            NavigateSuppliersCommand = new RelayCommand(() => Navigation.NavigateTo<SuppliersViewModel>());
             NavigateMovementsCommand = new RelayCommand(() => Navigation.NavigateTo<StockMovementsViewModel>());
             NavigateStockCommand = new RelayCommand(() => Navigation.NavigateTo<StockBalancesViewModel>());
             NavigateWarehousesCommand = new RelayCommand(() => Navigation.NavigateTo<WarehousesViewModel>());
