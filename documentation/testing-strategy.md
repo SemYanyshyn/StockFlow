@@ -136,7 +136,7 @@ Workflow `CI` запускається для PR у `main` та push у `main` �
 
 ## Крайові ситуації
 
-Рядки модулів «Товари» й «Категорії». Рядки інших модулів додадуть автори (SE7-7, SA7-7, MA7-8).
+Рядки всіх модулів, що є в `main` на коміті `3288910`. Рядки для залишків і звітів (SA7-1 – SA7-4) додамо після мерджу цих задач.
 
 | № | Модуль | Ситуація | Очікувана поведінка | Тест | Рівень |
 |---|---|---|---|---|---|
@@ -156,6 +156,26 @@ Workflow `CI` запускається для PR у `main` та push у `main` �
 | 14 | Товари | Зміна одиниці виміру товару, для якого є залишки або рухи | «Одиницю виміру не можна змінити: для товару вже є залишки або рухи.», оновлення не викликається | `ProductServiceTests.UnitCannotChangeWhenProductHasStockOrMovements` | модульний |
 | 15 | Товари | Видалення товару із залишками або рухами | «Товар не можна видалити: для нього є залишки або рухи товару.», запис лишається | `ProductServiceTests.ProductWithStockOrMovementsIsNotDeleted` | модульний |
 | 16 | Товари | Два товари з однаковою назвою | Дозволено (на відміну від категорій) | `ProductServiceTests.DuplicateProductNamesAreAllowed` | модульний |
+| 17 | Постачальники | Email рівно 100 символів | Приймається | `SupplierTests.EmailAtMaxLengthIsAccepted` | модульний |
+| 18 | Постачальники | Email `bad-email`, `name@`, `a@b@c.com`, `hello @example.com` | «Некоректна електронна пошта постачальника.», запис не зберігається | `SupplierServiceTests.InvalidEmailIsRejectedWithoutSaving` | модульний |
+| 19 | Постачальники | Телефон і email порожні або з самих пробілів | Зберігаються як `null` | `SupplierServiceTests.BlankOptionalFieldsBecomeNull` | модульний |
+| 20 | Постачальники | Видалення постачальника, для якого є рухи | Відмова, запис лишається; постачальника без рухів видаляє | `SupplierServiceTests.DeleteProtectsHistoryAndRemovesUnusedSupplier` | модульний |
+| 21 | Склади | Назва `null`, порожня або з самих пробілів | «Назва складу обов'язкова.» | `WarehouseServiceTests.Add_WhenNameIsEmptyOrWhitespace_ThrowsValidationException` | модульний |
+| 22 | Користувачі | Логін «NewUser» уже є, створюємо «NewUser» і «newuser» | Точний дубль: «Користувач із таким логіном уже існує.»; інший регістр дозволено | `UserServiceTests.CreateTrimsIdentityHashesPasswordAndPreservesCaseSensitiveUsernameRule` | модульний |
+| 23 | Користувачі | Зміна ролі останнього активного Адміністратора на Працівника | «Не можна позбавити систему останнього активного Адміністратора.»; змінити ім'я можна | `UserServiceTests.LastActiveAdminCannotBeDemotedButCanChangeName` | модульний |
+| 24 | Користувачі | Адміністратор блокує або видаляє власний обліковий запис | «Не можна заблокувати власний обліковий запис.» / «Не можна видалити власний обліковий запис.» | `UserServiceTests.CannotBlockOrDeleteSelfAndCanBlockUnblockOtherUsers` | модульний |
+| 25 | Користувачі | Адміністратора заблокували або понизили в БД, поки його сесія відкрита | «Виконувати цю дію може лише Адміністратор.», жодних змін | `UserServiceTests.StaleAdminSessionCannotReadOrWriteWhenBlockedOrDemotedInDatabase` | модульний |
+| 26 | Користувачі | Видалення користувача, який має рухи товарів | «Користувач має зареєстровані рухи товарів. Замість видалення заблокуйте обліковий запис.» | `UserServiceTests.DeleteChecksMovementsAndTranslatesForeignKeyRaceWithoutCommit` | модульний |
+| 27 | Вхід | Невідомий логін, неправильний пароль, пошкоджений хеш | Однакове «Невірний логін або пароль»; заблокований із правильним паролем — «Обліковий запис заблоковано. Зверніться до Адміністратора.» | `AuthServiceTests.UnknownWrongAndCorruptCredentialsHaveSameMessageAndBlockedStatusNeedsCorrectPassword` | модульний |
+| 28 | Вхід | Пароль « secret » із пробілами | Пароль не обрізається: «secret» не підходить | `AuthServiceTests.HashUsesRandomSaltAndVerifiesExactPassword` | модульний |
+| 29 | Накладні | Списання 11 при залишку 10; списання 1 при залишку 0 | «Недостатньо товару на складі», залишок не змінюється | `StockMovementTests.RejectedMovementProvidesOneErrorAndCannotChangeStock` | модульний |
+| 30 | Накладні | Надходження без постачальника; списання з постачальником | «Для надходження потрібно обрати постачальника» / «Для списання постачальник не зазначається» | `StockMovementTests.RejectedMovementProvidesOneErrorAndCannotChangeStock` | модульний |
+| 31 | Накладні | Надходження, після якого залишок перевищив би `int.MaxValue` | «Кількість перевищує допустиму», залишок не змінюється | `StockMovementTests.RejectedMovementProvidesOneErrorAndCannotChangeStock` | модульний |
+| 32 | Накладні | Списання всього залишку: 10 із 10 | Приймається, залишок 0 | `StockMovementTests.WriteOffSupportsPartialAndWholeStock` | модульний |
+| 33 | Накладні | Номер рівно 50 символів; 49 символів із пробілами по краях | 50 приймається; з пробілами — ні, бо пробіли теж зберігаються | `StockMovementTests.NumberWithExactlyTheSchemaLimitIsAccepted`, `StockMovementTests.WhitespaceStillCountsTowardTheStoredNumberLength` | модульний |
+| 34 | Накладні | Фільтр: дата «з» пізніша за дату «по» | Відмова до запиту в БД | `StockMovementListTests.InvalidRangeRejectedBeforeRepositoryAndSameDayTimesNormalize` | модульний |
+| 35 | Накладні | Порожня база, немає збігів за фільтром, помилка БД | «Накладних ще немає.» / «За обраними фільтрами накладних не знайдено.» / «Не вдалося завантажити…» без тексту винятку; повторне завантаження працює | `StockMovementListTests.EmptyDatabaseNoMatchAndFailureAreDifferentStatesAndCanRetry` | модульний |
+| 36 | Залишки | Кількість 4, 10, 15 при порозі 10; 0 при порозі 0 | Низький залишок лише 4 із 10; рівно на порозі — не низький | `StockTests.IsBelowThreshold_EvaluatesCorrectly` | модульний |
 
 ---
 
