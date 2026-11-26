@@ -32,8 +32,12 @@ public sealed class UserServiceTests
         public IUserManagementTransaction BeginManagement() { Begins++; return new Transaction(this); }
         private static User Copy(User user) => new()
         {
-            Id = user.Id, Username = user.Username, FullName = user.FullName, PasswordHash = user.PasswordHash,
-            Role = user.Role, IsActive = user.IsActive
+            Id = user.Id,
+            Username = user.Username,
+            FullName = user.FullName,
+            PasswordHash = user.PasswordHash,
+            Role = user.Role,
+            IsActive = user.IsActive
         };
         private sealed class Transaction : IUserManagementTransaction
         {

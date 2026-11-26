@@ -16,6 +16,27 @@ public sealed class AuthServiceTests
         public User? GetByUsername(string username) => User?.Username == username ? User : null;
     }
 
+    [Theory]
+    [InlineData(null, "Password!")]
+    [InlineData("", "Password!")]
+    [InlineData(" \t", "Password!")]
+    [InlineData("demo", null)]
+    [InlineData("demo", "")]
+    [InlineData("demo", " \t")]
+    public void BlankCredentialsAreRejectedBeforeCreatingRepository(string? username, string? password)
+    {
+        var context = new AuthenticatedUserContext();
+        var auth = new AuthService(
+            () => throw new InvalidOperationException("The repository factory must not be called."),
+            new Pbkdf2PasswordHasher(),
+            context);
+
+        var error = Assert.Throws<ValidationException>(() => auth.Login(username, password));
+
+        Assert.Equal(AuthService.InvalidCredentialsMessage, error.Message);
+        Assert.False(context.IsAuthenticated);
+    }
+
     [Fact]
     public void HashUsesRandomSaltAndVerifiesExactPassword()
     {
