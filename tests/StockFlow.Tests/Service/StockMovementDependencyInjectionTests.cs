@@ -2,7 +2,6 @@ using System.Data;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using StockFlow.BusinessLogic;
-using StockFlow.BusinessLogic.Users;
 using StockFlow.DataAccess;
 using StockFlow.Domain;
 using Xunit;
@@ -18,43 +17,47 @@ public sealed class StockMovementDependencyInjectionTests
         }).Build();
 
     [Fact]
-    public void FullCandidateGraphValidatesAndResolvesWithoutDatabase()
+    public void AddStockFlowRegistersTheRepositoryRequiredByMovementServices()
     {
         var services = new ServiceCollection();
         services.AddStockFlow(Config()).AddStockMovementServices();
-        services.AddSingleton<IStockRepository, UnopenedStockRepository>();
-        services.AddSingleton<ICurrentUserContext, TestUser>();
         using var provider = services.BuildServiceProvider(new ServiceProviderOptions
         {
             ValidateOnBuild = true,
             ValidateScopes = true
         });
+
         Assert.NotNull(provider.GetRequiredService<StockMovementService>());
+        Assert.IsType<StockRepository>(provider.GetRequiredService<IStockRepository>());
         Assert.IsType<StockMovementRepository>(provider.GetRequiredService<IStockMovementRepository>());
         Assert.IsType<NpgsqlStockTransactionFactory>(provider.GetRequiredService<IStockTransactionFactory>());
     }
 
     [Fact]
-    public void MovementModuleRequiresActualStockRepositoryRegistration()
+    public void MovementServicesResolveWithAnExplicitStockRepositoryOverride()
     {
         var services = new ServiceCollection();
         services.AddStockFlow(Config()).AddStockMovementServices();
-        var error = Assert.Throws<AggregateException>(() => services.BuildServiceProvider(
-            new ServiceProviderOptions { ValidateOnBuild = true }));
-        Assert.Contains(nameof(IStockRepository), error.ToString());
-    }
+        services.AddSingleton<IStockRepository, UnopenedStockRepository>();
+        using var provider = services.BuildServiceProvider(new ServiceProviderOptions
+        {
+            ValidateOnBuild = true,
+            ValidateScopes = true
+        });
 
-    private sealed class TestUser : ICurrentUserContext
-    {
-        public User CurrentUser { get; } = new() { Id = 1, Role = UserRole.Employee };
+        Assert.NotNull(provider.GetRequiredService<StockMovementService>());
+        Assert.IsType<UnopenedStockRepository>(provider.GetRequiredService<IStockRepository>());
     }
 
     private sealed class UnopenedStockRepository : IStockRepository
     {
         public Stock GetForUpdate(int productId, int warehouseId, IDbTransaction transaction) =>
             throw new InvalidOperationException("No database operation is expected while resolving DI");
+
         public void Save(Stock stock, IDbTransaction transaction) =>
             throw new InvalidOperationException("No database operation is expected while resolving DI");
-        public IReadOnlyList<Stock> GetAll(int? warehouseId) => Array.Empty<Stock>();
+
+        public IReadOnlyList<Stock> GetAll(int? warehouseId = null, IDbTransaction? transaction = null) =>
+            Array.Empty<Stock>();
     }
 }

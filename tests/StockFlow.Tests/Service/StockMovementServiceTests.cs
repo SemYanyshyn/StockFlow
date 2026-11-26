@@ -308,6 +308,24 @@ public sealed class StockMovementServiceTests
         AssertReleased(fixture);
     }
 
+    [Fact]
+    public void GetAll_FiltersByWarehouseAndReadsPendingStockWithinTransaction()
+    {
+        var fixture = new Fixture();
+        fixture.Transaction.PendingStock = new Stock
+        {
+            ProductId = 11,
+            WarehouseId = 24,
+            Quantity = 3,
+            MinThreshold = 2
+        };
+
+        Assert.Equal(10, Assert.Single(fixture.Stocks.GetAll()).Quantity);
+        Assert.Empty(fixture.Stocks.GetAll(99));
+        Assert.Equal(3, Assert.Single(fixture.Stocks.GetAll(24, fixture.Transaction.Transaction)).Quantity);
+        Assert.Empty(fixture.Stocks.GetAll(22, fixture.Transaction.Transaction));
+    }
+
     private static StockMovement Request(MovementType type = MovementType.Receipt, int quantity = 5) => new()
     {
         Number = "НК-017",
@@ -488,9 +506,15 @@ public sealed class StockMovementServiceTests
             work.PendingStock = Copy(stock);
         }
 
-        public IReadOnlyList<Stock> GetAll(int? warehouseId) =>
-            warehouseId is null || warehouseId == state.PersistedStock.WarehouseId
-                ? [Copy(state.PersistedStock)] : [];
+        public IReadOnlyList<Stock> GetAll(int? warehouseId = null, IDbTransaction? transaction = null)
+        {
+            var stock = ReferenceEquals(transaction, work.Transaction) && work.PendingStock is { } pendingStock
+                ? pendingStock
+                : state.PersistedStock;
+
+            return warehouseId is null || warehouseId == stock.WarehouseId
+                ? [Copy(stock)] : [];
+        }
     }
 
     private sealed class FakeMovementRepository(FakeStockTransaction work) : IStockMovementRepository
