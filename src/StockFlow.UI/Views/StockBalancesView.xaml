@@ -111,7 +111,7 @@
             </DataGridTemplateColumn.CellTemplate>
           </DataGridTemplateColumn>
 
-          <DataGridTemplateColumn Header="Поточний залишок" Width="160">
+          <DataGridTemplateColumn Header="Поточний залишок" Width="180">
             <DataGridTemplateColumn.CellTemplate>
               <DataTemplate>
                 <TextBlock Text="{Binding QuantityDisplay}"
