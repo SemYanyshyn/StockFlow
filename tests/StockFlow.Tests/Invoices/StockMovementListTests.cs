@@ -110,6 +110,41 @@ public sealed class StockMovementListTests
     }
 
     [Fact]
+    public async Task FilterChangedWhileDetailsLoadReloadsListWithLatestFilter()
+    {
+        var f = new Fixture { DetailGate = new ManualResetEventSlim(false) }; var vm = f.ViewModel();
+        await vm.LoadAsync();
+        var view = vm.ViewCommand.ExecuteAsync(vm.Movements[0]);
+        Assert.True(vm.IsBusy);
+        vm.FilterType = MovementType.Receipt;
+        f.DetailGate.Set();
+        await view;
+        Assert.Equal(2, f.ReadCount);
+        Assert.Equal(MovementType.Receipt, f.LastFilter!.Type);
+        Assert.False(vm.IsListOpen);
+        vm.BackCommand.Execute(null);
+        Assert.True(vm.IsListOpen);
+        Assert.False(vm.IsBusy);
+    }
+
+    [Fact]
+    public async Task SearchTypedWhileDetailsFailReloadsListAndKeepsDetailError()
+    {
+        var f = new Fixture { DetailGate = new ManualResetEventSlim(false), DetailError = new IOException("private query") };
+        var vm = f.ViewModel(); vm.SearchDelay = TimeSpan.Zero;
+        await vm.LoadAsync();
+        var view = vm.ViewCommand.ExecuteAsync(vm.Movements[0]);
+        vm.SearchNumber = "нк-01";
+        f.DetailGate.Set();
+        await view;
+        Assert.Equal(2, f.ReadCount);
+        Assert.Equal("нк-01", f.LastFilter!.Number);
+        Assert.True(vm.IsListOpen);
+        Assert.Contains("Не вдалося завантажити деталі", vm.ListError);
+        Assert.False(vm.IsBusy);
+    }
+
+    [Fact]
     public async Task InvalidDateRangeShowsErrorWithoutQuery()
     {
         var f = new Fixture(); var vm = f.ViewModel();
@@ -193,6 +228,7 @@ public sealed class StockMovementListTests
         public int ReadCount { get; private set; }
         public bool MissingDetails { get; set; }
         public ManualResetEventSlim? Gate { get; set; }
+        public ManualResetEventSlim? DetailGate { get; set; }
         public StockMovementsViewModel ViewModel() => new(new(this), new(this, this), this);
         public StockMovementList Search(StockMovementFilter filter)
         {
@@ -203,6 +239,7 @@ public sealed class StockMovementListTests
         }
         public StockMovementDetails? GetById(int id)
         {
+            DetailGate?.Wait();
             if (DetailError is not null) throw DetailError;
             return MissingDetails ? null : Row(id);
         }

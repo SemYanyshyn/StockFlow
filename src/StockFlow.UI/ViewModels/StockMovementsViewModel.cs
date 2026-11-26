@@ -192,9 +192,12 @@ public sealed partial class StockMovementsViewModel : ViewModelBase
         if (IsBusy || row is null) return;
         IsBusy = true;
         ListError = null;
+        string? detailError = null;
         try { Details = new(await Task.Run(() => _query.GetById(row.Id))); }
-        catch (ValidationException error) { ListError = error.Message; }
-        catch (Exception) { ListError = "Не вдалося завантажити деталі накладної. Спробуйте ще раз."; }
+        catch (ValidationException error) { detailError = error.Message; }
+        catch (Exception) { detailError = "Не вдалося завантажити деталі накладної. Спробуйте ще раз."; }
         finally { IsBusy = false; }
+        if (_reloadPending) await LoadAsync();
+        ListError ??= detailError;
     }
 }
