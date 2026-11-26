@@ -115,6 +115,7 @@
 - [user-stories.md](documentation/user-stories.md) — історії користувачів із критеріями приймання;
 - [scenarios.md](documentation/scenarios.md) — сценарії використання;
 - [architecture.md](documentation/architecture.md) — архітектура, структура рішення, модель даних, обґрунтування рішень;
+- [testing-strategy.md](documentation/testing-strategy.md) — рівні тестування, угоди, крайові ситуації, приклади рефакторингу;
 - [stage5-integration.md](documentation/stage5-integration.md) — контракти між модулями й технічні нотатки каркаса;
 - [us21-verification.md](documentation/us21-verification.md) — список накладних, фактичні перевірки та передача на Windows;
 - [diagrams/](documentation/diagrams/) — UML, ER-діаграма, wireframes.
@@ -207,7 +208,7 @@ dotnet run --project src/StockFlow.UI/StockFlow.UI.csproj -c Release --no-build
 ```
 
 - `appsettings.json` копіюється біля застосунку під час збирання. Якщо створили або змінили його після `build`, зберіть проєкт ще раз.
-- Юніт-тести можна запускати без PostgreSQL. Порядок перевірок наведено в розділі [«CI»](#ci).
+- Юніт-тести можна запускати без PostgreSQL. Решту наборів описано в розділі [«Тестування»](#тестування), перевірки PR — у розділі [«CI»](#ci).
 - Якщо PostgreSQL недоступний, вікно входу показує повідомлення про підключення й дозволяє повторити спробу.
 
 ## Поточний стан
@@ -218,7 +219,7 @@ dotnet run --project src/StockFlow.UI/StockFlow.UI.csproj -c Release --no-build
 
 - каркас рішення з п'яти проєктів, `DbConnectionFactory`, конфігурація й DI;
 - скрипти бази даних і тестові дані;
-- CI: збирання й юніт-тести для кожного pull request;
+- CI: форматування, збірка без попереджень, юніт-тести з покриттям, перевірки PostgreSQL і WPF для кожного pull request;
 - головне вікно з меню (пункт «Користувачі» лише для Адміністратора) і стилі інтерфейсу;
 - **Товари**: список, пошук, фільтр, додавання, редагування та видалення з перевіркою ролі й пов’язаних даних;
 - **Категорії**: список, додавання, редагування й видалення (Адмін); валідація, захист зв’язків і DB-унікальність без регістру;
@@ -229,27 +230,59 @@ dotnet run --project src/StockFlow.UI/StockFlow.UI.csproj -c Release --no-build
 
 **Ще не завершено в командних модулях:** рух товару з транзакцією, екрани накладних і звітів, повний облік залишків, розширені операції зі складами. Ці модулі не змінювалися цим завданням.
 
-## Окремі перевірки PostgreSQL і WPF
+## Тестування
 
-Проєкти `StockFlow.DatabaseChecks` і `StockFlow.WindowsChecks` запускаються окремо від `StockFlow.sln`. Їм потрібен PostgreSQL з ICU, а WPF-перевіркам також потрібна Windows.
+Підходи, угоди й каталог крайових ситуацій описано в [стратегії тестування](documentation/testing-strategy.md).
+
+| Набір | Що перевіряє | Що потрібно | У CI |
+| --- | --- | --- | --- |
+| `tests/StockFlow.Tests` | домен, сервіси з фейковими репозиторіями, реєстрацію DI, конфігурацію | лише .NET 8 SDK | `build-and-test` |
+| `tests/StockFlow.DatabaseChecks` | репозиторії на справжній PostgreSQL, обмеження схеми, ICU-унікальність, конкурентні зміни | PostgreSQL з ICU | `database-checks`, `windows-checks` |
+| `tests/StockFlow.WindowsChecks` | ViewModels і XAML реальних екранів: права ролей, фільтри, повідомлення, помилки підключення | Windows, PostgreSQL з ICU | `windows-checks` |
+| `tests/StockFlow.MovementChecks` | запити списку накладних на справжній PostgreSQL | bash, Python 3, PostgreSQL | ні, запуск вручну |
+
+`StockFlow.Tests` входить у `StockFlow.sln`. Три інші проєкти запускаються окремо, кожен у власній тимчасовій БД з префіксом `stockflow_isolated_`. Рядок підключення робочої БД вони не використовують.
+
+### Юніт-тести
+
+```powershell
+dotnet test tests/StockFlow.Tests/StockFlow.Tests.csproj -c Release
+dotnet test tests/StockFlow.Tests/StockFlow.Tests.csproj -c Release --filter 'FullyQualifiedName~CategoryServiceTests'
+```
+
+### Перевірки PostgreSQL і WPF
 
 На Windows із локальними бінарними файлами PostgreSQL виконайте:
 
 ```powershell
-.\scripts\Verify-Isolated.ps1 -PostgreSqlBin 'C:\Program Files\PostgreSQL\16\bin'
+.\scripts\Verify-Isolated.ps1 -PostgreSqlBin 'C:\Program Files\PostgreSQL\17\bin'
 ```
 
-Скрипт створює окремий тимчасовий кластер на вільному loopback-порту і три БД з префіксом `stockflow_isolated_`, виконує перевірки репозиторіїв, конкурентних змін, WPF ViewModels/XAML та безпечності міграцій і зупиняє кластер у finally. Рядок робочої БД не використовується. Каталог зупиненого кластера зберігається у `%TEMP%` для огляду; шлях друкується наприкінці. Рендери й журнали — у `TestResults/` (Git ігнорує їх). `-SkipWindowsChecks` пропускає WPF-проєкт.
+Скрипт створює окремий тимчасовий кластер на вільному loopback-порту і три БД з префіксом `stockflow_isolated_`, виконує перевірки репозиторіїв, конкурентних змін, WPF ViewModels/XAML та безпечності міграцій і зупиняє кластер у finally. Каталог зупиненого кластера зберігається у `%TEMP%` для огляду; шлях друкується наприкінці. Рендери й журнали — у `TestResults/` (Git ігнорує їх). `-SkipWindowsChecks` пропускає WPF-проєкт.
 
 Фактичні результати, обмеження ручної перевірки й порядок локальних гілок — у [звіті MA-8–MA-10](documentation/ma8-ma10-report.md). Тексти PR — у [documentation/pull-requests/](documentation/pull-requests/).
+
+### Перевірки накладних
+
+На macOS або Linux:
+
+```bash
+STOCKFLOW_PG_BIN="$(pg_config --bindir)" ./scripts/Verify-Movements-Isolated.sh
+```
+
+Скрипт створює тимчасовий кластер, завантажує схему й seed, запускає `StockFlow.MovementChecks` і видаляє кластер. Без `STOCKFLOW_PG_BIN` він шукає PostgreSQL у Postgres.app. Подробиці — у [us21-verification.md](documentation/us21-verification.md).
 
 ## CI
 
 [![CI](https://github.com/SemYanyshyn/StockFlow/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/SemYanyshyn/StockFlow/actions/workflows/ci.yml?query=branch%3Amain)
 
-Workflow `CI` запускається для PR у `main` і push у `main`. У базовій конфігурації `main` (`b7683c7`) job `build-and-test` на `windows-latest` виконує restore, Release-збірку й xUnit. PR #248 додає перевірку форматування, збірку з `-warnaserror` і звіт про покриття. Його прогін очікує форматування з #252. PR #249 додає окремі jobs для PostgreSQL і WPF. Обидва jobs пройшли пілотний прогін, у якому `build-and-test` зупинився на форматуванні. [PR #248](https://github.com/SemYanyshyn/StockFlow/pull/248) · [Прогін #249](https://github.com/SemYanyshyn/StockFlow/actions/runs/44612768357)
+Workflow `CI` запускається для PR у `main` і push у `main` і містить три jobs:
 
-У PowerShell з кореня репозиторію виконайте команди для гілки з оновленим workflow і `coverlet.collector`.
+- `build-and-test` на `windows-latest`: restore, перевірка форматування, Release-збірка з `-warnaserror`, xUnit зі збором покриття. Обов’язковий для злиття в `main`.
+- `database-checks` на Ubuntu: PostgreSQL 16 з ICU як сервіс, схема й seed у `stockflow_isolated_ci`, потім `StockFlow.DatabaseChecks`.
+- `windows-checks` на `windows-latest`: `Verify-Isolated.ps1` з PostgreSQL з `PGBIN` запускає перевірки БД, WPF і міграцій.
+
+Ті самі кроки `build-and-test` у PowerShell з кореня репозиторію:
 
 ```powershell
 dotnet restore StockFlow.sln
@@ -258,7 +291,7 @@ dotnet build StockFlow.sln -c Release --no-restore -warnaserror
 dotnet test tests/StockFlow.Tests/StockFlow.Tests.csproj -c Release --no-build --no-restore --collect 'XPlat Code Coverage' --results-directory TestResults/ci
 ```
 
-Після успішного `build-and-test` за workflow з #248 відкрийте **Summary**, щоб переглянути покриття. У **Artifacts** завантажте `coverage-html`, розпакуйте архів і відкрийте `index.html`. Артефакт зберігається 14 днів. Покриття публікується як метрика без порога.
+Після успішного `build-and-test` відкрийте **Summary**, щоб переглянути покриття. У **Artifacts** завантажте `coverage-html`, розпакуйте архів і відкрийте `index.html`. Артефакт зберігається 14 днів. Покриття публікується як метрика без порога.
 
 Для локального HTML-звіту використайте той самий ReportGenerator. Запускайте збір покриття з порожнім каталогом результатів, щоб звіт охоплював один прогін.
 
@@ -271,4 +304,4 @@ dotnet tool install dotnet-reportgenerator-globaltool --version 5.4.12 --tool-pa
 
 Якщо CI падає, відкрийте перший червоний крок і відтворіть його команду локально. Для форматування застосуйте `dotnet format StockFlow.sln` і перегляньте diff. Для збірки виправте причину за кодом діагностики. Для xUnit відтворіть тест із `--filter 'FullyQualifiedName~НазваТесту'`, виправте причину й повторіть повний прогін. Надішліть виправлення в той самий PR і дочекайтеся зеленого запуску.
 
-Job `database-checks` використовує PostgreSQL 16 з ICU на Ubuntu. Він завантажує `01_schema.sql` і `02_seed.sql` у `stockflow_isolated_ci`, а потім запускає `StockFlow.DatabaseChecks` через `STOCKFLOW_TEST_CONNECTION` на `127.0.0.1`. Job `windows-checks` запускає `Verify-Isolated.ps1` з бінарними файлами PostgreSQL з `PGBIN` і перевіряє БД, WPF та міграції. WPF-прогін працює з STA Dispatcher і зберігає PNG-рендери в `TestResults/windows-checks`. Для кожного пілотного job потрібні п’ять послідовних успішних запусків GitHub Actions перед додаванням до обов’язкових перевірок. [Стратегія тестування](documentation/testing-strategy.md#8-ci)
+WPF-прогін у `windows-checks` працює з STA Dispatcher і зберігає PNG-рендери в `TestResults/windows-checks`. Jobs `database-checks` і `windows-checks` стануть обов’язковими після п’яти успішних запусків поспіль. [Стратегія тестування](documentation/testing-strategy.md#8-ci)
