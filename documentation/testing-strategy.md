@@ -1,6 +1,6 @@
 # Стратегія тестування StockFlow
 
-Документ описує, як і що ми тестуємо, як запускати перевірки та де їхні межі. Числа зафіксовано на коміті `11d2aa8` (17.11.2026) і будуть оновлені після прогону на чистому клоні (TA7-5).
+Документ описує, як і що ми тестуємо, як запускати перевірки та де їхні межі. Числа взято з прогону на чистому клоні на коміті `3288910` (20.11.2026), див. [«Результати прогону»](#результати-прогону).
 
 ## 1. Мета й обсяг
 
@@ -12,12 +12,29 @@
 
 | Рівень | Проєкт | Що перевіряє | Інструмент | Кількість | Де запускається |
 |---|---|---|---|---|---|
-| Модульні | `tests/StockFlow.Tests` | домен, сервіси, реєстрація DI, конфігурація; без бази | xUnit, ручні фейки | 360 тестів | CI для PR у `main` і push у `main`; локально `dotnet test` |
-| Перевірки БД | `tests/StockFlow.DatabaseChecks` | репозиторії на справжній PostgreSQL, обмеження схеми, ICU-унікальність, конкурентні зміни | консольна програма, Npgsql | 32 перевірки | ізольований локальний прогін і пілотний job `database-checks` |
-| Перевірки WPF | `tests/StockFlow.WindowsChecks` | ViewModel і XAML реальних екранів: вхід, постачальники, користувачі, права ролей, помилки підключення | консольна програма, WPF Dispatcher | 27 перевірок | `scripts/Verify-Isolated.ps1` і пілотний job `windows-checks` |
-| Перевірки накладних | `tests/StockFlow.MovementChecks` | запити списку накладних на справжній PostgreSQL | консольна програма, Npgsql | 15 перевірок | вручну, `scripts/Verify-Movements-Isolated.sh` |
+| Модульні | `tests/StockFlow.Tests` | домен, сервіси, реєстрація DI, конфігурація; без бази | xUnit, ручні фейки | 367 тестів | job `build-and-test`; локально `dotnet test` |
+| Перевірки БД | `tests/StockFlow.DatabaseChecks` | репозиторії на справжній PostgreSQL, обмеження схеми, ICU-унікальність, конкурентні зміни | консольна програма, Npgsql | 169 перевірок | jobs `database-checks` і `windows-checks`; локально `scripts/Verify-Isolated.ps1` |
+| Перевірки WPF | `tests/StockFlow.WindowsChecks` | ViewModel і XAML реальних екранів: вхід, постачальники, користувачі, права ролей, помилки підключення | консольна програма, WPF Dispatcher | 27 перевірок | job `windows-checks`; локально `scripts/Verify-Isolated.ps1` |
+| Перевірки накладних | `tests/StockFlow.MovementChecks` | запити списку накладних на справжній PostgreSQL | консольна програма, Npgsql | 15 перевірок | вручну, `scripts/Verify-Movements-Isolated.sh` (macOS, Linux) |
 
 Перевірки БД і WPF запускаються окремо від `StockFlow.sln` з PostgreSQL із підтримкою ICU. Для WPF потрібна Windows. Обидві програми приймають лише рядок підключення до БД `stockflow_isolated_*` на loopback-адресі.
+
+### Результати прогону
+
+Чистий клон `main`, без `appsettings.json` і локальних налаштувань, .NET SDK 8.0.427, PostgreSQL 17 на Windows 10.
+
+| Набір | Кількість | Результат | Дата | Коміт |
+|---|---|---|---|---|
+| Модульні (`dotnet test -c Release`) | 367 | усі пройшли | 20.11.2026 | `3288910` |
+| `DatabaseChecks` (`Verify-Isolated.ps1`) | 169 | усі пройшли | 20.11.2026 | `3288910` |
+| `WindowsChecks` (`Verify-Isolated.ps1`) | 27 | усі пройшли | 20.11.2026 | `3288910` |
+| Міграції (`Verify-Isolated.ps1`) | — | пройшли | 20.11.2026 | `3288910` |
+| `MovementChecks` | 15 | усі пройшли | 20.11.2026 | `3288910` |
+| Покриття рядків: Domain / BusinessLogic | 96,7 % / 99,1 % | гілки BusinessLogic 93,2 % | 20.11.2026 | `3288910` |
+
+Збірка з `-warnaserror` дала 0 попереджень, `dotnet format --verify-no-changes` змін не знайшов. Той самий коміт у CI: усі три jobs зелені. [Прогін на `main`](https://github.com/SemYanyshyn/StockFlow/actions/runs/44693221947)
+
+Покриття рахує лише модульні тести, тому DataAccess має 12,8 %: репозиторії перевіряють `DatabaseChecks` на справжньому PostgreSQL. `Verify-Movements-Isolated.sh` розрахований на macOS і Linux, тож на Windows ті самі кроки (тимчасовий кластер, схема, seed, `dotnet run`) виконано вручну.
 
 ## 3. Що де тестуємо
 
@@ -90,13 +107,15 @@ dotnet test StockFlow.sln --filter "FullyQualifiedName~CategoryServiceTests"
 
 ## 8. CI
 
-Workflow `CI` запускається для PR у `main` та push у `main`. Перевірка `build-and-test` обов’язкова для злиття у `main`. [Конфігурація workflow](../.github/workflows/ci.yml)
+Workflow `CI` запускається для PR у `main` та push у `main` і має три jobs. Обов’язковий для злиття у `main` лише `build-and-test`. [Конфігурація workflow](../.github/workflows/ci.yml) · [Прогін на `main`](https://github.com/SemYanyshyn/StockFlow/actions/runs/44693221947)
 
-У базовій конфігурації `main` (`b7683c7`) `build-and-test` на Windows виконує restore, Release-збірку й xUnit. PR #248 додає перевірку форматування, збірку з `-warnaserror` і звіт про покриття xUnit. GitHub-прогін зупинився на форматуванні. Для наступного прогону потрібен #252. [Прогін #248](https://github.com/SemYanyshyn/StockFlow/actions/runs/44612737011) · [Локальний запуск і звіт](../README.md#ci)
+`build-and-test` на Windows виконує restore, перевірку форматування (`dotnet format --verify-no-changes`), Release-збірку з `-warnaserror` і xUnit зі збором покриття. Резюме покриття видно на сторінці запуску (**Summary**), HTML-звіт — в артефакті `coverage-html`, який зберігається 14 днів. Порога покриття немає. [Локальний запуск і звіт](../README.md#ci)
 
-Для MA7-5 обрано варіант A. `DatabaseChecks` та її залежності мають цільову платформу `net8.0`. В окремому job `database-checks` на Ubuntu PostgreSQL 16 з ICU працює як сервіс. `psql` застосовує схему та seed, після чого `dotnet run` використовує `STOCKFLOW_TEST_CONNECTION` з loopback-адресою й іменем `stockflow_isolated_ci`. У пілотному прогоні #249 цей job успішно виконав 55 перевірок БД. [Журнал `database-checks`](https://github.com/SemYanyshyn/StockFlow/actions/runs/44612768357/job/135873402995)
+`DatabaseChecks` та її залежності мають цільову платформу `net8.0`. В окремому job `database-checks` на Ubuntu PostgreSQL 16 з ICU працює як сервіс. `psql` застосовує схему та seed, після чого `dotnet run` використовує `STOCKFLOW_TEST_CONNECTION` з loopback-адресою й іменем `stockflow_isolated_ci`.
 
-У `windows-checks` скрипт `Verify-Isolated.ps1` створює тимчасовий кластер і запускає перевірки БД, WPF та міграцій. `WindowsChecks` має цільову платформу `net8.0-windows` і програмно рендерить WPF через STA Dispatcher. У пілотному прогоні #249 пройшли 55 перевірок БД, 27 WPF-перевірок і міграції. Кожному новому job потрібні п’ять успішних запусків поспіль на GitHub Actions для рішення про його обов’язковість. [Журнал `windows-checks`](https://github.com/SemYanyshyn/StockFlow/actions/runs/44612768357/job/135873402588)
+У `windows-checks` скрипт `Verify-Isolated.ps1` створює тимчасовий кластер і запускає перевірки БД, WPF та міграцій. `WindowsChecks` має цільову платформу `net8.0-windows` і програмно рендерить WPF через STA Dispatcher.
+
+`database-checks` і `windows-checks` стануть обов’язковими після п’яти успішних запусків поспіль на GitHub Actions.
 
 ## 9. Баги й регресії
 
@@ -109,15 +128,15 @@ Workflow `CI` запускається для PR у `main` та push у `main`. 
 ## 11. Обмеження й прогалини
 
 - Екрани «Товари» й «Категорії» не мають WPF-перевірок: їх перевіряли вручну в PR (скріншоти) і UI Automation-скриптами, які в репозиторій не входять.
-- До підтвердження стабільності нових jobs для контрольного прогону БД і WPF використовуйте локальний скрипт (розділи 7 і 8).
-- Модулі залишків і звітів на момент написання ще без бізнес-логіки, тож і без тестів (задачі SA7-1 – SA7-4).
-- Покриття коду показуємо як інформацію, а не як вимогу (після MA7-2).
+- `database-checks` і `windows-checks` поки не обов’язкові для злиття (розділ 8). `MovementChecks` у CI не запускаються.
+- Для залишків є доменні тести (`StockTests`), а `StockRepository` і звіти ще в роботі.
+- Покриття коду показуємо як інформацію, а не як вимогу. Воно не враховує перевірки БД і WPF.
 
 ---
 
 ## Крайові ситуації
 
-Рядки модулів «Товари» й «Категорії». Рядки інших модулів додадуть автори (SE7-7, SA7-7, MA7-8).
+Рядки всіх модулів, що є в `main` на коміті `3288910`. Рядки для репозиторію залишків і звітів додамо, коли вони з'являться в `main`.
 
 | № | Модуль | Ситуація | Очікувана поведінка | Тест | Рівень |
 |---|---|---|---|---|---|
@@ -137,6 +156,26 @@ Workflow `CI` запускається для PR у `main` та push у `main`. 
 | 14 | Товари | Зміна одиниці виміру товару, для якого є залишки або рухи | «Одиницю виміру не можна змінити: для товару вже є залишки або рухи.», оновлення не викликається | `ProductServiceTests.UnitCannotChangeWhenProductHasStockOrMovements` | модульний |
 | 15 | Товари | Видалення товару із залишками або рухами | «Товар не можна видалити: для нього є залишки або рухи товару.», запис лишається | `ProductServiceTests.ProductWithStockOrMovementsIsNotDeleted` | модульний |
 | 16 | Товари | Два товари з однаковою назвою | Дозволено (на відміну від категорій) | `ProductServiceTests.DuplicateProductNamesAreAllowed` | модульний |
+| 17 | Постачальники | Email рівно 100 символів | Приймається | `SupplierTests.EmailAtMaxLengthIsAccepted` | модульний |
+| 18 | Постачальники | Email `bad-email`, `name@`, `a@b@c.com`, `hello @example.com` | «Некоректна електронна пошта постачальника.», запис не зберігається | `SupplierServiceTests.InvalidEmailIsRejectedWithoutSaving` | модульний |
+| 19 | Постачальники | Телефон і email порожні або з самих пробілів | Зберігаються як `null` | `SupplierServiceTests.BlankOptionalFieldsBecomeNull` | модульний |
+| 20 | Постачальники | Видалення постачальника, для якого є рухи | Відмова, запис лишається; постачальника без рухів видаляє | `SupplierServiceTests.DeleteProtectsHistoryAndRemovesUnusedSupplier` | модульний |
+| 21 | Склади | Назва `null`, порожня або з самих пробілів | «Назва складу обов'язкова.» | `WarehouseServiceTests.Add_WhenNameIsEmptyOrWhitespace_ThrowsValidationException` | модульний |
+| 22 | Користувачі | Логін «NewUser» уже є, створюємо «NewUser» і «newuser» | Точний дубль: «Користувач із таким логіном уже існує.»; інший регістр дозволено | `UserServiceTests.CreateTrimsIdentityHashesPasswordAndPreservesCaseSensitiveUsernameRule` | модульний |
+| 23 | Користувачі | Зміна ролі останнього активного Адміністратора на Працівника | «Не можна позбавити систему останнього активного Адміністратора.»; змінити ім'я можна | `UserServiceTests.LastActiveAdminCannotBeDemotedButCanChangeName` | модульний |
+| 24 | Користувачі | Адміністратор блокує або видаляє власний обліковий запис | «Не можна заблокувати власний обліковий запис.» / «Не можна видалити власний обліковий запис.» | `UserServiceTests.CannotBlockOrDeleteSelfAndCanBlockUnblockOtherUsers` | модульний |
+| 25 | Користувачі | Адміністратора заблокували або понизили в БД, поки його сесія відкрита | «Виконувати цю дію може лише Адміністратор.», жодних змін | `UserServiceTests.StaleAdminSessionCannotReadOrWriteWhenBlockedOrDemotedInDatabase` | модульний |
+| 26 | Користувачі | Видалення користувача, який має рухи товарів | «Користувач має зареєстровані рухи товарів. Замість видалення заблокуйте обліковий запис.» | `UserServiceTests.DeleteChecksMovementsAndTranslatesForeignKeyRaceWithoutCommit` | модульний |
+| 27 | Вхід | Невідомий логін, неправильний пароль, пошкоджений хеш | Однакове «Невірний логін або пароль»; заблокований із правильним паролем — «Обліковий запис заблоковано. Зверніться до Адміністратора.» | `AuthServiceTests.UnknownWrongAndCorruptCredentialsHaveSameMessageAndBlockedStatusNeedsCorrectPassword` | модульний |
+| 28 | Вхід | Пароль « secret » із пробілами | Пароль не обрізається: «secret» не підходить | `AuthServiceTests.HashUsesRandomSaltAndVerifiesExactPassword` | модульний |
+| 29 | Накладні | Списання 11 при залишку 10; списання 1 при залишку 0 | «Недостатньо товару на складі», залишок не змінюється | `StockMovementTests.RejectedMovementProvidesOneErrorAndCannotChangeStock` | модульний |
+| 30 | Накладні | Надходження без постачальника; списання з постачальником | «Для надходження потрібно обрати постачальника» / «Для списання постачальник не зазначається» | `StockMovementTests.RejectedMovementProvidesOneErrorAndCannotChangeStock` | модульний |
+| 31 | Накладні | Надходження, після якого залишок перевищив би `int.MaxValue` | «Кількість перевищує допустиму», залишок не змінюється | `StockMovementTests.RejectedMovementProvidesOneErrorAndCannotChangeStock` | модульний |
+| 32 | Накладні | Списання всього залишку: 10 із 10 | Приймається, залишок 0 | `StockMovementTests.WriteOffSupportsPartialAndWholeStock` | модульний |
+| 33 | Накладні | Номер рівно 50 символів; 49 символів із пробілами по краях | 50 приймається; з пробілами — ні, бо пробіли теж зберігаються | `StockMovementTests.NumberWithExactlyTheSchemaLimitIsAccepted`, `StockMovementTests.WhitespaceStillCountsTowardTheStoredNumberLength` | модульний |
+| 34 | Накладні | Фільтр: дата «з» пізніша за дату «по» | Відмова до запиту в БД | `StockMovementListTests.InvalidRangeRejectedBeforeRepositoryAndSameDayTimesNormalize` | модульний |
+| 35 | Накладні | Порожня база, немає збігів за фільтром, помилка БД | «Накладних ще немає.» / «За обраними фільтрами накладних не знайдено.» / «Не вдалося завантажити…» без тексту винятку; повторне завантаження працює | `StockMovementListTests.EmptyDatabaseNoMatchAndFailureAreDifferentStatesAndCanRetry` | модульний |
+| 36 | Залишки | Кількість 4, 10, 15 при порозі 10; 0 при порозі 0 | Низький залишок лише 4 із 10; рівно на порозі — не низький | `StockTests.IsBelowThreshold_EvaluatesCorrectly` | модульний |
 
 ---
 
@@ -253,4 +292,4 @@ CREATE UNIQUE INDEX categories_name_case_insensitive_key
 
 **Як збережено поведінку.** `CategoryServiceTests.DuplicateNameIsRejectedWithoutSaving` (зокрема «Ґудзики» / «ґудзики», «Їжа для тварин» / «їЖА ДЛЯ ТВАРИН»), `DuplicateDetectedByDatabaseIsReportedAsValidationError` і перевірки БД з рядків 5–6 каталогу. [CI #192 — success](https://github.com/SemYanyshyn/StockFlow/actions/runs/43314390640/job/131518466492).
 
-Інші приклади (SE7-6, SA7-6, MA7-8) додадуть автори.
+Інші приклади додамо після рефакторингу модулів накладних, залишків і постачальників.

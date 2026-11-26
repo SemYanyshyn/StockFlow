@@ -21,6 +21,9 @@ public static class ServiceCollectionExtensions
 
         // Lazy singleton stores configuration only. No shared connection or database access at startup.
         services.AddSingleton<DbConnectionFactory>(_ => new DbConnectionFactory(configuration));
+        services.AddSingleton<IStockMovementRepository, StockMovementRepository>();
+        services.AddSingleton<IStockTransactionFactory, NpgsqlStockTransactionFactory>();
+        // Activate AddStockMovementServices after the stock module registers its real IStockRepository.
         // Module owners add their real services/repositories here when implemented.
         services.AddSingleton<AuthenticatedUserContext>();
         services.AddSingleton<ICurrentUserContext>(sp => sp.GetRequiredService<AuthenticatedUserContext>());
@@ -44,6 +47,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<StockMovementQueryService>();
         services.AddSingleton<IStockReportingQueryRepository, StockReportingQueryRepository>();
         services.AddSingleton<StockReportingQueryService>();
+        services.AddSingleton<IStockRepository, StockRepository>();
         return services;
     }
 }
