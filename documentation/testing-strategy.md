@@ -111,7 +111,7 @@ Workflow `CI` запускається для PR у `main` та push у `main` �
 
 `build-and-test` на Windows виконує restore, перевірку форматування (`dotnet format --verify-no-changes`), Release-збірку з `-warnaserror` і xUnit зі збором покриття. Резюме покриття видно на сторінці запуску (**Summary**), HTML-звіт — в артефакті `coverage-html`, який зберігається 14 днів. Порога покриття немає. [Локальний запуск і звіт](../README.md#ci)
 
-Для MA7-5 обрано варіант A. `DatabaseChecks` та її залежності мають цільову платформу `net8.0`. В окремому job `database-checks` на Ubuntu PostgreSQL 16 з ICU працює як сервіс. `psql` застосовує схему та seed, після чого `dotnet run` використовує `STOCKFLOW_TEST_CONNECTION` з loopback-адресою й іменем `stockflow_isolated_ci`.
+`DatabaseChecks` та її залежності мають цільову платформу `net8.0`. В окремому job `database-checks` на Ubuntu PostgreSQL 16 з ICU працює як сервіс. `psql` застосовує схему та seed, після чого `dotnet run` використовує `STOCKFLOW_TEST_CONNECTION` з loopback-адресою й іменем `stockflow_isolated_ci`.
 
 У `windows-checks` скрипт `Verify-Isolated.ps1` створює тимчасовий кластер і запускає перевірки БД, WPF та міграцій. `WindowsChecks` має цільову платформу `net8.0-windows` і програмно рендерить WPF через STA Dispatcher.
 
@@ -129,14 +129,14 @@ Workflow `CI` запускається для PR у `main` та push у `main` �
 
 - Екрани «Товари» й «Категорії» не мають WPF-перевірок: їх перевіряли вручну в PR (скріншоти) і UI Automation-скриптами, які в репозиторій не входять.
 - `database-checks` і `windows-checks` поки не обов’язкові для злиття (розділ 8). `MovementChecks` у CI не запускаються.
-- Для залишків є доменні тести (`StockTests`), а `StockRepository` і звіти ще в роботі (задачі SA7-1 – SA7-4).
+- Для залишків є доменні тести (`StockTests`), а `StockRepository` і звіти ще в роботі.
 - Покриття коду показуємо як інформацію, а не як вимогу. Воно не враховує перевірки БД і WPF.
 
 ---
 
 ## Крайові ситуації
 
-Рядки всіх модулів, що є в `main` на коміті `3288910`. Рядки для залишків і звітів (SA7-1 – SA7-4) додамо після мерджу цих задач.
+Рядки всіх модулів, що є в `main` на коміті `3288910`. Рядки для репозиторію залишків і звітів додамо, коли вони з'являться в `main`.
 
 | № | Модуль | Ситуація | Очікувана поведінка | Тест | Рівень |
 |---|---|---|---|---|---|
@@ -292,4 +292,4 @@ CREATE UNIQUE INDEX categories_name_case_insensitive_key
 
 **Як збережено поведінку.** `CategoryServiceTests.DuplicateNameIsRejectedWithoutSaving` (зокрема «Ґудзики» / «ґудзики», «Їжа для тварин» / «їЖА ДЛЯ ТВАРИН»), `DuplicateDetectedByDatabaseIsReportedAsValidationError` і перевірки БД з рядків 5–6 каталогу. [CI #192 — success](https://github.com/SemYanyshyn/StockFlow/actions/runs/43314390640/job/131518466492).
 
-Інші приклади (SE7-6, SA7-6, MA7-8) додадуть автори.
+Інші приклади додамо після рефакторингу модулів накладних, залишків і постачальників.
