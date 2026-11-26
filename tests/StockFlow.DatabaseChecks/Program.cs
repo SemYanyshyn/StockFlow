@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Npgsql;
+using StockFlow.BusinessLogic;
 using StockFlow.BusinessLogic.Products;
 using StockFlow.BusinessLogic.Suppliers;
 using StockFlow.BusinessLogic.Users;
@@ -57,6 +58,7 @@ void Execute(string sql, params (string Name, object Value)[] parameters)
 StockRepositoryChecks.Run(factory, Check);
 SchemaConstraintChecks.Run(factory, Check);
 InvoiceDatabaseChecks.Run(factory, Check);
+StockReportingDatabaseChecks.Run(factory, Check);
 
 Check(((ICurrentUserContext)adminContext).IsAdmin && adminId > 0, "seed admin login and role");
 var employeeContext = new AuthenticatedUserContext();
