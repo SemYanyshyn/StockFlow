@@ -148,7 +148,7 @@
         <DataGrid.Columns>
           <DataGridTextColumn Header="Товар" Binding="{Binding ProductName}" Width="1.5*"/>
           <DataGridTextColumn Header="Склад" Binding="{Binding WarehouseName}" Width="1.2*"/>
-          <DataGridTextColumn Header="Поточний залишок" Binding="{Binding QuantityDisplay}" Width="150"/>
+          <DataGridTextColumn Header="Поточний залишок" Binding="{Binding QuantityDisplay}" Width="180"/>
           <DataGridTextColumn Header="Мін. норма" Binding="{Binding MinThresholdDisplay}" Width="130"/>
           <DataGridTextColumn Header="Статус" Binding="{Binding StatusText}" Width="140"/>
         </DataGrid.Columns>

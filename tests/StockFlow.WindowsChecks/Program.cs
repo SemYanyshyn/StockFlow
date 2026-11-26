@@ -198,7 +198,7 @@ internal static class Program
         await employeeSuppliers.LoadAsync();
         var employeeView = new SuppliersView { DataContext = employeeSuppliers };
         await Render(employeeView, "suppliers-employee");
-        var manageButtons = Descendants<Button>(employeeView).Where(b => b.Content?.ToString() is "Редагувати" or "Видалити" or "+ Додати постачальника").ToArray();
+        var manageButtons = Descendants<Button>(employeeView).Where(b => b.Content?.ToString() is "Редагувати" or "Видалити" or "+ Додати").ToArray();
         Check(manageButtons.Length > 0 && !employeeSuppliers.CanManage && manageButtons.All(b =>
         {
             for (DependencyObject? current = b; current is not null; current = VisualTreeHelper.GetParent(current))
