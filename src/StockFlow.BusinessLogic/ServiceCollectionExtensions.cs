@@ -45,6 +45,8 @@ public static class ServiceCollectionExtensions
         // Read-only invoices do not depend on the stock registration module.
         services.AddSingleton<IStockMovementReadRepository, StockMovementReadRepository>();
         services.AddSingleton<StockMovementQueryService>();
+        services.AddSingleton<IStockReportingQueryRepository, StockReportingQueryRepository>();
+        services.AddSingleton<StockReportingQueryService>();
         services.AddSingleton<IStockRepository, StockRepository>();
         return services;
     }
