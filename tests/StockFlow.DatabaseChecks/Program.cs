@@ -54,7 +54,7 @@ void Execute(string sql, params (string Name, object Value)[] parameters)
     foreach (var parameter in parameters) command.Parameters.AddWithValue(parameter.Name, parameter.Value);
     command.ExecuteNonQuery();
 }
-
+StockRepositoryChecks.Run(factory, Check);
 SchemaConstraintChecks.Run(factory, Check);
 InvoiceDatabaseChecks.Run(factory, Check);
 
@@ -203,4 +203,5 @@ foreach (var operation in new[] { "demote", "block", "delete" })
     // Remove admin privileges from this pair before the next concurrency scenario.
     Execute("UPDATE users SET role='employee' WHERE id=@first OR id=@second", ("first", first.Id), ("second", second.Id));
 }
+
 Console.WriteLine($"All {checks} database checks passed.");

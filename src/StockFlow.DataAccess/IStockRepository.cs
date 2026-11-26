@@ -8,5 +8,5 @@ public interface IStockRepository
 {
     Stock GetForUpdate(int productId, int warehouseId, IDbTransaction transaction);
     void Save(Stock stock, IDbTransaction transaction);
-    IReadOnlyList<Stock> GetAll(int? warehouseId);
+    IReadOnlyList<Stock> GetAll(int? warehouseId = null, IDbTransaction? transaction = null);
 }
