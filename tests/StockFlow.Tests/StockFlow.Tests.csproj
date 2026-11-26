@@ -32,6 +32,7 @@
     <!-- These view models have no WPF dependency; exercise their actual sources on every OS. -->
     <Compile Include="../../src/StockFlow.UI/ViewModels/ViewModelBase.cs" Link="UI/ViewModelBase.cs" />
     <Compile Include="../../src/StockFlow.UI/ViewModels/StockMovementsViewModel.cs" Link="UI/StockMovementsViewModel.cs" />
+    <Compile Include="../../src/StockFlow.UI/ViewModels/StockMovementEditorViewModel.cs" Link="UI/StockMovementEditorViewModel.cs" />
     <Compile Include="../../src/StockFlow.UI/ViewModels/StockMovementRow.cs" Link="UI/StockMovementRow.cs" />
     <Compile Include="../../src/StockFlow.UI/ViewModels/UnitOfMeasureText.cs" Link="UI/UnitOfMeasureText.cs" />
   </ItemGroup>
