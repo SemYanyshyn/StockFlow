@@ -12,24 +12,28 @@ public sealed partial class StockMovementsViewModel : ViewModelBase
 {
     private readonly StockMovementQueryService _query;
     private readonly WarehouseService _warehouses;
+    private readonly IStockMovementEditorService _editorService;
     private bool _warehousesLoaded;
 
-    public StockMovementsViewModel(StockMovementQueryService query, WarehouseService warehouses, ICurrentUserContext user)
+    public StockMovementsViewModel(StockMovementQueryService query, WarehouseService warehouses,
+        ICurrentUserContext user, IStockMovementEditorService editorService)
     {
         _query = query;
         _warehouses = warehouses;
+        _editorService = editorService;
         IsEmployee = user.Role == UserRole.Employee;
         ApplyFiltersCommand = new AsyncRelayCommand(LoadAsync, () => !IsBusy);
         ClearFiltersCommand = new AsyncRelayCommand(ClearAsync, () => !IsBusy);
         ViewCommand = new AsyncRelayCommand<StockMovementRow>(ViewAsync, row => !IsBusy && row is not null);
         BackCommand = new RelayCommand(() => Details = null, () => !IsBusy);
+        CreateCommand = new AsyncRelayCommand(OpenEditorAsync, () => CanCreateMovement && !IsBusy);
     }
 
     public bool IsEmployee { get; }
-    public string? CreationUnavailableMessage => IsEmployee
-        ? "Створення накладних тимчасово недоступне. Перегляд і фільтри працюють." : null;
-    public bool IsListOpen => Details is null;
-    public string Title => Details is null ? "Накладні" : "Перегляд накладної";
+    public bool CanCreateMovement => IsEmployee && IsListOpen;
+    public bool IsListOpen => Details is null && Editor is null;
+    public bool HasDetails => Details is not null;
+    public string Title => Editor is not null ? "Створення накладної" : HasDetails ? "Перегляд накладної" : "Накладні";
     public IReadOnlyList<MovementTypeOption> FilterTypes { get; } = new[]
     {
         new MovementTypeOption(null, "Усі типи"), new(MovementType.Receipt, "Надходження"), new(MovementType.WriteOff, "Списання")
@@ -57,12 +61,18 @@ public sealed partial class StockMovementsViewModel : ViewModelBase
     [ObservableProperty] private string? _listError;
     [ObservableProperty] private string? _filterError;
     [ObservableProperty] private bool _isBusy;
-    [ObservableProperty, NotifyPropertyChangedFor(nameof(IsListOpen), nameof(Title))] private StockMovementRow? _details;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(IsListOpen), nameof(HasDetails), nameof(Title), nameof(CanCreateMovement))]
+    [NotifyCanExecuteChangedFor(nameof(CreateCommand))]
+    private StockMovementRow? _details;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(IsListOpen), nameof(Title), nameof(CanCreateMovement))]
+    [NotifyCanExecuteChangedFor(nameof(CreateCommand))]
+    private StockMovementEditorViewModel? _editor;
 
     public IAsyncRelayCommand ApplyFiltersCommand { get; }
     public IAsyncRelayCommand ClearFiltersCommand { get; }
     public IAsyncRelayCommand<StockMovementRow> ViewCommand { get; }
     public IRelayCommand BackCommand { get; }
+    public IAsyncRelayCommand CreateCommand { get; }
 
     partial void OnIsBusyChanged(bool value)
     {
@@ -70,6 +80,28 @@ public sealed partial class StockMovementsViewModel : ViewModelBase
         ClearFiltersCommand.NotifyCanExecuteChanged();
         ViewCommand.NotifyCanExecuteChanged();
         BackCommand.NotifyCanExecuteChanged();
+        CreateCommand.NotifyCanExecuteChanged();
+    }
+
+    private async Task OpenEditorAsync()
+    {
+        if (!CanCreateMovement || IsBusy) return;
+        IsBusy = true;
+        ListError = null;
+        try
+        {
+            var data = await Task.Run(_editorService.Load);
+            Editor = new(data, _editorService, () => Editor = null, RefreshAfterSaveAsync);
+        }
+        catch (ValidationException error) { ListError = error.Message; }
+        catch (Exception) { ListError = "Не вдалося відкрити форму накладної. Перевірте з’єднання і спробуйте ще раз."; }
+        finally { IsBusy = false; }
+    }
+
+    private async Task RefreshAfterSaveAsync()
+    {
+        Editor = null;
+        await LoadAsync();
     }
 
     public async Task LoadAsync()

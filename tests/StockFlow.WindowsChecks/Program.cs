@@ -15,7 +15,7 @@ using StockFlow.UI.Services;
 using StockFlow.UI.ViewModels;
 using StockFlow.UI.Views;
 
-internal static class Program
+internal static partial class Program
 {
     private sealed class Confirmation : IConfirmationService
     {
@@ -208,6 +208,7 @@ internal static class Program
         var denied = employeeProvider.GetRequiredService<UsersViewModel>();
         await denied.LoadAsync();
         Check(denied.ErrorMessage == UserService.AdminOnlyMessage && denied.Users.Count == 0, "employee user-screen access denied by service");
+        await CheckInvoices(provider, employeeProvider);
 
         settings.Port = 1; settings.Timeout = 1;
         using var unavailable = Provider(settings.ConnectionString);

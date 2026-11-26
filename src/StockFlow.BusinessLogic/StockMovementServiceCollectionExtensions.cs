@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace StockFlow.BusinessLogic;
 
@@ -8,7 +9,7 @@ public static class StockMovementServiceCollectionExtensions
     public static IServiceCollection AddStockMovementServices(this IServiceCollection services)
     {
         ArgumentNullException.ThrowIfNull(services);
-        services.AddTransient<StockMovementService>();
+        services.TryAddTransient<StockMovementService>();
         return services;
     }
 }

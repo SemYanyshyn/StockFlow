@@ -84,6 +84,12 @@ userService.SetActive(employeeId, true);
 employeeAuth.Login("employee", "EmployeeDemo!2026");
 Check(employeeContext.IsAuthenticated, "unblocking restores login");
 await RunInvoiceConcurrency(employeeContext);
+var invoiceNumbers = new StockMovementNumberRepository(factory);
+var reservations = await Task.WhenAll(Enumerable.Range(0, 32).Select(_ => Task.Run(invoiceNumbers.Reserve)))
+    .WaitAsync(TimeSpan.FromSeconds(10));
+Check(reservations.Distinct(StringComparer.Ordinal).Count() == 32 &&
+    reservations.All(number => number.StartsWith("НК-", StringComparison.Ordinal)),
+    "invoice number reservations are unique across 32 concurrent requests");
 ExpectValidation(() => new UserService(users, employeeContext, hasher).GetAll(), UserService.AdminOnlyMessage);
 ExpectValidation(() => userService.SetActive(adminId, false), UserService.SelfBlockMessage);
 ExpectValidation(() => userService.Delete(adminId), UserService.SelfDeleteMessage);
