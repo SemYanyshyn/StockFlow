@@ -8,7 +8,7 @@ namespace StockFlow.Tests;
 public sealed class StockReportingQueryServiceTests
 {
     [Fact]
-    public void GetMovementSummary_ReversedPeriod_ThrowsBeforeRepositoryCall()
+    public void GetMovementSummary_ReversedPeriod_ThrowsValidationExceptionWithoutRepositoryCall()
     {
         var repository = new FakeStockReportingQueryRepository();
         var service = new StockReportingQueryService(repository);
@@ -17,32 +17,72 @@ public sealed class StockReportingQueryServiceTests
             service.GetMovementSummary(new DateTime(2026, 11, 14), new DateTime(2026, 11, 13)));
 
         Assert.Equal("Дата початку не може бути пізнішою за кінцеву дату.", error.Message);
-        Assert.Equal(0, repository.MovementSummaryCalls);
+        Assert.Equal(0, repository.Calls);
     }
 
     [Fact]
-    public void GetMovementSummary_LastMicrosecondIncludedAndNextMidnightExcluded()
+    public void GetMovementSummary_SameDayAt2359_IncludesMovement()
     {
-        var dateTo = new DateTime(2026, 11, 13);
+        var date = new DateTime(2026, 11, 13);
         var repository = new FakeStockReportingQueryRepository();
-        repository.Movements.Add(new Movement(
-            "Сир", "кг", "Склад 1", 5, true,
-            dateTo.Date.AddDays(1).AddMicroseconds(-1)));
-        repository.Movements.Add(new Movement(
-            "Сир", "кг", "Склад 1", 8, true,
-            dateTo.Date.AddDays(1)));
+        repository.Movements.Add(new Movement("Сир", "кг", "Склад 1", 5, true, date.AddHours(23).AddMinutes(59)));
         var service = new StockReportingQueryService(repository);
 
-        var summary = service.GetMovementSummary(dateTo.AddDays(-1), dateTo);
+        var summary = service.GetMovementSummary(date, date);
 
         var row = Assert.Single(summary);
         Assert.Equal(5, row.IncomingQuantity);
-        Assert.Equal(0, row.OutgoingQuantity);
-        Assert.Equal(1, repository.MovementSummaryCalls);
+        Assert.Equal(1, repository.Calls);
     }
 
     [Fact]
-    public void GetMovementSummary_GroupsIncomingAndOutgoingByWarehouse()
+    public void GetMovementSummary_StartAndFinalMicrosecond_IncludesBothMovements()
+    {
+        var dateFrom = new DateTime(2026, 11, 12);
+        var dateTo = new DateTime(2026, 11, 13);
+        var repository = new FakeStockReportingQueryRepository();
+        repository.Movements.Add(new Movement("Сир", "кг", "Склад 1", 4, true, dateFrom));
+        repository.Movements.Add(new Movement(
+            "Сир", "кг", "Склад 1", 6, true,
+            dateTo.AddDays(1).AddMicroseconds(-1)));
+        var service = new StockReportingQueryService(repository);
+
+        var row = Assert.Single(service.GetMovementSummary(dateFrom, dateTo));
+
+        Assert.Equal(10, row.IncomingQuantity);
+    }
+
+    [Fact]
+    public void GetMovementSummary_OutsidePeriod_ExcludesBothMovements()
+    {
+        var dateFrom = new DateTime(2026, 11, 12);
+        var dateTo = new DateTime(2026, 11, 13);
+        var repository = new FakeStockReportingQueryRepository();
+        repository.Movements.Add(new Movement(
+            "Сир", "кг", "Склад 1", 4, true,
+            dateFrom.AddDays(-1).AddHours(23).AddMinutes(59).AddSeconds(59)));
+        repository.Movements.Add(new Movement("Сир", "кг", "Склад 1", 6, true, dateTo.AddDays(1)));
+        var service = new StockReportingQueryService(repository);
+
+        var summary = service.GetMovementSummary(dateFrom, dateTo);
+
+        Assert.Empty(summary);
+    }
+
+    [Fact]
+    public void GetMovementSummary_EmptyPeriod_ReturnsEmptyResult()
+    {
+        var repository = new FakeStockReportingQueryRepository();
+        var service = new StockReportingQueryService(repository);
+
+        var summary = service.GetMovementSummary(new DateTime(2026, 11, 12), new DateTime(2026, 11, 13));
+
+        Assert.Empty(summary);
+        Assert.Equal(1, repository.Calls);
+    }
+
+    [Fact]
+    public void GetMovementSummary_TwoWarehouses_GroupsTotalsByProductAndWarehouse()
     {
         var date = new DateTime(2026, 11, 13);
         var repository = new FakeStockReportingQueryRepository();
@@ -59,6 +99,22 @@ public sealed class StockReportingQueryServiceTests
         var secondWarehouse = Assert.Single(summary, row => row.WarehouseName == "Склад 2");
         Assert.Equal((10, 2), (firstWarehouse.IncomingQuantity, firstWarehouse.OutgoingQuantity));
         Assert.Equal((7, 3), (secondWarehouse.IncomingQuantity, secondWarehouse.OutgoingQuantity));
+    }
+
+    [Fact]
+    public void GetMovementSummary_MultidayLastDayAt2359_IncludesMovement()
+    {
+        var dateFrom = new DateTime(2026, 11, 10);
+        var dateTo = new DateTime(2026, 11, 12);
+        var repository = new FakeStockReportingQueryRepository();
+        repository.Movements.Add(new Movement(
+            "Сир", "кг", "Склад 1", 9, true,
+            dateTo.AddHours(23).AddMinutes(59)));
+        var service = new StockReportingQueryService(repository);
+
+        var row = Assert.Single(service.GetMovementSummary(dateFrom, dateTo));
+
+        Assert.Equal(9, row.IncomingQuantity);
     }
 
     [Theory]
@@ -84,13 +140,13 @@ public sealed class StockReportingQueryServiceTests
     {
         public List<StockBalanceQueryRow> Balances { get; } = [];
         public List<Movement> Movements { get; } = [];
-        public int MovementSummaryCalls { get; private set; }
+        public int Calls { get; private set; }
 
         public IReadOnlyList<StockBalanceQueryRow> GetStockBalances() => Balances;
 
         public IReadOnlyList<MovementSummaryQueryRow> GetMovementSummary(DateTime? dateFrom, DateTime? dateTo)
         {
-            MovementSummaryCalls++;
+            Calls++;
             var from = dateFrom?.Date;
             var toExclusive = dateTo?.Date.AddDays(1);
             var included = Movements.Where(movement =>
