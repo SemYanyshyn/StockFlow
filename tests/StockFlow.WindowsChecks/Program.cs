@@ -198,7 +198,7 @@ internal static class Program
         await employeeSuppliers.LoadAsync();
         var employeeView = new SuppliersView { DataContext = employeeSuppliers };
         await Render(employeeView, "suppliers-employee");
-        var manageButtons = Descendants<Button>(employeeView).Where(b => b.Content?.ToString() is "Редагувати" or "Видалити" or "+ Додати постачальника").ToArray();
+        var manageButtons = Descendants<Button>(employeeView).Where(b => b.Content?.ToString() is "Редагувати" or "Видалити" or "+ Додати").ToArray();
         Check(manageButtons.Length > 0 && !employeeSuppliers.CanManage && manageButtons.All(b =>
         {
             for (DependencyObject? current = b; current is not null; current = VisualTreeHelper.GetParent(current))
@@ -208,6 +208,13 @@ internal static class Program
         var denied = employeeProvider.GetRequiredService<UsersViewModel>();
         await denied.LoadAsync();
         Check(denied.ErrorMessage == UserService.AdminOnlyMessage && denied.Users.Count == 0, "employee user-screen access denied by service");
+        var employeeBalances = employeeProvider.GetRequiredService<StockBalancesViewModel>();
+        var employeeBalancesView = new StockBalancesView { DataContext = employeeBalances };
+        await Render(employeeBalancesView, "stock-balances-employee");
+        var employeeThresholdEditor = Descendants<StackPanel>(employeeBalancesView)
+            .Single(panel => panel.Name == "ThresholdEditorPanel");
+        Check(!employeeBalances.CanEditThreshold && employeeThresholdEditor.Visibility == Visibility.Collapsed,
+            "employee cannot see the minimum threshold editor");
 
         var stockRepo = provider.GetRequiredService<StockFlow.DataAccess.IStockRepository>();
         var productRepo = provider.GetRequiredService<StockFlow.DataAccess.Products.IProductRepository>();
@@ -257,6 +264,53 @@ internal static class Program
                       lowBrush.Color.A > 0 &&
                       !Equals(lowRow.Background, normalRow.Background),
                     "stock balances highlights rows below minimum threshold");
+
+                var lowBalance = (StockBalanceRowItem)lowRow.Item;
+                stockBalances.SelectedRow = lowBalance;
+                var thresholdEditor = Descendants<StackPanel>(balancesView)
+                    .Single(panel => panel.Name == "ThresholdEditorPanel");
+                var thresholdInput = Descendants<TextBox>(balancesView)
+                    .Single(textBox => textBox.Name == "MinThresholdInput");
+                Check(stockBalances.CanEditThreshold && thresholdEditor.Visibility == Visibility.Visible,
+                    "administrator sees the minimum threshold editor");
+
+                const string thresholdInputError = "Введіть ціле числове значення мінімальної норми.";
+                thresholdInput.Text = "не число";
+                stockBalances.SaveMinThresholdCommand.Execute(null);
+                await Render(balancesView, "stock-balances-invalid-threshold");
+                var thresholdErrorText = Descendants<TextBlock>(balancesView)
+                    .Single(textBlock => textBlock.Name == "ErrorMessageText");
+                Check(stockBalances.ErrorMessage == thresholdInputError &&
+                      thresholdErrorText.Text == thresholdInputError &&
+                      thresholdErrorText.Visibility == Visibility.Visible,
+                    "нечислове значення порога показує українську помилку без падіння");
+
+                thresholdInput.Text = string.Empty;
+                stockBalances.SaveMinThresholdCommand.Execute(null);
+                Check(stockBalances.ErrorMessage == thresholdInputError,
+                    "порожнє значення порога відхиляється з повідомленням");
+
+                thresholdInput.Text = "2";
+                stockBalances.SaveMinThresholdCommand.Execute(null);
+                await Render(balancesView, "stock-balances-updated-threshold");
+                var updatedLowBalance = stockBalances.FilteredRows.Single(row =>
+                    row.ProductId == lowBalance.ProductId && row.WarehouseId == lowBalance.WarehouseId);
+                Check(updatedLowBalance.Quantity == 2 &&
+                      updatedLowBalance.MinThreshold == 2 &&
+                      !updatedLowBalance.IsLow &&
+                      updatedLowBalance.StatusText == "• В нормі" &&
+                      stockBalances.ErrorMessage.Length == 0,
+                    "збереження порога негайно оновлює статус і зберігає кількість");
+
+                var updatedGridRows = Descendants<DataGridRow>(balancesView).ToList();
+                var updatedLowRow = updatedGridRows.Single(row =>
+                    ((StockBalanceRowItem)row.Item).ProductId == lowBalance.ProductId &&
+                    ((StockBalanceRowItem)row.Item).WarehouseId == lowBalance.WarehouseId);
+                var unchangedNormalRow = updatedGridRows.Single(row =>
+                    ((StockBalanceRowItem)row.Item).ProductId == ((StockBalanceRowItem)normalRow.Item).ProductId &&
+                    ((StockBalanceRowItem)row.Item).WarehouseId == ((StockBalanceRowItem)normalRow.Item).WarehouseId);
+                Check(Equals(updatedLowRow.Background, unchangedNormalRow.Background),
+                    "підсвічування критичного рядка знімається після досягнення порога");
 
                 stockBalances.SelectedWarehouse = stockBalances.Warehouses.First(w => w.Id == allWarehouses[1].Id);
                 Check(stockBalances.FilteredRows.Count == 1 && stockBalances.FilteredRows[0].WarehouseName == allWarehouses[1].Name,

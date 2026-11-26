@@ -1,6 +1,7 @@
 using System.Data;
 using StockFlow.BusinessLogic;
 using StockFlow.BusinessLogic.Products;
+using StockFlow.BusinessLogic.Users;
 using StockFlow.DataAccess;
 using StockFlow.DataAccess.Products;
 using StockFlow.DataAccess.Warehouses;
@@ -36,15 +37,46 @@ public sealed class StockServiceTests
     {
         public List<Stock> Items { get; } = new();
         public int GetAllCalls { get; private set; }
+        public int SetMinThresholdCalls { get; private set; }
+        public int Calls { get; private set; }
 
-        public Stock GetForUpdate(int productId, int warehouseId, IDbTransaction transaction) =>
+        public Stock GetForUpdate(int productId, int warehouseId, IDbTransaction transaction)
+        {
+            Calls++;
             throw new NotSupportedException();
+        }
 
-        public void Save(Stock stock, IDbTransaction transaction) =>
+        public void Save(Stock stock, IDbTransaction transaction)
+        {
+            Calls++;
             throw new NotSupportedException();
+        }
+
+        public void SetMinThreshold(int productId, int warehouseId, int minThreshold)
+        {
+            Calls++;
+            SetMinThresholdCalls++;
+            var stock = Items.SingleOrDefault(item =>
+                item.ProductId == productId && item.WarehouseId == warehouseId);
+            if (stock is null)
+            {
+                Items.Add(new Stock
+                {
+                    ProductId = productId,
+                    WarehouseId = warehouseId,
+                    Quantity = 0,
+                    MinThreshold = minThreshold
+                });
+            }
+            else
+            {
+                stock.MinThreshold = minThreshold;
+            }
+        }
 
         public IReadOnlyList<Stock> GetAll(int? warehouseId = null, IDbTransaction? transaction = null)
         {
+            Calls++;
             GetAllCalls++;
             return warehouseId.HasValue
                 ? Items.Where(s => s.WarehouseId == warehouseId.Value).ToList()
@@ -86,6 +118,11 @@ public sealed class StockServiceTests
         public bool Delete(int id) => throw new NotSupportedException();
     }
 
+    private sealed class FakeCurrentUserContext(UserRole role) : ICurrentUserContext
+    {
+        public User CurrentUser { get; } = new() { Id = 1, Role = role };
+    }
+
     [Fact]
     public void IsBelowThreshold_QuantityBelowThreshold_ReturnsTrue()
     {
@@ -115,6 +152,61 @@ public sealed class StockServiceTests
     {
         var service = CreateService(out _, out _, out _);
         Assert.False(service.IsBelowThreshold(quantity: quantity, minThreshold: 0));
+    }
+
+    [Fact]
+    public void SetMinThreshold_EmployeeIsDeniedBeforeRepositoryCall()
+    {
+        var service = CreateService(out var stockRepo, out _, out _, UserRole.Employee);
+
+        var error = Assert.Throws<InvalidOperationException>(() => service.SetMinThreshold(1, 1, 5));
+
+        Assert.Equal(StockService.MinThresholdAdminOnlyMessage, error.Message);
+        Assert.Equal(0, stockRepo.Calls);
+    }
+
+    [Fact]
+    public void SetMinThreshold_NegativeValueIsRejectedBeforeRepositoryCall()
+    {
+        var service = CreateService(out var stockRepo, out _, out _);
+
+        var error = Assert.Throws<ValidationException>(() => service.SetMinThreshold(1, 1, -1));
+
+        Assert.Equal(StockService.NegativeMinThresholdMessage, error.Message);
+        Assert.Equal(0, stockRepo.Calls);
+    }
+
+    [Fact]
+    public void SetMinThreshold_ZeroDisablesCriticalStatusForEmptyStock()
+    {
+        var service = CreateService(out var stockRepo, out _, out _);
+        var stock = new Stock { ProductId = 1, WarehouseId = 1, Quantity = 0, MinThreshold = 5 };
+        stockRepo.Items.Add(stock);
+
+        service.SetMinThreshold(1, 1, 0);
+
+        Assert.Equal(0, stock.MinThreshold);
+        Assert.False(service.IsBelowThreshold(stock.Quantity, stock.MinThreshold));
+        Assert.Equal(1, stockRepo.SetMinThresholdCalls);
+    }
+
+    [Fact]
+    public void SetMinThreshold_AdminUpdatePreservesQuantityAndRecalculatesCriticalStatus()
+    {
+        var service = CreateService(out var stockRepo, out var productRepo, out var warehouseRepo);
+        var stock = new Stock { ProductId = 1, WarehouseId = 1, Quantity = 4, MinThreshold = 5 };
+        stockRepo.Items.Add(stock);
+        productRepo.Items.Add(new Product { Id = 1, Name = "Товар", Unit = UnitOfMeasure.Piece, CategoryId = 1 });
+        warehouseRepo.Items.Add(new Warehouse { Id = 1, Name = "Склад" });
+
+        Assert.True(service.GetRows().Single().IsLow);
+        service.SetMinThreshold(1, 1, 3);
+        var updatedRow = Assert.Single(service.GetRows());
+
+        Assert.Equal(4, updatedRow.Quantity);
+        Assert.Equal(3, updatedRow.MinThreshold);
+        Assert.False(updatedRow.IsLow);
+        Assert.Equal(1, stockRepo.SetMinThresholdCalls);
     }
 
     [Fact]
@@ -227,11 +319,12 @@ public sealed class StockServiceTests
     private static StockService CreateService(
         out FakeStockRepository stockRepo,
         out FakeProductRepository productRepo,
-        out FakeWarehouseRepository warehouseRepo)
+        out FakeWarehouseRepository warehouseRepo,
+        UserRole role = UserRole.Admin)
     {
         stockRepo = new FakeStockRepository();
         productRepo = new FakeProductRepository();
         warehouseRepo = new FakeWarehouseRepository();
-        return new StockService(stockRepo, productRepo, warehouseRepo);
+        return new StockService(stockRepo, productRepo, warehouseRepo, new FakeCurrentUserContext(role));
     }
 }

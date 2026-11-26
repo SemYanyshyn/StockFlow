@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Npgsql;
@@ -220,6 +220,20 @@ internal static class StockRepositoryChecks
                 check(emptyList.Count == 0, "StockRepository.GetAll returns empty list when table is empty");
                 emptyTx.Rollback();
             }
+
+            repo.SetMinThreshold(product1Id, warehouse1Id, 9);
+            check(ScalarInt("SELECT quantity FROM stock WHERE product_id=@p AND warehouse_id=@w",
+                    ("p", product1Id), ("w", warehouse1Id)) == 50 &&
+                  ScalarInt("SELECT min_threshold FROM stock WHERE product_id=@p AND warehouse_id=@w",
+                    ("p", product1Id), ("w", warehouse1Id)) == 9,
+                "Зміна мінімальної норми оновлює лише поріг і зберігає кількість.");
+
+            repo.SetMinThreshold(product2Id, warehouse1Id, 6);
+            check(ScalarInt("SELECT quantity FROM stock WHERE product_id=@p AND warehouse_id=@w",
+                    ("p", product2Id), ("w", warehouse1Id)) == 0 &&
+                  ScalarInt("SELECT min_threshold FROM stock WHERE product_id=@p AND warehouse_id=@w",
+                    ("p", product2Id), ("w", warehouse1Id)) == 6,
+                "Зміна мінімальної норми створює відсутній рядок із нульовою кількістю.");
         }
         finally
         {
