@@ -27,6 +27,16 @@ public sealed class WarehouseServiceTests
             });
             return AddCalls;
         }
+
+        public bool Update(Warehouse warehouse)
+        {
+            var index = Warehouses.FindIndex(w => w.Id == warehouse.Id);
+            if (index < 0) return false;
+            Warehouses[index] = new Warehouse { Id = warehouse.Id, Name = warehouse.Name, Address = warehouse.Address };
+            return true;
+        }
+
+        public bool Delete(int id) => Warehouses.RemoveAll(w => w.Id == id) > 0;
     }
 
     private sealed class FakeUserContext : ICurrentUserContext

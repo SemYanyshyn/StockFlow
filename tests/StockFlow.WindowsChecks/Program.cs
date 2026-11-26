@@ -208,11 +208,147 @@ internal static class Program
         var denied = employeeProvider.GetRequiredService<UsersViewModel>();
         await denied.LoadAsync();
         Check(denied.ErrorMessage == UserService.AdminOnlyMessage && denied.Users.Count == 0, "employee user-screen access denied by service");
+        var employeeBalances = employeeProvider.GetRequiredService<StockBalancesViewModel>();
+        var employeeBalancesView = new StockBalancesView { DataContext = employeeBalances };
+        await Render(employeeBalancesView, "stock-balances-employee");
+        var employeeThresholdEditor = Descendants<StackPanel>(employeeBalancesView)
+            .Single(panel => panel.Name == "ThresholdEditorPanel");
+        Check(!employeeBalances.CanEditThreshold && employeeThresholdEditor.Visibility == Visibility.Collapsed,
+            "employee cannot see the minimum threshold editor");
+
+        var stockRepo = provider.GetRequiredService<StockFlow.DataAccess.IStockRepository>();
+        var productRepo = provider.GetRequiredService<StockFlow.DataAccess.Products.IProductRepository>();
+        var warehouseRepo = provider.GetRequiredService<StockFlow.DataAccess.Warehouses.IWarehouseRepository>();
+        var existingStock = stockRepo.GetAll().ToList();
+
+        try
+        {
+            using (var clearConn = new NpgsqlConnection(connection))
+            {
+                clearConn.Open();
+                using var clearCmd = new NpgsqlCommand("DELETE FROM stock;", clearConn);
+                clearCmd.ExecuteNonQuery();
+            }
+
+            var emptyStockBalances = provider.GetRequiredService<StockBalancesViewModel>();
+            var emptyBalancesView = new StockBalancesView { DataContext = emptyStockBalances };
+            await Render(emptyBalancesView, "stock-balances-empty");
+            var emptyStateText = Descendants<TextBlock>(emptyBalancesView).Single(t => t.Name == "EmptyStateText");
+            Check(emptyStockBalances.FilteredRows.Count == 0 && emptyStockBalances.IsEmpty && emptyStateText.Visibility == Visibility.Visible,
+                "stock balances empty database sets IsEmpty and shows empty state");
+
+            var allProducts = productRepo.GetAll();
+            var allWarehouses = warehouseRepo.GetAll();
+            if (allProducts.Count >= 2 && allWarehouses.Count >= 2)
+            {
+                using (var seedConn = new NpgsqlConnection(connection))
+                {
+                    seedConn.Open();
+                    using var seedTx = seedConn.BeginTransaction();
+                    stockRepo.Save(new StockFlow.Domain.Stock { ProductId = allProducts[0].Id, WarehouseId = allWarehouses[0].Id, Quantity = 2, MinThreshold = 10 }, seedTx);
+                    stockRepo.Save(new StockFlow.Domain.Stock { ProductId = allProducts[1].Id, WarehouseId = allWarehouses[1].Id, Quantity = 25, MinThreshold = 10 }, seedTx);
+                    seedTx.Commit();
+                }
+
+                var stockBalances = provider.GetRequiredService<StockBalancesViewModel>();
+                var balancesView = new StockBalancesView { DataContext = stockBalances };
+                await Render(balancesView, "stock-balances-list");
+
+                Check(stockBalances.SelectedWarehouse?.Name == "Усі склади" && stockBalances.FilteredRows.Count == 2 && !stockBalances.IsEmpty,
+                    "stock balances default filter 'Усі склади' displays all rows");
+
+                var gridRows = Descendants<DataGridRow>(balancesView).ToList();
+                var lowRow = gridRows.Single(r => ((StockBalanceRowItem)r.Item).IsLow);
+                var normalRow = gridRows.Single(r => !((StockBalanceRowItem)r.Item).IsLow);
+                Check(lowRow.Background is SolidColorBrush lowBrush &&
+                      lowBrush.Color.A > 0 &&
+                      !Equals(lowRow.Background, normalRow.Background),
+                    "stock balances highlights rows below minimum threshold");
+
+                var lowBalance = (StockBalanceRowItem)lowRow.Item;
+                stockBalances.SelectedRow = lowBalance;
+                var thresholdEditor = Descendants<StackPanel>(balancesView)
+                    .Single(panel => panel.Name == "ThresholdEditorPanel");
+                var thresholdInput = Descendants<TextBox>(balancesView)
+                    .Single(textBox => textBox.Name == "MinThresholdInput");
+                Check(stockBalances.CanEditThreshold && thresholdEditor.Visibility == Visibility.Visible,
+                    "administrator sees the minimum threshold editor");
+
+                const string thresholdInputError = "Введіть ціле числове значення мінімальної норми.";
+                thresholdInput.Text = "не число";
+                stockBalances.SaveMinThresholdCommand.Execute(null);
+                await Render(balancesView, "stock-balances-invalid-threshold");
+                var thresholdErrorText = Descendants<TextBlock>(balancesView)
+                    .Single(textBlock => textBlock.Name == "ErrorMessageText");
+                Check(stockBalances.ErrorMessage == thresholdInputError &&
+                      thresholdErrorText.Text == thresholdInputError &&
+                      thresholdErrorText.Visibility == Visibility.Visible,
+                    "нечислове значення порога показує українську помилку без падіння");
+
+                thresholdInput.Text = string.Empty;
+                stockBalances.SaveMinThresholdCommand.Execute(null);
+                Check(stockBalances.ErrorMessage == thresholdInputError,
+                    "порожнє значення порога відхиляється з повідомленням");
+
+                thresholdInput.Text = "2";
+                stockBalances.SaveMinThresholdCommand.Execute(null);
+                await Render(balancesView, "stock-balances-updated-threshold");
+                var updatedLowBalance = stockBalances.FilteredRows.Single(row =>
+                    row.ProductId == lowBalance.ProductId && row.WarehouseId == lowBalance.WarehouseId);
+                Check(updatedLowBalance.Quantity == 2 &&
+                      updatedLowBalance.MinThreshold == 2 &&
+                      !updatedLowBalance.IsLow &&
+                      updatedLowBalance.StatusText == "• В нормі" &&
+                      stockBalances.ErrorMessage.Length == 0,
+                    "збереження порога негайно оновлює статус і зберігає кількість");
+
+                var updatedGridRows = Descendants<DataGridRow>(balancesView).ToList();
+                var updatedLowRow = updatedGridRows.Single(row =>
+                    ((StockBalanceRowItem)row.Item).ProductId == lowBalance.ProductId &&
+                    ((StockBalanceRowItem)row.Item).WarehouseId == lowBalance.WarehouseId);
+                var unchangedNormalRow = updatedGridRows.Single(row =>
+                    ((StockBalanceRowItem)row.Item).ProductId == ((StockBalanceRowItem)normalRow.Item).ProductId &&
+                    ((StockBalanceRowItem)row.Item).WarehouseId == ((StockBalanceRowItem)normalRow.Item).WarehouseId);
+                Check(Equals(updatedLowRow.Background, unchangedNormalRow.Background),
+                    "підсвічування критичного рядка знімається після досягнення порога");
+
+                stockBalances.SelectedWarehouse = stockBalances.Warehouses.First(w => w.Id == allWarehouses[1].Id);
+                Check(stockBalances.FilteredRows.Count == 1 && stockBalances.FilteredRows[0].WarehouseName == allWarehouses[1].Name,
+                    "stock balances filters by specific warehouse");
+
+                stockBalances.SelectedWarehouse = stockBalances.Warehouses.First(w => w.Id == 0);
+                Check(stockBalances.FilteredRows.Count == 2,
+                    "stock balances restores all rows when 'Усі склади' is selected again");
+            }
+        }
+        finally
+        {
+            using var restoreConn = new NpgsqlConnection(connection);
+            restoreConn.Open();
+            using var restoreTx = restoreConn.BeginTransaction();
+            using (var delCmd = new NpgsqlCommand("DELETE FROM stock;", restoreConn, restoreTx))
+            {
+                delCmd.ExecuteNonQuery();
+            }
+            foreach (var item in existingStock)
+            {
+                stockRepo.Save(item, restoreTx);
+            }
+            restoreTx.Commit();
+        }
 
         settings.Port = 1; settings.Timeout = 1;
         using var unavailable = Provider(settings.ConnectionString);
         var failedLogin = new LoginViewModel(unavailable.GetRequiredService<AuthService>()) { Username = "admin" };
         await failedLogin.LoginCommand.ExecuteAsync("AdminDemo!2026");
+        var failedBalances = unavailable.GetRequiredService<StockBalancesViewModel>();
+        var failedBalancesView = new StockBalancesView { DataContext = failedBalances };
+        await Render(failedBalancesView, "stock-balances-error");
+        var errorText = Descendants<TextBlock>(failedBalancesView).Single(t => t.Name == "ErrorMessageText");
+        Check(!string.IsNullOrWhiteSpace(failedBalances.ErrorMessage) &&
+              failedBalances.IsEmpty &&
+              errorText.Visibility == Visibility.Visible,
+            "stock balances displays load error without crashing");
         Check(failedLogin.ErrorMessage is not null && !failedLogin.IsBusy && !unavailable.GetRequiredService<AuthenticatedUserContext>().IsAuthenticated, "connection failure handled by login VM without crash");
         Check(trace.Errors.Count == 0, "WPF XAML binding trace contains no errors");
         Console.WriteLine($"All {_checks} Windows/WPF checks passed. These are programmatic checks, not manual desktop automation.");

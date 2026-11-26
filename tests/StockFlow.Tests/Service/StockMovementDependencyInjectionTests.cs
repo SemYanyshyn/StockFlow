@@ -57,6 +57,9 @@ public sealed class StockMovementDependencyInjectionTests
         public void Save(Stock stock, IDbTransaction transaction) =>
             throw new InvalidOperationException("No database operation is expected while resolving DI");
 
+        public void SetMinThreshold(int productId, int warehouseId, int minThreshold) =>
+            throw new InvalidOperationException("No database operation is expected while resolving DI");
+
         public IReadOnlyList<Stock> GetAll(int? warehouseId = null, IDbTransaction? transaction = null) =>
             Array.Empty<Stock>();
     }
