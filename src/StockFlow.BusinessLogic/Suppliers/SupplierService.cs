@@ -1,13 +1,14 @@
 using StockFlow.BusinessLogic.Products;
 using StockFlow.BusinessLogic.Users;
 using StockFlow.DataAccess.Suppliers;
+using StockFlow.DataAccess.Products;
 using StockFlow.Domain;
 
 namespace StockFlow.BusinessLogic.Suppliers;
 
 public sealed class SupplierService
 {
-    public const string AdminOnlyMessage = "Додавати постачальників може лише Адміністратор.";
+    public const string AdminOnlyMessage = "Виконувати цю дію може лише Адміністратор.";
     public const string NameRequiredMessage = "Назва постачальника обов'язкова.";
     public static readonly string NameTooLongMessage =
         $"Назва постачальника не може бути довшою за {Supplier.MaxNameLength} символів.";
@@ -35,6 +36,13 @@ public sealed class SupplierService
             throw new ValidationException(AdminOnlyMessage);
         }
 
+        var supplier = Build(name, phone, email);
+        supplier.Id = _repository.Add(supplier);
+        return supplier;
+    }
+
+    private static Supplier Build(string? name, string? phone, string? email)
+    {
         var supplier = new Supplier
         {
             Name = name?.Trim() ?? string.Empty,
@@ -59,8 +67,32 @@ public sealed class SupplierService
             throw new ValidationException(InvalidEmailMessage);
         }
 
-        supplier.Id = _repository.Add(supplier);
         return supplier;
+    }
+
+    public Supplier Update(int id, string? name, string? phone = null, string? email = null)
+    {
+        EnsureAdmin();
+        var supplier = Build(name, phone, email);
+        supplier.Id = id;
+        if (!_repository.Update(supplier)) throw new ValidationException("Постачальника вже видалено. Оновіть список.");
+        return supplier;
+    }
+
+    public void Delete(int id)
+    {
+        EnsureAdmin();
+        try
+        {
+            if (!_repository.Delete(id)) throw new ValidationException("Постачальника вже видалено. Оновіть список.");
+        }
+        catch (RecordInUseException)
+        { throw new ValidationException("Неможливо видалити постачальника з рухами товарів."); }
+    }
+
+    private void EnsureAdmin()
+    {
+        if (!_currentUser.IsAdmin) throw new ValidationException(AdminOnlyMessage);
     }
 
     public static IReadOnlyList<Supplier> Filter(IEnumerable<Supplier> suppliers, string? query)

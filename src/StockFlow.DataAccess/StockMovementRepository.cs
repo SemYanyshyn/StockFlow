@@ -15,12 +15,7 @@ public sealed class StockMovementRepository : IStockMovementRepository
         ArgumentNullException.ThrowIfNull(movement);
         ArgumentNullException.ThrowIfNull(transaction);
 
-        var databaseType = movement.Type switch
-        {
-            MovementType.Receipt => "receipt",
-            MovementType.WriteOff => "write_off",
-            _ => throw new ArgumentOutOfRangeException(nameof(movement), "Невідомий тип руху товару")
-        };
+        var databaseType = StockMovementTypeColumn.Format(movement.Type);
 
         var connection = transaction.Connection
             ?? throw new InvalidOperationException("Транзакція не має активного підключення");

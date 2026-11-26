@@ -74,14 +74,15 @@ public sealed class CurrentUserContextTests
     }
 
     [Fact]
-    public void ContainerResolvesSingleContextFromConfigurationWithoutDatabase()
+    public void ContainerResolvesUnauthenticatedContextWithoutDatabase()
     {
         using var provider = new ServiceCollection()
             .AddStockFlow(Configuration("Employee"))
             .BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true });
         var context = provider.GetRequiredService<ICurrentUserContext>();
-        Assert.IsType<TemporaryUserContext>(context);
-        Assert.False(context.IsAdmin);
+        Assert.IsType<AuthenticatedUserContext>(context);
+        Assert.False(((AuthenticatedUserContext)context).IsAuthenticated);
+        Assert.Throws<InvalidOperationException>(() => context.CurrentUser);
         Assert.Same(context, provider.GetRequiredService<ICurrentUserContext>());
     }
 }

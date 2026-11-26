@@ -12,7 +12,7 @@ namespace StockFlow.Tests.Service;
 public sealed class StockMovementDependencyInjectionTests
 {
     private static IConfiguration Config() => new ConfigurationBuilder()
-        .AddInMemoryCollection(new Dictionary<string,string?>
+        .AddInMemoryCollection(new Dictionary<string, string?>
         {
             ["ConnectionStrings:StockFlow"] = "Host=127.0.0.1;Port=1;Database=prototype;Username=test;Pooling=false"
         }).Build();
@@ -26,7 +26,8 @@ public sealed class StockMovementDependencyInjectionTests
         services.AddSingleton<ICurrentUserContext, TestUser>();
         using var provider = services.BuildServiceProvider(new ServiceProviderOptions
         {
-            ValidateOnBuild = true, ValidateScopes = true
+            ValidateOnBuild = true,
+            ValidateScopes = true
         });
         Assert.NotNull(provider.GetRequiredService<StockMovementService>());
         Assert.IsType<StockMovementRepository>(provider.GetRequiredService<IStockMovementRepository>());
@@ -45,14 +46,14 @@ public sealed class StockMovementDependencyInjectionTests
 
     private sealed class TestUser : ICurrentUserContext
     {
-        public User CurrentUser { get; } = new() { Id=1, Role=UserRole.Employee };
+        public User CurrentUser { get; } = new() { Id = 1, Role = UserRole.Employee };
     }
 
     private sealed class UnopenedStockRepository : IStockRepository
     {
-        public Stock GetForUpdate(int productId,int warehouseId,IDbTransaction transaction) =>
+        public Stock GetForUpdate(int productId, int warehouseId, IDbTransaction transaction) =>
             throw new InvalidOperationException("No database operation is expected while resolving DI");
-        public void Save(Stock stock,IDbTransaction transaction) =>
+        public void Save(Stock stock, IDbTransaction transaction) =>
             throw new InvalidOperationException("No database operation is expected while resolving DI");
         public IReadOnlyList<Stock> GetAll(int? warehouseId) => Array.Empty<Stock>();
     }

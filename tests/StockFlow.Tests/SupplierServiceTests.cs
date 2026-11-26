@@ -16,6 +16,20 @@ public sealed class SupplierServiceTests
 
         public IReadOnlyList<Supplier> GetAll() => Suppliers.ToList();
 
+        public bool InUse { get; set; }
+        public bool Update(Supplier supplier)
+        {
+            var index = Suppliers.FindIndex(s => s.Id == supplier.Id);
+            if (index < 0) return false;
+            Suppliers[index] = supplier;
+            return true;
+        }
+        public bool Delete(int id)
+        {
+            if (InUse) throw new StockFlow.DataAccess.Products.RecordInUseException();
+            return Suppliers.RemoveAll(s => s.Id == id) == 1;
+        }
+
         public int Add(Supplier supplier)
         {
             AddCalls++;
@@ -181,4 +195,44 @@ public sealed class SupplierServiceTests
     [Fact]
     public void FilterRejectsNullCollection() =>
         Assert.Throws<ArgumentNullException>(() => SupplierService.Filter(null!, "тест"));
+    [Fact]
+    public void UpdateTrimsAndClearsOptionalFieldsWithoutMutatingOriginal()
+    {
+        var (service, repository) = Create();
+        var original = service.Add("Original", "123", "a@b");
+        var updated = service.Update(original.Id, " Updated ", " ", null);
+        Assert.Equal("Updated", updated.Name);
+        Assert.Null(updated.Phone);
+        Assert.Null(updated.Email);
+        Assert.Equal("Original", original.Name);
+        Assert.Single(SupplierService.Filter(service.GetAll(), "updated"));
+        Assert.Empty(SupplierService.Filter(service.GetAll(), "original"));
+        Assert.Throws<ValidationException>(() => service.Update(original.Id, " "));
+        Assert.Throws<ValidationException>(() => service.Update(original.Id, "Name", email: "bad"));
+        Assert.Equal("Updated", Assert.Single(repository.Suppliers).Name);
+    }
+
+    [Fact]
+    public void EmployeeCannotUpdateOrDelete()
+    {
+        var (service, repository) = Create(UserRole.Employee);
+        Assert.Throws<ValidationException>(() => service.Update(1, "Name"));
+        Assert.Throws<ValidationException>(() => service.Delete(1));
+        Assert.Empty(repository.Suppliers);
+    }
+
+    [Fact]
+    public void DeleteProtectsHistoryAndRemovesUnusedSupplier()
+    {
+        var (service, repository) = Create();
+        var supplier = service.Add("Name");
+        repository.InUse = true;
+        Assert.Contains("рухами", Assert.Throws<ValidationException>(() => service.Delete(supplier.Id)).Message);
+        Assert.Single(repository.Suppliers);
+        repository.InUse = false;
+        service.Delete(supplier.Id);
+        Assert.Empty(repository.Suppliers);
+        Assert.Throws<ValidationException>(() => service.Update(supplier.Id, "Name"));
+        Assert.Throws<ValidationException>(() => service.Delete(supplier.Id));
+    }
 }

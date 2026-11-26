@@ -150,6 +150,25 @@ public sealed class StockMovementServiceTests
     }
 
     [Fact]
+    public void AddFailureRollsBackWithoutCallingSaveOrCommit()
+    {
+        var fixture = new Fixture();
+        fixture.Movements.AddError = new InvalidOperationException(SensitiveMarker);
+
+        var result = fixture.Service.Register(Request());
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Не вдалося зберегти рух товару", result.Error);
+        Assert.Equal(1, fixture.Movements.AddCount);
+        Assert.Equal(0, fixture.Stocks.SaveCount);
+        Assert.Equal(0, fixture.Transaction.CommitCount);
+        Assert.Equal(1, fixture.Transaction.RollbackCount);
+        Assert.Empty(fixture.State.PersistedMovements);
+        Assert.Equal(10, fixture.State.PersistedStock.Quantity);
+        AssertReleased(fixture);
+    }
+
+    [Fact]
     public void DuplicateNumberReturnsNumberSpecificMessageAndRollsBack()
     {
         var fixture = new Fixture();
@@ -158,7 +177,7 @@ public sealed class StockMovementServiceTests
         var result = fixture.Service.Register(Request());
 
         Assert.False(result.IsSuccess);
-        Assert.Contains("номер", Assert.IsType<string>(result.Error), StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("Накладна з таким номером уже існує", result.Error);
         Assert.Equal(0, fixture.Stocks.SaveCount);
         Assert.Equal(0, fixture.Transaction.CommitCount);
         Assert.Equal(1, fixture.Transaction.RollbackCount);
@@ -212,7 +231,7 @@ public sealed class StockMovementServiceTests
 
         Assert.False(result.IsSuccess);
         AssertSanitizedError(result.Error);
-        Assert.DoesNotContain("номер", result.Error!, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("Спробуйте ще раз", result.Error);
         Assert.Equal(1, fixture.Transaction.RollbackCount);
         Assert.Equal(0, fixture.Transaction.CommitCount);
         Assert.Empty(fixture.State.PersistedMovements);
@@ -366,7 +385,10 @@ public sealed class StockMovementServiceTests
     {
         public Stock PersistedStock { get; set; } = new()
         {
-            ProductId = 11, WarehouseId = 22, Quantity = 10, MinThreshold = 3
+            ProductId = 11,
+            WarehouseId = 22,
+            Quantity = 10,
+            MinThreshold = 3
         };
         public List<StockMovement> PersistedMovements { get; } = [];
     }
@@ -489,15 +511,23 @@ public sealed class StockMovementServiceTests
 
     private static Stock Copy(Stock stock) => new()
     {
-        ProductId = stock.ProductId, WarehouseId = stock.WarehouseId,
-        Quantity = stock.Quantity, MinThreshold = stock.MinThreshold
+        ProductId = stock.ProductId,
+        WarehouseId = stock.WarehouseId,
+        Quantity = stock.Quantity,
+        MinThreshold = stock.MinThreshold
     };
 
     private static StockMovement Copy(StockMovement movement) => new()
     {
-        Id = movement.Id, Number = movement.Number, Type = movement.Type,
-        ProductId = movement.ProductId, WarehouseId = movement.WarehouseId,
-        SupplierId = movement.SupplierId, UserId = movement.UserId,
-        Quantity = movement.Quantity, MovementDate = movement.MovementDate, Note = movement.Note
+        Id = movement.Id,
+        Number = movement.Number,
+        Type = movement.Type,
+        ProductId = movement.ProductId,
+        WarehouseId = movement.WarehouseId,
+        SupplierId = movement.SupplierId,
+        UserId = movement.UserId,
+        Quantity = movement.Quantity,
+        MovementDate = movement.MovementDate,
+        Note = movement.Note
     };
 }

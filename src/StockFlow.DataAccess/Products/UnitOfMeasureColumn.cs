@@ -11,4 +11,12 @@ public static class UnitOfMeasureColumn
         "liter" => UnitOfMeasure.Liter,
         _ => throw new InvalidOperationException($"Невідома одиниця виміру в базі даних: '{value}'.")
     };
+
+    public static string Format(UnitOfMeasure unit) => unit switch
+    {
+        UnitOfMeasure.Piece => "piece",
+        UnitOfMeasure.Kilogram => "kg",
+        UnitOfMeasure.Liter => "liter",
+        _ => throw new ArgumentOutOfRangeException(nameof(unit))
+    };
 }

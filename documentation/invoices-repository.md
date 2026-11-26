@@ -1,4 +1,4 @@
-# SE-3: репозиторій рухів товару
+# SE7-2: репозиторій рухів товару
 
 Код входить у звичайний `StockFlow.DataAccess`, тести — у `StockFlow.Tests`.
 Він використовує production `StockMovement` із PR #139 та єдиний командний
@@ -19,8 +19,9 @@
 передане підключення/транзакцію та не виконує commit або rollback.
 Повертає доданий id, не змінюючи вхідний доменний об'єкт.
 
-`Receipt` відображається у `receipt`, `WriteOff` — у `write_off` явним switch;
-невідомий enum відхиляється. `supplier_id` та `note` передаються як типізовані
+`StockMovementTypeColumn` задає зіставлення `Receipt` ↔ `receipt` і
+`WriteOff` ↔ `write_off` для запису та читання. Невідоме значення відхиляється.
+`supplier_id` та `note` передаються як типізовані
 параметри з `DBNull.Value`, якщо значення відсутнє. Решту бізнес-правил перевіряє
 спільний домен через сервіс; репозиторій не дублює їх.
 
@@ -39,33 +40,25 @@
 перетворення часового поясу. Це відповідає
 [офіційному зіставленню Npgsql](https://www.npgsql.org/doc/types/basic.html).
 
-## Перевірки
+## Перевірки для #225
 
 ```sh
-export PATH="/private/tmp/stockflow-dotnet8:$PATH"
 dotnet restore StockFlow.sln
-dotnet build StockFlow.sln -c Release --no-restore
-dotnet test tests/StockFlow.Tests/StockFlow.Tests.csproj -c Release --no-build --no-restore
-dotnet test tests/StockFlow.Tests/StockFlow.Tests.csproj -c Release --no-build --no-restore --filter FullyQualifiedName~StockMovementRepositoryTests
+dotnet format StockFlow.sln --verify-no-changes --no-restore
+dotnet build StockFlow.sln -c Release --no-restore -warnaserror
+dotnet test tests/StockFlow.Tests/StockFlow.Tests.csproj -c Release --no-build
+dotnet run --project tests/StockFlow.DatabaseChecks -c Release
 ```
-
-Фактично виконано на macOS ARM64, SDK .NET 8.0.427: restore та Release build
-успішні, 0 warnings / 0 errors. У звичайному test project виконано **240 тестів**:
-175 наявних командних/інфраструктурних +42 доменних +23 репозиторію; 0 failed,
-0 skipped. Окремий фільтр StockMovementRepositoryTests виконав 23/23.
 
 23 тести репозиторію перевіряють передачу всіх значень, SQL-параметризацію,
 типи/NULL, `RETURNING id`, явне зіставлення enum, точну класифікацію SQLSTATE,
 дотримання транзакції та звільнення лише власної команди на успіху й помилці.
-Recording-фейки не доводять правильність виконання SQL, ізоляцію або атомарність
-PostgreSQL. Реальні SQL-перевірки запускаються окремо тільки в новій локальній
-тестовій БД; результати й межі перевірки фіксуються у `stage6-semen.md`.
 
-PR #140 спирається на `feature/invoices-domain-rules` (PR #139), тому diff не
-повторює домен. `Part of #128`, `Part of #30`, `Part of #32`; повні історії з
-формою цим репозиторієм ще не завершені. PR лишається Draft до остаточної
-перевірки CI й узгодження командної інтеграції; він не зливався.
+`InvoiceDatabaseChecks.cs` запускається в job `database-checks` і перевіряє
+реальні `INSERT`, `CHECK`, `FK`, `RESTRICT`, унікальність, обидва типи,
+невідомий тип, точність дати та `NULL`. Використовується лише база з префіксом
+`stockflow_isolated_` на loopback, підготовлена `database/01_schema.sql` і
+`database/02_seed.sql`; рядок підключення читається зі `STOCKFLOW_TEST_CONNECTION`.
 
-CI на main `723e656` фактично успішний (run 40968466801, job build-and-test).
-Наявний workflow виконується для push/main та PR із base main. Для цього PR з
-feature-base CI автоматично не запускається; успіх main не є перевіркою head PR.
+Репозиторій не вмикає створення накладних: сервіс, форма й фінальна перевірка
+надходження та списання (issues #30/#32) ідуть окремо.

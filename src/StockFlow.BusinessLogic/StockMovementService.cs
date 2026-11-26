@@ -60,10 +60,10 @@ public sealed class StockMovementService(
             Rollback(scope);
             return StockMovementRegistrationResult.Failure(error.Message);
         }
-        catch (DuplicateNumberException error)
+        catch (DuplicateNumberException)
         {
             Rollback(scope);
-            return StockMovementRegistrationResult.Failure(error.Message);
+            return StockMovementRegistrationResult.Failure("Накладна з таким номером уже існує");
         }
         catch (PostgresException error) when (
             error.SqlState is "40001" or "40P01" ||
