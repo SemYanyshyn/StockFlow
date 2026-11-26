@@ -9,7 +9,7 @@ using StockFlow.DataAccess.Suppliers;
 using StockFlow.DataAccess.Users;
 using StockFlow.Domain;
 
-// Deliberately outside StockFlow.sln/CI. Only an explicitly named isolated database is accepted.
+// Only an explicitly named isolated database is accepted, locally and in CI.
 var connectionString = Environment.GetEnvironmentVariable("STOCKFLOW_TEST_CONNECTION") ??
     throw new InvalidOperationException("Set STOCKFLOW_TEST_CONNECTION to an isolated, schema+seed initialized database.");
 var settings = new NpgsqlConnectionStringBuilder(connectionString);
@@ -54,6 +54,18 @@ void Execute(string sql, params (string Name, object Value)[] parameters)
     foreach (var parameter in parameters) command.Parameters.AddWithValue(parameter.Name, parameter.Value);
     command.ExecuteNonQuery();
 }
+
+Task RunInvoiceConcurrency(AuthenticatedUserContext employee) =>
+    InvoiceConcurrencyChecks.RunAsync(factory, new StockRepository(factory), employee, Check);
+
+if (args is ["--invoice-concurrency-only"])
+{
+    var concurrencyEmployee = new AuthenticatedUserContext();
+    new AuthService(() => users, hasher, concurrencyEmployee).Login("employee", "EmployeeDemo!2026");
+    await RunInvoiceConcurrency(concurrencyEmployee);
+    Console.WriteLine($"All {checks} invoice concurrency checks passed.");
+    return;
+}
 StockRepositoryChecks.Run(factory, Check);
 SchemaConstraintChecks.Run(factory, Check);
 InvoiceDatabaseChecks.Run(factory, Check);
@@ -71,6 +83,7 @@ ExpectValidation(() => employeeAuth.Login("employee", "EmployeeDemo!2026"), Auth
 userService.SetActive(employeeId, true);
 employeeAuth.Login("employee", "EmployeeDemo!2026");
 Check(employeeContext.IsAuthenticated, "unblocking restores login");
+await RunInvoiceConcurrency(employeeContext);
 ExpectValidation(() => new UserService(users, employeeContext, hasher).GetAll(), UserService.AdminOnlyMessage);
 ExpectValidation(() => userService.SetActive(adminId, false), UserService.SelfBlockMessage);
 ExpectValidation(() => userService.Delete(adminId), UserService.SelfDeleteMessage);
