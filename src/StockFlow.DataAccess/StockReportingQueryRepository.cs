@@ -1,41 +1,20 @@
-using System;
-using System.Collections.Generic;
 using System.Data;
-using StockFlow.BusinessLogic.Products;
-using StockFlow.DataAccess;
 
-namespace StockFlow.BusinessLogic;
+namespace StockFlow.DataAccess;
 
-public sealed record StockBalanceDto(
-    string ProductName,
-    string Unit,
-    string WarehouseName,
-    int Quantity,
-    int MinThreshold,
-    bool IsLow);
-
-public sealed record MovementReportDto(
-    string ProductName,
-    string Unit,
-    string WarehouseName,
-    int IncomingQuantity,
-    int OutgoingQuantity,
-    int CurrentBalance);
-
-public sealed class StockReportingQueryService
+public sealed class StockReportingQueryRepository : IStockReportingQueryRepository
 {
     private readonly DbConnectionFactory _connectionFactory;
 
-    public StockReportingQueryService(DbConnectionFactory connectionFactory)
+    public StockReportingQueryRepository(DbConnectionFactory connectionFactory)
     {
-        _connectionFactory = connectionFactory;
+        _connectionFactory = connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
     }
 
-    public IReadOnlyList<StockBalanceDto> GetStockBalances()
+    public IReadOnlyList<StockBalanceQueryRow> GetStockBalances()
     {
         using var connection = _connectionFactory.CreateConnection();
-        if (connection.State != ConnectionState.Open)
-            connection.Open();
+        connection.Open();
 
         using var command = connection.CreateCommand();
         command.CommandText = """
@@ -50,34 +29,25 @@ public sealed class StockReportingQueryService
             ORDER BY p.name, w.name;
             """;
 
-        var result = new List<StockBalanceDto>();
+        var result = new List<StockBalanceQueryRow>();
         using var reader = command.ExecuteReader();
         while (reader.Read())
         {
-            var quantity = Convert.ToInt32(reader["quantity"]);
-            var minThreshold = Convert.ToInt32(reader["min_threshold"]);
-            var isLow = minThreshold > 0 ? quantity <= minThreshold : quantity == 0;
-
-            result.Add(new StockBalanceDto(
+            result.Add(new StockBalanceQueryRow(
                 ProductName: Convert.ToString(reader["product_name"]) ?? string.Empty,
                 Unit: Convert.ToString(reader["unit"]) ?? "piece",
                 WarehouseName: Convert.ToString(reader["warehouse_name"]) ?? string.Empty,
-                Quantity: quantity,
-                MinThreshold: minThreshold,
-                IsLow: isLow));
+                Quantity: Convert.ToInt32(reader["quantity"]),
+                MinThreshold: Convert.ToInt32(reader["min_threshold"])));
         }
 
         return result;
     }
 
-    public IReadOnlyList<MovementReportDto> GetMovementSummary(DateTime? dateFrom, DateTime? dateTo)
+    public IReadOnlyList<MovementSummaryQueryRow> GetMovementSummary(DateTime? dateFrom, DateTime? dateTo)
     {
-        if (dateFrom?.Date > dateTo?.Date)
-            throw new ValidationException("Дата початку не може бути пізнішою за кінцеву дату.");
-
         using var connection = _connectionFactory.CreateConnection();
-        if (connection.State != ConnectionState.Open)
-            connection.Open();
+        connection.Open();
 
         using var command = connection.CreateCommand();
         var conditions = new List<string>();
@@ -114,11 +84,11 @@ public sealed class StockReportingQueryService
             ORDER BY p.name, w.name;
             """;
 
-        var result = new List<MovementReportDto>();
+        var result = new List<MovementSummaryQueryRow>();
         using var reader = command.ExecuteReader();
         while (reader.Read())
         {
-            result.Add(new MovementReportDto(
+            result.Add(new MovementSummaryQueryRow(
                 ProductName: Convert.ToString(reader["product_name"]) ?? string.Empty,
                 Unit: Convert.ToString(reader["unit"]) ?? "piece",
                 WarehouseName: Convert.ToString(reader["warehouse_name"]) ?? string.Empty,
