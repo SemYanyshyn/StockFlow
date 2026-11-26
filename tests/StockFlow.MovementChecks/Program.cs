@@ -35,7 +35,7 @@ void Execute(string sql, params (string Name, object Value)[] parameters)
     command.ExecuteNonQuery();
 }
 Check(!query.Search(new()).HasAny, "empty database is distinct from no matches");
-Check(provider.GetService<IStockRepository>() is null, "read DI does not require a stock repository");
+Check(provider.GetRequiredService<IStockRepository>() is StockRepository, "stock repository is registered in the DI container");
 var reportDate = new DateTime(2026, 11, 15, 0, 0, 0, DateTimeKind.Unspecified);
 var reportPrefix = "se7_9_" + Guid.NewGuid().ToString("N")[..8] + "_";
 try
