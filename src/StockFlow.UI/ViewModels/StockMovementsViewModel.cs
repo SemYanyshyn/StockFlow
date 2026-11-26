@@ -13,13 +13,16 @@ public sealed partial class StockMovementsViewModel : ViewModelBase
     private readonly StockMovementQueryService _query;
     private readonly WarehouseService _warehouses;
     private bool _warehousesLoaded;
+    private bool _reloadPending;
+    private bool _suppressApply;
+    private Task _loading = Task.CompletedTask;
+    private CancellationTokenSource? _searchDelay;
 
     public StockMovementsViewModel(StockMovementQueryService query, WarehouseService warehouses, ICurrentUserContext user)
     {
         _query = query;
         _warehouses = warehouses;
         IsEmployee = user.Role == UserRole.Employee;
-        ApplyFiltersCommand = new AsyncRelayCommand(LoadAsync, () => !IsBusy);
         ClearFiltersCommand = new AsyncRelayCommand(ClearAsync, () => !IsBusy);
         ViewCommand = new AsyncRelayCommand<StockMovementRow>(ViewAsync, row => !IsBusy && row is not null);
         BackCommand = new RelayCommand(() => Details = null, () => !IsBusy);
@@ -59,23 +62,55 @@ public sealed partial class StockMovementsViewModel : ViewModelBase
     [ObservableProperty] private bool _isBusy;
     [ObservableProperty, NotifyPropertyChangedFor(nameof(IsListOpen), nameof(Title))] private StockMovementRow? _details;
 
-    public IAsyncRelayCommand ApplyFiltersCommand { get; }
     public IAsyncRelayCommand ClearFiltersCommand { get; }
     public IAsyncRelayCommand<StockMovementRow> ViewCommand { get; }
     public IRelayCommand BackCommand { get; }
 
+    internal TimeSpan SearchDelay { get; set; } = TimeSpan.FromMilliseconds(300);
+    internal Task PendingApply { get; private set; } = Task.CompletedTask;
+
     partial void OnIsBusyChanged(bool value)
     {
-        ApplyFiltersCommand.NotifyCanExecuteChanged();
         ClearFiltersCommand.NotifyCanExecuteChanged();
         ViewCommand.NotifyCanExecuteChanged();
         BackCommand.NotifyCanExecuteChanged();
     }
 
-    public async Task LoadAsync()
+    partial void OnSearchNumberChanged(string value) => ApplyAfterTyping();
+    partial void OnFilterTypeChanged(MovementType? value) => ApplyNow();
+    partial void OnFilterWarehouseIdChanged(int? value) => ApplyNow();
+    partial void OnDateFromChanged(DateTime? value) => ApplyNow();
+    partial void OnDateToChanged(DateTime? value) => ApplyNow();
+
+    public Task LoadAsync()
     {
-        if (IsBusy) return;
+        if (IsBusy)
+        {
+            _reloadPending = true;
+            return _loading;
+        }
+        _loading = RunLoadAsync();
+        return _loading;
+    }
+
+    private async Task RunLoadAsync()
+    {
         IsBusy = true;
+        try
+        {
+            do
+            {
+                _reloadPending = false;
+                await LoadMovementsAsync();
+                await LoadWarehousesAsync();
+            }
+            while (_reloadPending);
+        }
+        finally { IsBusy = false; }
+    }
+
+    private async Task LoadMovementsAsync()
+    {
         ListError = null;
         EmptyMessage = null;
         var filter = new StockMovementFilter(SearchNumber, FilterType, FilterWarehouseId, DateFrom, DateTo);
@@ -92,31 +127,63 @@ public sealed partial class StockMovementsViewModel : ViewModelBase
             Movements = Array.Empty<StockMovementRow>();
             ListError = "Не вдалося завантажити накладні. Перевірте з’єднання з базою даних і спробуйте ще раз.";
         }
+    }
 
+    private async Task LoadWarehousesAsync()
+    {
+        if (_warehousesLoaded) return;
+        FilterError = null;
         try
         {
-            if (!_warehousesLoaded)
-            {
-                FilterError = null;
-                try
-                {
-                    var warehouses = await Task.Run(_warehouses.GetAll);
-                    WarehouseOptions = new[] { new MovementWarehouseOption(null, "Усі склади") }
-                        .Concat(warehouses.Select(w => new MovementWarehouseOption(w.Id, w.Name))).ToArray();
-                    _warehousesLoaded = true;
-                }
-                catch (Exception) { FilterError = "Не вдалося завантажити перелік складів. Натисніть «Застосувати», щоб повторити."; }
-            }
+            var warehouses = await Task.Run(_warehouses.GetAll);
+            WarehouseOptions = new[] { new MovementWarehouseOption(null, "Усі склади") }
+                .Concat(warehouses.Select(w => new MovementWarehouseOption(w.Id, w.Name))).ToArray();
+            _warehousesLoaded = true;
         }
-        finally { IsBusy = false; }
+        catch (Exception) { FilterError = "Не вдалося завантажити перелік складів. Натисніть «Очистити», щоб повторити."; }
+    }
+
+    private void ApplyNow()
+    {
+        if (_suppressApply) return;
+        CancelSearchDelay();
+        PendingApply = LoadAsync();
+    }
+
+    private void ApplyAfterTyping()
+    {
+        if (_suppressApply) return;
+        CancelSearchDelay();
+        _searchDelay = new CancellationTokenSource();
+        PendingApply = LoadAfterDelayAsync(_searchDelay.Token);
+    }
+
+    private async Task LoadAfterDelayAsync(CancellationToken token)
+    {
+        try { await Task.Delay(SearchDelay, token); }
+        catch (OperationCanceledException) { return; }
+        await LoadAsync();
+    }
+
+    private void CancelSearchDelay()
+    {
+        _searchDelay?.Cancel();
+        _searchDelay?.Dispose();
+        _searchDelay = null;
     }
 
     private async Task ClearAsync()
     {
-        SearchNumber = string.Empty;
-        FilterType = null;
-        FilterWarehouseId = null;
-        DateFrom = DateTo = null;
+        CancelSearchDelay();
+        _suppressApply = true;
+        try
+        {
+            SearchNumber = string.Empty;
+            FilterType = null;
+            FilterWarehouseId = null;
+            DateFrom = DateTo = null;
+        }
+        finally { _suppressApply = false; }
         await LoadAsync();
     }
 
@@ -125,9 +192,12 @@ public sealed partial class StockMovementsViewModel : ViewModelBase
         if (IsBusy || row is null) return;
         IsBusy = true;
         ListError = null;
+        string? detailError = null;
         try { Details = new(await Task.Run(() => _query.GetById(row.Id))); }
-        catch (ValidationException error) { ListError = error.Message; }
-        catch (Exception) { ListError = "Не вдалося завантажити деталі накладної. Спробуйте ще раз."; }
+        catch (ValidationException error) { detailError = error.Message; }
+        catch (Exception) { detailError = "Не вдалося завантажити деталі накладної. Спробуйте ще раз."; }
         finally { IsBusy = false; }
+        if (_reloadPending) await LoadAsync();
+        ListError ??= detailError;
     }
 }

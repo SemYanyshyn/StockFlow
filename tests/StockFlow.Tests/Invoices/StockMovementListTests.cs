@@ -66,18 +66,93 @@ public sealed class StockMovementListTests
     }
 
     [Fact]
-    public async Task FiltersCombineApplyExplicitlyAndClearReloadsAll()
+    public async Task FiltersApplyAutomaticallyAndClearReloadsOnce()
     {
-        var f = new Fixture(); var vm = f.ViewModel();
-        vm.SearchNumber = "  нк-01 "; vm.FilterType = MovementType.WriteOff; vm.FilterWarehouseId = 2;
-        vm.DateFrom = new(2026, 11, 1, 12, 0, 0); vm.DateTo = new(2026, 11, 13, 12, 0, 0);
-        Assert.Equal(0, f.ReadCount);
-        await vm.ApplyFiltersCommand.ExecuteAsync(null);
+        var f = new Fixture(); var vm = f.ViewModel(); vm.SearchDelay = TimeSpan.Zero;
+        vm.SearchNumber = "  нк-01 "; await vm.PendingApply;
+        vm.FilterType = MovementType.WriteOff; await vm.PendingApply;
+        vm.FilterWarehouseId = 2; await vm.PendingApply;
+        vm.DateFrom = new(2026, 11, 1, 12, 0, 0); await vm.PendingApply;
+        vm.DateTo = new(2026, 11, 13, 12, 0, 0); await vm.PendingApply;
+        Assert.Equal(5, f.ReadCount);
         Assert.Equal(new StockMovementFilter("нк-01", MovementType.WriteOff, 2, new(2026, 11, 1), new(2026, 11, 13)), f.LastFilter);
         await vm.ClearFiltersCommand.ExecuteAsync(null);
+        Assert.Equal(6, f.ReadCount);
         Assert.Equal(new StockMovementFilter(""), f.LastFilter);
         Assert.Equal("Усі типи", vm.SelectedFilterType.Name);
         Assert.Equal("Усі склади", vm.SelectedFilterWarehouse.Name);
+    }
+
+    [Fact]
+    public async Task NumberSearchWaitsForTypingToStop()
+    {
+        var f = new Fixture(); var vm = f.ViewModel(); vm.SearchDelay = TimeSpan.FromMilliseconds(50);
+        vm.SearchNumber = "н"; vm.SearchNumber = "нк"; vm.SearchNumber = "нк-01";
+        Assert.Equal(0, f.ReadCount);
+        await vm.PendingApply;
+        Assert.Equal(1, f.ReadCount);
+        Assert.Equal("нк-01", f.LastFilter!.Number);
+    }
+
+    [Fact]
+    public async Task FilterChangedDuringLoadReloadsWithLatestFilter()
+    {
+        var f = new Fixture { Gate = new ManualResetEventSlim(false) }; var vm = f.ViewModel();
+        var first = vm.LoadAsync();
+        Assert.True(vm.IsBusy);
+        vm.FilterType = MovementType.Receipt;
+        f.Gate.Set();
+        await first;
+        await vm.PendingApply;
+        Assert.Equal(2, f.ReadCount);
+        Assert.Equal(MovementType.Receipt, f.LastFilter!.Type);
+        Assert.False(vm.IsBusy);
+    }
+
+    [Fact]
+    public async Task FilterChangedWhileDetailsLoadReloadsListWithLatestFilter()
+    {
+        var f = new Fixture { DetailGate = new ManualResetEventSlim(false) }; var vm = f.ViewModel();
+        await vm.LoadAsync();
+        var view = vm.ViewCommand.ExecuteAsync(vm.Movements[0]);
+        Assert.True(vm.IsBusy);
+        vm.FilterType = MovementType.Receipt;
+        f.DetailGate.Set();
+        await view;
+        Assert.Equal(2, f.ReadCount);
+        Assert.Equal(MovementType.Receipt, f.LastFilter!.Type);
+        Assert.False(vm.IsListOpen);
+        vm.BackCommand.Execute(null);
+        Assert.True(vm.IsListOpen);
+        Assert.False(vm.IsBusy);
+    }
+
+    [Fact]
+    public async Task SearchTypedWhileDetailsFailReloadsListAndKeepsDetailError()
+    {
+        var f = new Fixture { DetailGate = new ManualResetEventSlim(false), DetailError = new IOException("private query") };
+        var vm = f.ViewModel(); vm.SearchDelay = TimeSpan.Zero;
+        await vm.LoadAsync();
+        var view = vm.ViewCommand.ExecuteAsync(vm.Movements[0]);
+        vm.SearchNumber = "нк-01";
+        f.DetailGate.Set();
+        await view;
+        Assert.Equal(2, f.ReadCount);
+        Assert.Equal("нк-01", f.LastFilter!.Number);
+        Assert.True(vm.IsListOpen);
+        Assert.Contains("Не вдалося завантажити деталі", vm.ListError);
+        Assert.False(vm.IsBusy);
+    }
+
+    [Fact]
+    public async Task InvalidDateRangeShowsErrorWithoutQuery()
+    {
+        var f = new Fixture(); var vm = f.ViewModel();
+        vm.DateFrom = new(2026, 11, 14); await vm.PendingApply;
+        var reads = f.ReadCount;
+        vm.DateTo = new(2026, 11, 13); await vm.PendingApply;
+        Assert.Equal(reads, f.ReadCount);
+        Assert.NotNull(vm.ListError);
     }
 
     [Fact]
@@ -152,15 +227,19 @@ public sealed class StockMovementListTests
         public bool WarehouseError { get; set; }
         public int ReadCount { get; private set; }
         public bool MissingDetails { get; set; }
+        public ManualResetEventSlim? Gate { get; set; }
+        public ManualResetEventSlim? DetailGate { get; set; }
         public StockMovementsViewModel ViewModel() => new(new(this), new(this, this), this);
         public StockMovementList Search(StockMovementFilter filter)
         {
+            Gate?.Wait();
             ReadCount++; LastFilter = filter;
             if (ReadError is not null) throw ReadError;
             return List;
         }
         public StockMovementDetails? GetById(int id)
         {
+            DetailGate?.Wait();
             if (DetailError is not null) throw DetailError;
             return MissingDetails ? null : Row(id);
         }
