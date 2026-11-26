@@ -35,7 +35,7 @@ public sealed class StockMovementReadRepository(DbConnectionFactory connections)
         if (filter.Type is { } type)
         {
             command.CommandText += " AND m.type = @type";
-            command.Parameters.AddWithValue("type", type == MovementType.Receipt ? "receipt" : "write_off");
+            command.Parameters.AddWithValue("type", StockMovementTypeColumn.Format(type));
         }
         if (filter.WarehouseId is { } warehouse)
         {
@@ -80,12 +80,7 @@ public sealed class StockMovementReadRepository(DbConnectionFactory connections)
 
     private static StockMovementDetails Read(NpgsqlDataReader reader) => new(
         reader.GetInt32(0), reader.GetString(1), reader.GetDateTime(2),
-        reader.GetString(3) switch
-        {
-            "receipt" => MovementType.Receipt,
-            "write_off" => MovementType.WriteOff,
-            _ => throw new InvalidOperationException("Невідомий тип накладної.")
-        },
+        StockMovementTypeColumn.Parse(reader.GetString(3)),
         reader.GetString(4), reader.GetInt32(5), UnitOfMeasureColumn.Parse(reader.GetString(6)),
         reader.GetString(7), reader.GetString(8),
         reader.IsDBNull(9) ? null : reader.GetString(9), reader.IsDBNull(10) ? null : reader.GetString(10));
