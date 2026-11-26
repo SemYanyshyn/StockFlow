@@ -488,7 +488,7 @@ public sealed class StockMovementServiceTests
             work.PendingStock = Copy(stock);
         }
 
-        public IReadOnlyList<Stock> GetAll(int? warehouseId) =>
+        public IReadOnlyList<Stock> GetAll(int? warehouseId, IDbTransaction? transaction) =>
             warehouseId is null || warehouseId == state.PersistedStock.WarehouseId
                 ? [Copy(state.PersistedStock)] : [];
     }

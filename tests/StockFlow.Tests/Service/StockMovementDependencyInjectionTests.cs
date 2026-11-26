@@ -1,6 +1,7 @@
 using System.Data;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using StockFlow.BusinessLogic;
 using StockFlow.BusinessLogic.Users;
 using StockFlow.DataAccess;
@@ -39,6 +40,7 @@ public sealed class StockMovementDependencyInjectionTests
     {
         var services = new ServiceCollection();
         services.AddStockFlow(Config()).AddStockMovementServices();
+        services.RemoveAll<IStockRepository>();
         var error = Assert.Throws<AggregateException>(() => services.BuildServiceProvider(
             new ServiceProviderOptions { ValidateOnBuild = true }));
         Assert.Contains(nameof(IStockRepository), error.ToString());
@@ -55,6 +57,6 @@ public sealed class StockMovementDependencyInjectionTests
             throw new InvalidOperationException("No database operation is expected while resolving DI");
         public void Save(Stock stock, IDbTransaction transaction) =>
             throw new InvalidOperationException("No database operation is expected while resolving DI");
-        public IReadOnlyList<Stock> GetAll(int? warehouseId) => Array.Empty<Stock>();
+        public IReadOnlyList<Stock> GetAll(int? warehouseId, IDbTransaction? transaction) => Array.Empty<Stock>();
     }
 }
