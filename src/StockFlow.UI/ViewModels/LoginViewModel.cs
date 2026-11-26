@@ -18,17 +18,20 @@ public sealed partial class LoginViewModel : ViewModelBase
     private async Task LoginAsync(string? password)
     {
         if (IsBusy) return;
-        IsBusy = true;
-        ErrorMessage = null;
-        try
+        await ExecuteSafelyAsync(async () =>
         {
             var username = Username;
             await Task.Run(() => _auth.Login(username, password));
-        }
-        catch (ValidationException error) { ErrorMessage = error.Message; }
-        catch (Exception)
-        { ErrorMessage = "Не вдалося увійти. Перевірте налаштування та підключення до бази даних і спробуйте ще раз."; }
-        finally { IsBusy = false; }
+        },
+        error => ErrorMessage = error is ValidationException validationError
+            ? validationError.Message
+            : "Не вдалося увійти. Перевірте налаштування та підключення до бази даних і спробуйте ще раз.",
+        onStarting: () =>
+        {
+            IsBusy = true;
+            ErrorMessage = null;
+        },
+        onFinally: () => IsBusy = false);
         if (ErrorMessage is null) LoginSucceeded?.Invoke();
     }
 }

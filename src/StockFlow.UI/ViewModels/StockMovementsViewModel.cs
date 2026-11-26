@@ -123,11 +123,16 @@ public sealed partial class StockMovementsViewModel : ViewModelBase
     private async Task ViewAsync(StockMovementRow? row)
     {
         if (IsBusy || row is null) return;
-        IsBusy = true;
-        ListError = null;
-        try { Details = new(await Task.Run(() => _query.GetById(row.Id))); }
-        catch (ValidationException error) { ListError = error.Message; }
-        catch (Exception) { ListError = "Не вдалося завантажити деталі накладної. Спробуйте ще раз."; }
-        finally { IsBusy = false; }
+        await ExecuteSafelyAsync(
+            async () => Details = new(await Task.Run(() => _query.GetById(row.Id))),
+            error => ListError = error is ValidationException validationError
+                ? validationError.Message
+                : "Не вдалося завантажити деталі накладної. Спробуйте ще раз.",
+            onStarting: () =>
+            {
+                IsBusy = true;
+                ListError = null;
+            },
+            onFinally: () => IsBusy = false);
     }
 }
