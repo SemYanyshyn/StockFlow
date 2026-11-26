@@ -54,7 +54,7 @@ void Execute(string sql, params (string Name, object Value)[] parameters)
     foreach (var parameter in parameters) command.Parameters.AddWithValue(parameter.Name, parameter.Value);
     command.ExecuteNonQuery();
 }
-StockRepositoryChecks.Run(factory, Check);
+await StockRepositoryChecks.Run(factory, Check);
 SchemaConstraintChecks.Run(factory, Check);
 InvoiceDatabaseChecks.Run(factory, Check);
 

@@ -19,6 +19,8 @@ public sealed class StockMovementService(
     IStockMovementRepository movements,
     IStockTransactionFactory transactions)
 {
+    private const int MaxSerializationAttempts = 2;
+
     public StockMovementRegistrationResult Register(StockMovement request)
     {
         // Read the trusted user once. Never accept the caller's editable UserId.
@@ -43,6 +45,17 @@ public sealed class StockMovementService(
             Note = request.Note
         };
 
+        for (var attempt = 0; ; attempt++)
+        {
+            var result = RegisterAttempt(movement, out var retrySerialization);
+            if (!retrySerialization || attempt >= MaxSerializationAttempts - 1)
+                return result;
+        }
+    }
+
+    private StockMovementRegistrationResult RegisterAttempt(StockMovement movement, out bool retrySerialization)
+    {
+        retrySerialization = false;
         IStockTransaction? scope = null;
         try
         {
@@ -65,8 +78,14 @@ public sealed class StockMovementService(
             Rollback(scope);
             return StockMovementRegistrationResult.Failure("Накладна з таким номером уже існує");
         }
+        catch (PostgresException error) when (error.SqlState == "40001")
+        {
+            Rollback(scope);
+            retrySerialization = true;
+            return StockMovementRegistrationResult.Failure("Спробуйте ще раз");
+        }
         catch (PostgresException error) when (
-            error.SqlState is "40001" or "40P01" ||
+            error.SqlState == "40P01" ||
             error.SqlState == "23505" && error.ConstraintName == "stock_pkey")
         {
             Rollback(scope);
