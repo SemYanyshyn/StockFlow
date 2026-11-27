@@ -42,7 +42,7 @@ public sealed class StockReportingQueryService
                 WarehouseName: row.WarehouseName,
                 Quantity: row.Quantity,
                 MinThreshold: row.MinThreshold,
-                IsLow: row.MinThreshold > 0 && row.Quantity < row.MinThreshold));
+                IsLow: StockService.IsBelowThreshold(row.Quantity, row.MinThreshold)));
         }
 
         return result;

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
 using StockFlow.BusinessLogic;
 using StockFlow.BusinessLogic.Warehouses;
 using StockFlow.Domain;
@@ -10,12 +9,13 @@ namespace StockFlow.UI.ViewModels;
 
 public class StockBalancesViewModel : ViewModelBase
 {
-    private readonly StockReportingQueryService _queryService;
+    private readonly StockService _stockService;
     private readonly WarehouseService _warehouseService;
     private readonly List<StockBalanceRowItem> _allRows = new();
 
     public ObservableCollection<StockBalanceRowItem> FilteredRows { get; } = new();
     public ObservableCollection<Warehouse> Warehouses { get; } = new();
+    public bool IsEmpty => FilteredRows.Count == 0;
 
     private string _searchText = string.Empty;
     public string SearchText
@@ -78,10 +78,10 @@ public class StockBalancesViewModel : ViewModelBase
     }
 
     public StockBalancesViewModel(
-        StockReportingQueryService queryService,
+        StockService stockService,
         WarehouseService warehouseService)
     {
-        _queryService = queryService;
+        _stockService = stockService;
         _warehouseService = warehouseService;
 
         LoadData();
@@ -97,13 +97,15 @@ public class StockBalancesViewModel : ViewModelBase
             var allOption = new Warehouse { Id = 0, Name = "Усі склади" };
             Warehouses.Add(allOption);
             foreach (var warehouse in _warehouseService.GetAll())
+            {
                 Warehouses.Add(warehouse);
+            }
 
             _selectedWarehouse = allOption;
             OnPropertyChanged(nameof(SelectedWarehouse));
 
             _allRows.Clear();
-            foreach (var row in _queryService.GetStockBalances())
+            foreach (var row in _stockService.GetRows())
             {
                 var unitDisplay = FormatUnit(row.Unit);
                 _allRows.Add(new StockBalanceRowItem(
@@ -121,6 +123,7 @@ public class StockBalancesViewModel : ViewModelBase
         {
             ErrorMessage = ex.Message;
             FilteredRows.Clear();
+            OnPropertyChanged(nameof(IsEmpty));
         }
     }
 
@@ -140,7 +143,11 @@ public class StockBalancesViewModel : ViewModelBase
 
         FilteredRows.Clear();
         foreach (var item in filtered)
+        {
             FilteredRows.Add(item);
+        }
+
+        OnPropertyChanged(nameof(IsEmpty));
     }
 
     internal static string FormatUnit(string? unit) => unit?.ToLowerInvariant() switch
