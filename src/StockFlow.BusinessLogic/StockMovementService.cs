@@ -43,56 +43,58 @@ public sealed class StockMovementService(
             Note = request.Note
         };
 
-        IStockTransaction? scope = null;
-        try
+        return ExecuteInTransaction(scope =>
         {
-            scope = transactions.Begin();
             var stock = stocks.GetForUpdate(movement.ProductId, movement.WarehouseId, scope.Transaction);
             // Apply uses the domain's single validation source and mutates only after all checks pass.
             movement.Apply(stock);
             var id = movements.Add(movement, scope.Transaction);
             stocks.Save(stock, scope.Transaction);
+            return id;
+        });
+    }
+
+    private StockMovementRegistrationResult ExecuteInTransaction(Func<IStockTransaction, int> operation)
+    {
+        IStockTransaction? scope = null;
+        try
+        {
+            scope = transactions.Begin();
+            var id = operation(scope);
             scope.Commit();
             return StockMovementRegistrationResult.Success(id);
         }
         catch (StockMovementValidationException error)
         {
-            Rollback(scope);
-            return StockMovementRegistrationResult.Failure(error.Message);
+            return RollbackAndFail(scope, error.Message);
         }
         catch (DuplicateNumberException)
         {
-            Rollback(scope);
-            return StockMovementRegistrationResult.Failure("Накладна з таким номером уже існує");
+            return RollbackAndFail(scope, "Накладна з таким номером уже існує");
         }
         catch (PostgresException error) when (
             error.SqlState is "40001" or "40P01" ||
             error.SqlState == "23505" && error.ConstraintName == "stock_pkey")
         {
-            Rollback(scope);
-            return StockMovementRegistrationResult.Failure("Спробуйте ще раз");
+            return RollbackAndFail(scope, "Спробуйте ще раз");
         }
         catch (PostgresException error) when (
             error.SqlState.StartsWith("08", StringComparison.Ordinal) ||
             error.SqlState is "57P01" or "57P02" or "57P03")
         {
-            Rollback(scope);
-            return StockMovementRegistrationResult.Failure("Не вдалося з'єднатися з базою даних. Перевірте підключення");
+            return RollbackAndFail(scope, "Не вдалося з'єднатися з базою даних. Перевірте підключення");
         }
         catch (PostgresException)
         {
-            Rollback(scope);
-            return StockMovementRegistrationResult.Failure("Не вдалося зберегти рух товару");
+            return RollbackAndFail(scope, "Не вдалося зберегти рух товару");
         }
         catch (Exception error) when (error is NpgsqlException or TimeoutException or IOException)
         {
-            Rollback(scope);
-            return StockMovementRegistrationResult.Failure("Не вдалося з'єднатися з базою даних. Перевірте підключення");
+            return RollbackAndFail(scope, "Не вдалося з'єднатися з базою даних. Перевірте підключення");
         }
         catch (Exception)
         {
-            Rollback(scope);
-            return StockMovementRegistrationResult.Failure("Не вдалося зберегти рух товару");
+            return RollbackAndFail(scope, "Не вдалося зберегти рух товару");
         }
         finally
         {
@@ -100,6 +102,12 @@ public sealed class StockMovementService(
             try { scope?.Dispose(); }
             catch (Exception) { }
         }
+    }
+
+    private static StockMovementRegistrationResult RollbackAndFail(IStockTransaction? scope, string message)
+    {
+        Rollback(scope);
+        return StockMovementRegistrationResult.Failure(message);
     }
 
     private static void Rollback(IStockTransaction? scope)
