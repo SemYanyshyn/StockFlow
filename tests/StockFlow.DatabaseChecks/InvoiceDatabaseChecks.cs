@@ -72,16 +72,11 @@ internal static class InvoiceDatabaseChecks
 
         StockMovement Movement(string name, MovementType type, int? supplier, int quantity = 4,
             int? product = null, int? warehouse = null, int? user = null) => new()
-            {
-                Number = token + "-" + name,
-                Type = type,
-                SupplierId = supplier,
-                Quantity = quantity,
-                ProductId = product ?? productId,
-                WarehouseId = warehouse ?? warehouseId,
-                UserId = user ?? userId,
-                MovementDate = date
-            };
+        {
+            Number = token + "-" + name, Type = type, SupplierId = supplier, Quantity = quantity,
+            ProductId = product ?? productId, WarehouseId = warehouse ?? warehouseId, UserId = user ?? userId,
+            MovementDate = date
+        };
 
         void Insert(StockMovement movement)
         {

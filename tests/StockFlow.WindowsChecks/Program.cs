@@ -257,10 +257,10 @@ internal static partial class Program
             reports.DateTo = reportDateTo;
             reports.GenerateReportCommand.Execute(null);
             await Render(reportsView, "reports-invalid-period");
-            var errorText = Descendants<TextBlock>(reportsView)
+            var reportErrorText = Descendants<TextBlock>(reportsView)
                 .SingleOrDefault(text => text.Text == invalidPeriodMessage);
             Check(reports.ErrorMessage == invalidPeriodMessage &&
-                  errorText is { Visibility: Visibility.Visible },
+                  reportErrorText is { Visibility: Visibility.Visible },
                 "екран звітів показує українське повідомлення про некоректний період");
 
             reports.DateFrom = new DateTime(1900, 1, 1);
