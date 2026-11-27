@@ -517,10 +517,10 @@ internal static partial class Program
         }
         finally
         {
-            Execute(connection, "DELETE FROM stock_movements WHERE number=@number", ("number", movementNumber));
+            Execute("DELETE FROM stock_movements WHERE number=@number", ("number", movementNumber));
             if (hadStock)
             {
-                Execute(connection, """
+                Execute("""
                     INSERT INTO stock(product_id, warehouse_id, quantity, min_threshold)
                     VALUES (@product, @warehouse, @quantity, @threshold)
                     ON CONFLICT (product_id, warehouse_id)
@@ -530,7 +530,7 @@ internal static partial class Program
             }
             else
             {
-                Execute(connection, "DELETE FROM stock WHERE product_id=@product AND warehouse_id=@warehouse",
+                Execute("DELETE FROM stock WHERE product_id=@product AND warehouse_id=@warehouse",
                     ("product", selectedProduct.Id), ("warehouse", selectedWarehouse.Id));
             }
         }

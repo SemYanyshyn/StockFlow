@@ -186,7 +186,7 @@ public sealed class StockServiceTests
         service.SetMinThreshold(1, 1, 0);
 
         Assert.Equal(0, stock.MinThreshold);
-        Assert.False(service.IsBelowThreshold(stock.Quantity, stock.MinThreshold));
+        Assert.False(StockService.IsBelowThreshold(stock.Quantity, stock.MinThreshold));
         Assert.Equal(1, stockRepo.SetMinThresholdCalls);
     }
 

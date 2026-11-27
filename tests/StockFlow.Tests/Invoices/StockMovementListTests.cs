@@ -253,6 +253,8 @@ public sealed class StockMovementListTests
         }
         public IReadOnlyList<Warehouse> GetAll() => WarehouseError ? throw new IOException() : new[] { new Warehouse { Id = 1, Name = "Склад" } };
         public int Add(Warehouse warehouse) => throw new NotSupportedException();
+        public bool Update(Warehouse warehouse) => throw new NotSupportedException();
+        public bool Delete(int id) => throw new NotSupportedException();
         IReadOnlyList<Product> IProductRepository.GetAll() => new[] { new Product { Id = 1, Name = "Товар" } };
         int IProductRepository.Add(Product product) => throw new NotSupportedException();
         Product? IProductRepository.GetById(int productId) => throw new NotSupportedException();
@@ -265,6 +267,7 @@ public sealed class StockMovementListTests
         bool ISupplierRepository.Delete(int id) => throw new NotSupportedException();
         Stock IStockRepository.GetForUpdate(int productId, int warehouseId, IDbTransaction transaction) => throw new NotSupportedException();
         void IStockRepository.Save(Stock stock, IDbTransaction transaction) => throw new NotSupportedException();
+        void IStockRepository.SetMinThreshold(int productId, int warehouseId, int minThreshold) => throw new NotSupportedException();
         IReadOnlyList<Stock> IStockRepository.GetAll(int? warehouseId, IDbTransaction? transaction) => Array.Empty<Stock>();
         int IStockMovementRepository.Add(StockMovement movement, IDbTransaction transaction) => throw new NotSupportedException();
         IStockTransaction IStockTransactionFactory.Begin() => throw new NotSupportedException();
