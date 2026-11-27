@@ -1,6 +1,6 @@
 # Стратегія тестування StockFlow
 
-Документ описує, як і що ми тестуємо, як запускати перевірки та де їхні межі. Числа взято з прогону на чистому клоні на коміті `3288910` (20.11.2026), див. [«Результати прогону»](#результати-прогону).
+Документ описує, як і що ми тестуємо, як запускати перевірки та де їхні межі. Числа взято з прогону на чистому клоні на коміті `6c1816e` (27.11.2026), див. [«Результати прогону»](#результати-прогону).
 
 ## 1. Мета й обсяг
 
@@ -12,9 +12,9 @@
 
 | Рівень | Проєкт | Що перевіряє | Інструмент | Кількість | Де запускається |
 |---|---|---|---|---|---|
-| Модульні | `tests/StockFlow.Tests` | домен, сервіси, реєстрація DI, конфігурація; без бази | xUnit, ручні фейки | 367 тестів | job `build-and-test`; локально `dotnet test` |
-| Перевірки БД | `tests/StockFlow.DatabaseChecks` | репозиторії на справжній PostgreSQL, обмеження схеми, ICU-унікальність, конкурентні зміни | консольна програма, Npgsql | 169 перевірок | jobs `database-checks` і `windows-checks`; локально `scripts/Verify-Isolated.ps1` |
-| Перевірки WPF | `tests/StockFlow.WindowsChecks` | ViewModel і XAML реальних екранів: вхід, постачальники, користувачі, права ролей, помилки підключення | консольна програма, WPF Dispatcher | 27 перевірок | job `windows-checks`; локально `scripts/Verify-Isolated.ps1` |
+| Модульні | `tests/StockFlow.Tests` | домен, сервіси, реєстрація DI, конфігурація; без бази | xUnit, ручні фейки | 446 тестів | job `build-and-test`; локально `dotnet test` |
+| Перевірки БД | `tests/StockFlow.DatabaseChecks` | репозиторії на справжній PostgreSQL, обмеження схеми, ICU-унікальність, конкурентні зміни | консольна програма, Npgsql | 198 перевірок | jobs `database-checks` і `windows-checks`; локально `scripts/Verify-Isolated.ps1` |
+| Перевірки WPF | `tests/StockFlow.WindowsChecks` | ViewModel і XAML реальних екранів: вхід, постачальники, користувачі, накладні, права ролей, помилки підключення | консольна програма, WPF Dispatcher | 47 перевірок | job `windows-checks`; локально `scripts/Verify-Isolated.ps1` |
 | Перевірки накладних | `tests/StockFlow.MovementChecks` | запити списку накладних на справжній PostgreSQL | консольна програма, Npgsql | 15 перевірок | вручну, `scripts/Verify-Movements-Isolated.sh` (macOS, Linux) |
 
 Перевірки БД і WPF запускаються окремо від `StockFlow.sln` з PostgreSQL із підтримкою ICU. Для WPF потрібна Windows. Обидві програми приймають лише рядок підключення до БД `stockflow_isolated_*` на loopback-адресі.
@@ -25,16 +25,16 @@
 
 | Набір | Кількість | Результат | Дата | Коміт |
 |---|---|---|---|---|
-| Модульні (`dotnet test -c Release`) | 367 | усі пройшли | 20.11.2026 | `3288910` |
-| `DatabaseChecks` (`Verify-Isolated.ps1`) | 169 | усі пройшли | 20.11.2026 | `3288910` |
-| `WindowsChecks` (`Verify-Isolated.ps1`) | 27 | усі пройшли | 20.11.2026 | `3288910` |
-| Міграції (`Verify-Isolated.ps1`) | — | пройшли | 20.11.2026 | `3288910` |
+| Модульні (`dotnet test -c Release`) | 446 | усі пройшли | 27.11.2026 | `6c1816e` |
+| `DatabaseChecks` (`Verify-Isolated.ps1`) | 198 | усі пройшли | 27.11.2026 | `6c1816e` |
+| `WindowsChecks` (`Verify-Isolated.ps1`) | 47 | усі пройшли | 27.11.2026 | `6c1816e` |
+| Міграції (`Verify-Isolated.ps1`) | — | пройшли | 27.11.2026 | `6c1816e` |
 | `MovementChecks` | 15 | усі пройшли | 20.11.2026 | `3288910` |
-| Покриття рядків: Domain / BusinessLogic | 96,7 % / 99,1 % | гілки BusinessLogic 93,2 % | 20.11.2026 | `3288910` |
+| Покриття рядків: Domain / BusinessLogic | 97,5 % / 94,0 % | гілки BusinessLogic 86,5 % | 27.11.2026 | `6c1816e` |
 
-Збірка з `-warnaserror` дала 0 попереджень, `dotnet format --verify-no-changes` змін не знайшов. Той самий коміт у CI: усі три jobs зелені. [Прогін на `main`](https://github.com/SemYanyshyn/StockFlow/actions/runs/44693221947)
+Збірка з `-warnaserror` дала 0 попереджень, `dotnet format --verify-no-changes` змін не знайшов. Той самий коміт у CI: усі три jobs зелені. [Прогін на `main`](https://github.com/SemYanyshyn/StockFlow/actions/runs/45957534968)
 
-Покриття рахує лише модульні тести, тому DataAccess має 12,8 %: репозиторії перевіряють `DatabaseChecks` на справжньому PostgreSQL. `Verify-Movements-Isolated.sh` розрахований на macOS і Linux, тож на Windows ті самі кроки (тимчасовий кластер, схема, seed, `dotnet run`) виконано вручну.
+Покриття рахує лише модульні тести, тому DataAccess має 17,1 %: репозиторії перевіряють `DatabaseChecks` на справжньому PostgreSQL. `Verify-Movements-Isolated.sh` розрахований на macOS і Linux, тож на Windows ті самі кроки (тимчасовий кластер, схема, seed, `dotnet run`) виконано вручну. У прогоні 27.11 `MovementChecks` не запускали, тому в таблиці лишився результат від 20.11.
 
 ## 3. Що де тестуємо
 
@@ -129,14 +129,14 @@ Workflow `CI` запускається для PR у `main` та push у `main` �
 
 - Екрани «Товари» й «Категорії» не мають WPF-перевірок: їх перевіряли вручну в PR (скріншоти) і UI Automation-скриптами, які в репозиторій не входять.
 - `database-checks` і `windows-checks` поки не обов’язкові для злиття (розділ 8). `MovementChecks` у CI не запускаються.
-- Для залишків є доменні тести (`StockTests`), а `StockRepository` і звіти ще в роботі.
+- Звіти покриті модульними тестами сервісу, але окремих перевірок їхніх SQL-запитів на PostgreSQL немає.
 - Покриття коду показуємо як інформацію, а не як вимогу. Воно не враховує перевірки БД і WPF.
 
 ---
 
 ## Крайові ситуації
 
-Рядки всіх модулів, що є в `main` на коміті `3288910`. Рядки для репозиторію залишків і звітів додамо, коли вони з'являться в `main`.
+Рядки всіх модулів, що є в `main` на коміті `6c1816e`.
 
 | № | Модуль | Ситуація | Очікувана поведінка | Тест | Рівень |
 |---|---|---|---|---|---|
@@ -176,6 +176,17 @@ Workflow `CI` запускається для PR у `main` та push у `main` �
 | 34 | Накладні | Фільтр: дата «з» пізніша за дату «по» | Відмова до запиту в БД | `StockMovementListTests.InvalidRangeRejectedBeforeRepositoryAndSameDayTimesNormalize` | модульний |
 | 35 | Накладні | Порожня база, немає збігів за фільтром, помилка БД | «Накладних ще немає.» / «За обраними фільтрами накладних не знайдено.» / «Не вдалося завантажити…» без тексту винятку; повторне завантаження працює | `StockMovementListTests.EmptyDatabaseNoMatchAndFailureAreDifferentStatesAndCanRetry` | модульний |
 | 36 | Залишки | Кількість 4, 10, 15 при порозі 10; 0 при порозі 0 | Низький залишок лише 4 із 10; рівно на порозі — не низький | `StockTests.IsBelowThreshold_EvaluatesCorrectly` | модульний |
+| 37 | Залишки | Склад без жодного запису | Порожній список, без помилки | `StockServiceTests.GetRows_WarehouseWithoutRecords_ReturnsEmptyList` | модульний |
+| 38 | Залишки | Ідентифікатор складу 0 або −3 | «Некоректний ідентифікатор складу.», репозиторії не викликаються | `StockServiceTests.GetRows_InvalidWarehouseId_ThrowsValidationExceptionAndDoesNotCallRepositories` | модульний |
+| 39 | Залишки | Два з'єднання одночасно читають той самий залишок для зміни | Друге чекає, доки перше зробить COMMIT | `DatabaseChecks`: «StockRepository.GetForUpdate blocks second connection until COMMIT» | БД |
+| 40 | Залишки | Від'ємна кількість або другий рядок для тієї самої пари товар–склад в обхід коду | Відхиляють `CHECK` і `PRIMARY KEY` | `DatabaseChecks`: «stock.quantity < 0 rejected by CHECK constraint», «stock duplicate (product_id, warehouse_id) rejected by PRIMARY KEY» | БД |
+| 41 | Звіти | Дата початку пізніша за кінцеву | «Дата початку не може бути пізнішою за кінцеву дату.», без запиту до бази | `StockReportingQueryServiceTests.GetMovementSummary_ПеревернутийПеріод_КидаєValidationExceptionБезВикликівРепозиторію` | модульний |
+| 42 | Звіти | Звіт за один день, рух о 23:59 | Рух враховано | `StockReportingQueryServiceTests.GetMovementSummary_ОдинДень_ВключаєРухО2359` | модульний |
+| 43 | Звіти | Рухи о 00:00 першого дня й в останню мікросекунду останнього; рухи за секунду до періоду й одразу після | Перші два враховано, другі два — ні | `StockReportingQueryServiceTests.GetMovementSummary_ПочатокТаОстанняМікросекунда_ВключаєОбидваРухи`, `StockReportingQueryServiceTests.GetMovementSummary_РухПозамежамиПеріоду_ВиключаєОбидваРухи` | модульний |
+| 44 | Накладні | Два одночасні списання 8 із залишку 10 | Проходить одне, друге отримує «Спробуйте ще раз»; залишок 2, один рух | `DatabaseChecks`: «invoice concurrency: exactly one of two 8-from-10 write-offs commits and one gets a serialization refusal» | БД |
+| 45 | Накладні | Номер накладної вже існує | «Накладна з таким номером уже існує», транзакція відкочується | `StockMovementServiceTests.DuplicateNumberReturnsNumberSpecificMessageAndRollsBack` | модульний |
+| 46 | Накладні | Помилка під час збереження | Відкіт: ні нового руху, ні зміни залишку | `StockMovementServiceTests.SaveFailureRollsBackStagedFakeMovementAndStock` | модульний |
+| 47 | Накладні | Фільтр або пошук змінено, поки завантажуються деталі накладної | Після завантаження деталей список перечитується з новими фільтрами, помилка деталей лишається на екрані | `StockMovementListTests.FilterChangedWhileDetailsLoadReloadsListWithLatestFilter`, `StockMovementListTests.SearchTypedWhileDetailsFailReloadsListAndKeepsDetailError` | модульний |
 
 ---
 
