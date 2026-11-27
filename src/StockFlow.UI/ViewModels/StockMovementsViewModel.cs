@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using StockFlow.BusinessLogic;
 using StockFlow.BusinessLogic.Products;
+using StockFlow.BusinessLogic.Suppliers;
 using StockFlow.BusinessLogic.Users;
 using StockFlow.BusinessLogic.Warehouses;
 using StockFlow.Domain;
@@ -12,31 +13,47 @@ public sealed partial class StockMovementsViewModel : ViewModelBase
 {
     private readonly StockMovementQueryService _query;
     private readonly WarehouseService _warehouses;
-    private readonly IStockMovementEditorService _editorService;
+    private readonly ProductService _products;
+    private readonly SupplierService _suppliers;
+    private readonly StockMovementService _registration;
     private bool _warehousesLoaded;
     private bool _reloadPending;
     private bool _suppressApply;
     private Task _loading = Task.CompletedTask;
     private CancellationTokenSource? _searchDelay;
 
-    public StockMovementsViewModel(StockMovementQueryService query, WarehouseService warehouses,
-        ICurrentUserContext user, IStockMovementEditorService editorService)
+    public StockMovementsViewModel(
+        StockMovementQueryService query,
+        WarehouseService warehouses,
+        ProductService products,
+        SupplierService suppliers,
+        StockMovementService registration,
+        ICurrentUserContext user)
     {
         _query = query;
         _warehouses = warehouses;
-        _editorService = editorService;
+        _products = products;
+        _suppliers = suppliers;
+        _registration = registration;
         IsEmployee = user.Role == UserRole.Employee;
+        CreateTypes = new[]
+        {
+            new MovementTypeOption(MovementType.Receipt, "Надходження"),
+            new MovementTypeOption(MovementType.WriteOff, "Списання")
+        };
+        _selectedCreateType = CreateTypes[0];
         ClearFiltersCommand = new AsyncRelayCommand(ClearAsync, () => !IsBusy);
         ViewCommand = new AsyncRelayCommand<StockMovementRow>(ViewAsync, row => !IsBusy && row is not null);
         BackCommand = new RelayCommand(() => Details = null, () => !IsBusy);
-        CreateCommand = new AsyncRelayCommand(OpenEditorAsync, () => CanCreateMovement && !IsBusy);
+        OpenCreateCommand = new AsyncRelayCommand(OpenCreateAsync, () => CanOpenCreate);
+        SaveMovementCommand = new AsyncRelayCommand(SaveMovementAsync, () => CanSaveMovement);
+        CancelCreateCommand = new RelayCommand(CancelCreate, () => !IsBusy && IsCreateFormOpen);
     }
 
     public bool IsEmployee { get; }
-    public bool CanCreateMovement => IsEmployee && IsListOpen;
-    public bool IsListOpen => Details is null && Editor is null;
-    public bool HasDetails => Details is not null;
-    public string Title => Editor is not null ? "Створення накладної" : HasDetails ? "Перегляд накладної" : "Накладні";
+    public bool IsReceipt => SelectedCreateType.Value == MovementType.Receipt;
+    public bool IsListOpen => Details is null;
+    public string Title => Details is null ? "Накладні" : "Перегляд накладної";
     public IReadOnlyList<MovementTypeOption> FilterTypes { get; } = new[]
     {
         new MovementTypeOption(null, "Усі типи"), new(MovementType.Receipt, "Надходження"), new(MovementType.WriteOff, "Списання")
@@ -64,17 +81,30 @@ public sealed partial class StockMovementsViewModel : ViewModelBase
     [ObservableProperty] private string? _listError;
     [ObservableProperty] private string? _filterError;
     [ObservableProperty] private bool _isBusy;
-    [ObservableProperty, NotifyPropertyChangedFor(nameof(IsListOpen), nameof(HasDetails), nameof(Title), nameof(CanCreateMovement))]
-    [NotifyCanExecuteChangedFor(nameof(CreateCommand))]
-    private StockMovementRow? _details;
-    [ObservableProperty, NotifyPropertyChangedFor(nameof(IsListOpen), nameof(Title), nameof(CanCreateMovement))]
-    [NotifyCanExecuteChangedFor(nameof(CreateCommand))]
-    private StockMovementEditorViewModel? _editor;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(IsListOpen), nameof(Title))] private StockMovementRow? _details;
+    [ObservableProperty] private bool _isCreateFormOpen;
+    [ObservableProperty] private string _creationNumber = string.Empty;
+    [ObservableProperty] private string _creationQuantity = string.Empty;
+    [ObservableProperty] private DateTime? _creationDate = DateTime.Today;
+    [ObservableProperty] private string _creationNote = string.Empty;
+    [ObservableProperty] private string? _creationError;
+    [ObservableProperty, NotifyPropertyChangedFor(nameof(IsReceipt))]
+    private MovementTypeOption _selectedCreateType = new(MovementType.Receipt, "Надходження");
+    [ObservableProperty] private IReadOnlyList<Warehouse> _createWarehouses = Array.Empty<Warehouse>();
+    [ObservableProperty] private Warehouse? _selectedCreateWarehouse;
+    [ObservableProperty] private IReadOnlyList<Product> _createProducts = Array.Empty<Product>();
+    [ObservableProperty] private Product? _selectedCreateProduct;
+    [ObservableProperty] private IReadOnlyList<Supplier> _createSuppliers = Array.Empty<Supplier>();
+    [ObservableProperty] private Supplier? _selectedCreateSupplier;
 
     public IAsyncRelayCommand ClearFiltersCommand { get; }
     public IAsyncRelayCommand<StockMovementRow> ViewCommand { get; }
     public IRelayCommand BackCommand { get; }
-    public IAsyncRelayCommand CreateCommand { get; }
+    public IAsyncRelayCommand OpenCreateCommand { get; }
+    public IAsyncRelayCommand SaveMovementCommand { get; }
+    public IRelayCommand CancelCreateCommand { get; }
+
+    public IReadOnlyList<MovementTypeOption> CreateTypes { get; }
 
     internal TimeSpan SearchDelay { get; set; } = TimeSpan.FromMilliseconds(300);
     internal Task PendingApply { get; private set; } = Task.CompletedTask;
@@ -84,31 +114,22 @@ public sealed partial class StockMovementsViewModel : ViewModelBase
         ClearFiltersCommand.NotifyCanExecuteChanged();
         ViewCommand.NotifyCanExecuteChanged();
         BackCommand.NotifyCanExecuteChanged();
-        CreateCommand.NotifyCanExecuteChanged();
+        OpenCreateCommand.NotifyCanExecuteChanged();
+        SaveMovementCommand.NotifyCanExecuteChanged();
+        CancelCreateCommand.NotifyCanExecuteChanged();
     }
 
-    private async Task OpenEditorAsync()
+    partial void OnIsCreateFormOpenChanged(bool value)
     {
-        if (!CanCreateMovement || IsBusy) return;
-        IsBusy = true;
-        ListError = null;
-        string? editorError = null;
-        try
-        {
-            var data = await Task.Run(_editorService.Load);
-            Editor = new(data, _editorService, () => Editor = null, RefreshAfterSaveAsync);
-        }
-        catch (ValidationException error) { editorError = error.Message; }
-        catch (Exception) { editorError = "Не вдалося відкрити форму накладної. Перевірте з’єднання і спробуйте ще раз."; }
-        finally { IsBusy = false; }
-        if (_reloadPending) await LoadAsync();
-        ListError ??= editorError;
+        OpenCreateCommand.NotifyCanExecuteChanged();
+        SaveMovementCommand.NotifyCanExecuteChanged();
+        CancelCreateCommand.NotifyCanExecuteChanged();
     }
-
-    private async Task RefreshAfterSaveAsync()
+    partial void OnSelectedCreateTypeChanged(MovementTypeOption value)
     {
-        Editor = null;
-        await LoadAsync();
+        CreationError = null;
+        if (value.Value != MovementType.Receipt)
+            SelectedCreateSupplier = null;
     }
 
     partial void OnSearchNumberChanged(string value) => ApplyAfterTyping();
@@ -225,17 +246,147 @@ public sealed partial class StockMovementsViewModel : ViewModelBase
     private async Task ViewAsync(StockMovementRow? row)
     {
         if (IsBusy || row is null) return;
-        await ExecuteSafelyAsync(
-            async () => Details = new(await Task.Run(() => _query.GetById(row.Id))),
-            error => ListError = error is ValidationException validationError
-                ? validationError.Message
-                : "Не вдалося завантажити деталі накладної. Спробуйте ще раз.",
-            onStarting: () =>
-            {
-                IsBusy = true;
-                ListError = null;
-            },
-            onFinally: () => IsBusy = false);
+        IsBusy = true;
+        ListError = null;
+        string? detailError = null;
+        try { Details = new(await Task.Run(() => _query.GetById(row.Id))); }
+        catch (ValidationException error) { detailError = error.Message; }
+        catch (Exception) { detailError = "Не вдалося завантажити деталі накладної. Спробуйте ще раз."; }
+        finally { IsBusy = false; }
         if (_reloadPending) await LoadAsync();
+        ListError ??= detailError;
+    }
+
+    private bool CanOpenCreate => IsEmployee && !IsBusy && !IsCreateFormOpen;
+    private bool CanSaveMovement => IsEmployee && IsCreateFormOpen && !IsBusy;
+
+    private async Task OpenCreateAsync()
+    {
+        CreationError = null;
+        IsCreateFormOpen = true;
+        IsBusy = true;
+        try
+        {
+            var (warehouses, products, suppliers) = await Task.Run(() =>
+                (_warehouses.GetAll(), _products.GetAll(), _suppliers.GetAll()));
+            CreateWarehouses = warehouses;
+            CreateProducts = products;
+            CreateSuppliers = suppliers;
+            SelectedCreateWarehouse = warehouses.FirstOrDefault();
+            SelectedCreateProduct = products.FirstOrDefault();
+            SelectedCreateSupplier = suppliers.FirstOrDefault();
+            var suffix = Guid.NewGuid().ToString("N")[..8];
+            CreationNumber = $"НК-{DateTime.Now:yyMMddHHmmss}-{suffix}";
+            CreationQuantity = string.Empty;
+            CreationDate = DateTime.Today;
+            CreationNote = string.Empty;
+
+            if (warehouses.Count == 0 || products.Count == 0 || IsReceipt && suppliers.Count == 0)
+                CreationError = IsReceipt && suppliers.Count == 0
+                    ? "Для надходження потрібно додати постачальника."
+                    : "Для створення накладної потрібні товари та склади.";
+        }
+        catch (Exception)
+        {
+            CreationError = "Не вдалося завантажити дані для накладної. Перевірте з'єднання з базою даних.";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task SaveMovementAsync()
+    {
+        CreationError = null;
+        if (string.IsNullOrWhiteSpace(CreationNumber))
+        {
+            CreationError = "Введіть номер накладної.";
+            return;
+        }
+        if (SelectedCreateType.Value is not { } movementType)
+        {
+            CreationError = "Оберіть тип накладної.";
+            return;
+        }
+        if (SelectedCreateWarehouse is null)
+        {
+            CreationError = "Оберіть склад.";
+            return;
+        }
+        if (SelectedCreateProduct is null)
+        {
+            CreationError = "Оберіть товар.";
+            return;
+        }
+        if (!int.TryParse(CreationQuantity, out var quantity) || quantity <= 0)
+        {
+            CreationError = "Кількість має бути додатним цілим числом.";
+            return;
+        }
+        if (CreationDate is null)
+        {
+            CreationError = "Оберіть дату накладної.";
+            return;
+        }
+        if (movementType == MovementType.Receipt && SelectedCreateSupplier is null)
+        {
+            CreationError = "Для надходження потрібно обрати постачальника.";
+            return;
+        }
+
+        IsBusy = true;
+        var saved = false;
+        try
+        {
+            var movement = new StockMovement
+            {
+                Number = CreationNumber.Trim(),
+                Type = movementType,
+                ProductId = SelectedCreateProduct.Id,
+                WarehouseId = SelectedCreateWarehouse.Id,
+                SupplierId = movementType == MovementType.Receipt ? SelectedCreateSupplier?.Id : null,
+                Quantity = quantity,
+                MovementDate = CreationDate.Value,
+                Note = string.IsNullOrWhiteSpace(CreationNote) ? null : CreationNote.Trim()
+            };
+            var result = await Task.Run(() => _registration.Register(movement));
+            if (!result.IsSuccess)
+            {
+                CreationError = result.Error ?? "Не вдалося створити накладну.";
+                return;
+            }
+
+            saved = true;
+            ResetCreationForm();
+        }
+        catch (Exception)
+        {
+            CreationError = "Не вдалося створити накладну. Перевірте з'єднання з базою даних.";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+
+        if (saved)
+            await LoadAsync();
+    }
+
+    private void CancelCreate()
+    {
+        if (!IsBusy)
+            ResetCreationForm();
+    }
+
+    private void ResetCreationForm()
+    {
+        IsCreateFormOpen = false;
+        CreationNumber = string.Empty;
+        CreationQuantity = string.Empty;
+        CreationDate = DateTime.Today;
+        CreationNote = string.Empty;
+        CreationError = null;
+        SelectedCreateSupplier = null;
     }
 }

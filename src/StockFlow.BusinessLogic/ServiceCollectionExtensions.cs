@@ -23,7 +23,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<DbConnectionFactory>(_ => new DbConnectionFactory(configuration));
         services.AddSingleton<IStockMovementRepository, StockMovementRepository>();
         services.AddSingleton<IStockTransactionFactory, NpgsqlStockTransactionFactory>();
-        // Module owners add their real services/repositories here when implemented.
         services.AddSingleton<AuthenticatedUserContext>();
         services.AddSingleton<ICurrentUserContext>(sp => sp.GetRequiredService<AuthenticatedUserContext>());
         services.AddSingleton<IUserRepository, UserRepository>();

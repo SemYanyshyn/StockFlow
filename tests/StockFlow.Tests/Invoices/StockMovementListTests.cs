@@ -1,10 +1,14 @@
+using System.Data;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using StockFlow.BusinessLogic;
 using StockFlow.BusinessLogic.Products;
+using StockFlow.BusinessLogic.Suppliers;
 using StockFlow.BusinessLogic.Users;
 using StockFlow.BusinessLogic.Warehouses;
 using StockFlow.DataAccess;
+using StockFlow.DataAccess.Products;
+using StockFlow.DataAccess.Suppliers;
 using StockFlow.DataAccess.Warehouses;
 using StockFlow.Domain;
 using StockFlow.UI.ViewModels;
@@ -30,94 +34,17 @@ public sealed class StockMovementListTests
         vm.BackCommand.Execute(null);
         Assert.True(vm.IsListOpen);
         Assert.Equal(role == UserRole.Employee, vm.IsEmployee);
-        Assert.Equal(role == UserRole.Employee, vm.CanCreateMovement);
+        Assert.Equal(role == UserRole.Employee, vm.OpenCreateCommand.CanExecute(null));
     }
 
     [Fact]
-    public void StockFlowResolvesInvoiceServicesWithoutOpeningDatabase()
+    public void ReadGraphResolvesWithoutStockRepositoryAndWithoutOpeningDatabase()
     {
         var services = new ServiceCollection().AddStockFlow(new ConfigurationBuilder().AddInMemoryCollection(
             new Dictionary<string, string?> { ["ConnectionStrings:StockFlow"] = "Host=127.0.0.1;Port=1;Database=test;Username=test" }).Build());
         using var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
         Assert.NotNull(provider.GetRequiredService<StockMovementQueryService>());
-        Assert.IsType<StockMovementEditorService>(provider.GetRequiredService<IStockMovementEditorService>());
         Assert.IsType<StockRepository>(provider.GetService<IStockRepository>());
-    }
-
-    [Fact]
-    public async Task AdminCannotOpenEditorEvenWhenCommandIsInvokedDirectly()
-    {
-        var f = new Fixture(UserRole.Admin);
-        var vm = f.ViewModel();
-        Assert.False(vm.CreateCommand.CanExecute(null));
-        await vm.CreateCommand.ExecuteAsync(null);
-        Assert.Null(vm.Editor);
-        Assert.Equal(0, f.EditorLoads);
-    }
-
-    [Fact]
-    public async Task ServiceRefusalKeepsFormOpenAndDoesNotRefreshList()
-    {
-        var f = new Fixture { SaveResult = StockMovementRegistrationResult.Failure("Недостатньо товару на складі") };
-        var vm = f.ViewModel();
-        await vm.CreateCommand.ExecuteAsync(null);
-        var editor = Assert.IsType<StockMovementEditorViewModel>(vm.Editor);
-        Fill(editor);
-        editor.SelectedSupplier = editor.Suppliers[0];
-        editor.SelectedType = editor.Types[1];
-        Assert.Null(editor.SelectedSupplier);
-        await editor.SaveCommand.ExecuteAsync(null);
-        Assert.Equal("Недостатньо товару на складі", editor.ErrorMessage);
-        Assert.Same(editor, vm.Editor);
-        Assert.Null(f.Submitted!.SupplierId);
-        Assert.Equal(0, f.ReadCount);
-    }
-
-    [Fact]
-    public async Task SuccessfulSaveClosesFormAndReloadsWithCurrentFilters()
-    {
-        var f = new Fixture();
-        var vm = f.ViewModel();
-        vm.FilterType = MovementType.Receipt;
-        await vm.PendingApply;
-        var beforeSave = f.ReadCount;
-        await vm.CreateCommand.ExecuteAsync(null);
-        var editor = Assert.IsType<StockMovementEditorViewModel>(vm.Editor);
-        Fill(editor);
-        editor.SelectedSupplier = editor.Suppliers[0];
-        editor.Note = "  прийнято  ";
-        await editor.SaveCommand.ExecuteAsync(null);
-        Assert.Null(vm.Editor);
-        Assert.True(vm.IsListOpen);
-        Assert.Equal(MovementType.Receipt, f.LastFilter!.Type);
-        Assert.Equal("прийнято", f.Submitted!.Note);
-        Assert.Equal(editor.Number, f.Submitted.Number);
-        Assert.Equal(beforeSave + 1, f.ReadCount);
-    }
-
-    [Fact]
-    public async Task FilterChangedWhileEditorOpensIsNotLostOnCancel()
-    {
-        using var gate = new ManualResetEventSlim(false);
-        var f = new Fixture { EditorGate = gate };
-        var vm = f.ViewModel();
-        await vm.LoadAsync();
-        var open = vm.CreateCommand.ExecuteAsync(null);
-        vm.FilterType = MovementType.WriteOff;
-        gate.Set();
-        await open.WaitAsync(TimeSpan.FromSeconds(5));
-        var editor = Assert.IsType<StockMovementEditorViewModel>(vm.Editor);
-        editor.CancelCommand.Execute(null);
-        Assert.True(vm.IsListOpen);
-        Assert.Equal(2, f.ReadCount);
-        Assert.Equal(MovementType.WriteOff, f.LastFilter!.Type);
-    }
-
-    private static void Fill(StockMovementEditorViewModel editor)
-    {
-        editor.SelectedProduct = editor.Products[0];
-        editor.SelectedWarehouse = editor.Warehouses[0];
-        editor.QuantityText = "5";
     }
 
     [Fact]
@@ -292,8 +219,9 @@ public sealed class StockMovementListTests
         Assert.Equal("Примітки немає", row.NoteText);
     }
 
-    private sealed class Fixture(UserRole role = UserRole.Employee)
-        : ICurrentUserContext, IStockMovementReadRepository, IWarehouseRepository, IStockMovementEditorService
+    private sealed class Fixture(UserRole role = UserRole.Employee) : ICurrentUserContext,
+        IStockMovementReadRepository, IWarehouseRepository, IProductRepository, ISupplierRepository,
+        IStockRepository, IStockMovementRepository, IStockTransactionFactory
     {
         public User CurrentUser { get; } = new() { Id = 7, FullName = "Працівник", Role = role };
         public static StockMovementDetails Row(int id = 1) => new(id, "НК-001", new(2026, 11, 13),
@@ -307,24 +235,9 @@ public sealed class StockMovementListTests
         public bool MissingDetails { get; set; }
         public ManualResetEventSlim? Gate { get; set; }
         public ManualResetEventSlim? DetailGate { get; set; }
-        public ManualResetEventSlim? EditorGate { get; init; }
-        public int EditorLoads { get; private set; }
-        public StockMovement? Submitted { get; private set; }
-        public StockMovementRegistrationResult SaveResult { get; init; } = StockMovementRegistrationResult.Success(1);
-        public StockMovementsViewModel ViewModel() => new(new(this), new(this, this), this, this);
-        public StockMovementEditorData Load()
-        {
-            if (EditorGate is not null && !EditorGate.Wait(TimeSpan.FromSeconds(5)))
-                throw new TimeoutException("The editor test did not release its gate.");
-            EditorLoads++;
-            return new("НК-777", CurrentUser.FullName, new[] { new Product { Id = 1, Name = "Товар" } },
-                GetAll(), new[] { new Supplier { Id = 1, Name = "Постачальник" } });
-        }
-        public StockMovementRegistrationResult Save(StockMovement request)
-        {
-            Submitted = request;
-            return SaveResult;
-        }
+        public StockMovementsViewModel ViewModel() => new(
+            new(this), new(this, this), new ProductService(this, this), new SupplierService(this, this),
+            new StockMovementService(this, this, this, this), this);
         public StockMovementList Search(StockMovementFilter filter)
         {
             Gate?.Wait();
@@ -340,7 +253,20 @@ public sealed class StockMovementListTests
         }
         public IReadOnlyList<Warehouse> GetAll() => WarehouseError ? throw new IOException() : new[] { new Warehouse { Id = 1, Name = "Склад" } };
         public int Add(Warehouse warehouse) => throw new NotSupportedException();
-        public bool Update(Warehouse warehouse) => throw new NotSupportedException();
-        public bool Delete(int id) => throw new NotSupportedException();
+        IReadOnlyList<Product> IProductRepository.GetAll() => new[] { new Product { Id = 1, Name = "Товар" } };
+        int IProductRepository.Add(Product product) => throw new NotSupportedException();
+        Product? IProductRepository.GetById(int productId) => throw new NotSupportedException();
+        bool IProductRepository.Update(Product product) => throw new NotSupportedException();
+        bool IProductRepository.HasRelatedRecords(int productId) => throw new NotSupportedException();
+        bool IProductRepository.Delete(int productId) => throw new NotSupportedException();
+        IReadOnlyList<Supplier> ISupplierRepository.GetAll() => new[] { new Supplier { Id = 1, Name = "Постачальник" } };
+        int ISupplierRepository.Add(Supplier supplier) => throw new NotSupportedException();
+        bool ISupplierRepository.Update(Supplier supplier) => throw new NotSupportedException();
+        bool ISupplierRepository.Delete(int id) => throw new NotSupportedException();
+        Stock IStockRepository.GetForUpdate(int productId, int warehouseId, IDbTransaction transaction) => throw new NotSupportedException();
+        void IStockRepository.Save(Stock stock, IDbTransaction transaction) => throw new NotSupportedException();
+        IReadOnlyList<Stock> IStockRepository.GetAll(int? warehouseId, IDbTransaction? transaction) => Array.Empty<Stock>();
+        int IStockMovementRepository.Add(StockMovement movement, IDbTransaction transaction) => throw new NotSupportedException();
+        IStockTransaction IStockTransactionFactory.Begin() => throw new NotSupportedException();
     }
 }

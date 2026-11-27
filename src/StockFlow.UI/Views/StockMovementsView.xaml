@@ -1,15 +1,10 @@
 <UserControl x:Class="StockFlow.UI.Views.StockMovementsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:views="clr-namespace:StockFlow.UI.Views"
-             xmlns:vm="clr-namespace:StockFlow.UI.ViewModels"
              Loaded="OnLoaded" DataContextChanged="OnDataContextChanged" Language="uk-UA"
              Background="{StaticResource BackgroundBrush}" Foreground="{StaticResource PrimaryTextBrush}">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="VisibleIfTrue"/>
-        <DataTemplate DataType="{x:Type vm:StockMovementEditorViewModel}">
-            <views:StockMovementEditorView/>
-        </DataTemplate>
         <Style x:Key="Message" TargetType="TextBlock">
             <Setter Property="TextWrapping" Value="Wrap"/>
             <Setter Property="Margin" Value="0,4,0,8"/>
@@ -30,20 +25,23 @@
         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
         <Border Style="{StaticResource PageHeader}">
             <DockPanel>
-                <Button Content="← До списку" DockPanel.Dock="Right" Command="{Binding BackCommand}"
-                        Style="{StaticResource DirectoryActionLink}"
-                        Visibility="{Binding HasDetails, Converter={StaticResource VisibleIfTrue}}"/>
+                <Button Content="← До списку" DockPanel.Dock="Right" Command="{Binding BackCommand}">
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource DirectoryActionLink}">
+                            <Style.Triggers><DataTrigger Binding="{Binding IsListOpen}" Value="True"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
                 <TextBlock Text="{Binding Title}" Style="{StaticResource PageHeaderText}"/>
             </DockPanel>
         </Border>
         <Grid Grid.Row="1" Margin="24" Visibility="{Binding IsListOpen, Converter={StaticResource VisibleIfTrue}}">
-            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
             <StackPanel>
                 <DockPanel LastChildFill="True">
-                    <StackPanel DockPanel.Dock="Right" Margin="16,0,0,12" VerticalAlignment="Top">
+                    <StackPanel DockPanel.Dock="Right" Margin="16,0,0,12" VerticalAlignment="Top" Visibility="{Binding IsEmployee, Converter={StaticResource VisibleIfTrue}}">
                         <TextBlock Text=" " Style="{StaticResource FieldLabel}"/>
-                        <Button x:Name="CreateMovementButton" Content="+ Створити" Style="{StaticResource PrimaryButton}"
-                                Command="{Binding CreateCommand}" Visibility="{Binding CanCreateMovement, Converter={StaticResource VisibleIfTrue}}"/>
+                        <Button Content="+ Створити накладну" Style="{StaticResource PrimaryButton}" Command="{Binding OpenCreateCommand}"/>
                     </StackPanel>
                     <WrapPanel>
                         <StackPanel Margin="0,0,12,12">
@@ -72,12 +70,68 @@
                     <Button Content="Очистити" Style="{StaticResource SecondaryButton}" Command="{Binding ClearFiltersCommand}" Margin="0,0,0,8"/>
                 </WrapPanel>
             </StackPanel>
-            <StackPanel Grid.Row="1">
+            <Border Grid.Row="1" Style="{StaticResource FormPanel}" Margin="0,0,0,12"
+                    Visibility="{Binding IsCreateFormOpen, Converter={StaticResource VisibleIfTrue}}">
+                <StackPanel>
+                    <TextBlock Text="Нова накладна" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,12"/>
+                    <WrapPanel>
+                        <StackPanel Width="180" Margin="0,0,12,10">
+                            <TextBlock Text="Тип операції" Style="{StaticResource FieldLabel}"/>
+                            <ComboBox Style="{StaticResource InputComboBox}" ItemsSource="{Binding CreateTypes}"
+                                      DisplayMemberPath="Name" SelectedItem="{Binding SelectedCreateType}"
+                                      AutomationProperties.Name="Тип операції накладної"/>
+                        </StackPanel>
+                        <StackPanel Width="220" Margin="0,0,12,10">
+                            <TextBlock Text="Склад" Style="{StaticResource FieldLabel}"/>
+                            <ComboBox Style="{StaticResource InputComboBox}" ItemsSource="{Binding CreateWarehouses}"
+                                      DisplayMemberPath="Name" SelectedItem="{Binding SelectedCreateWarehouse}"
+                                      AutomationProperties.Name="Склад накладної"/>
+                        </StackPanel>
+                        <StackPanel Width="250" Margin="0,0,12,10">
+                            <TextBlock Text="Товар" Style="{StaticResource FieldLabel}"/>
+                            <ComboBox Style="{StaticResource InputComboBox}" ItemsSource="{Binding CreateProducts}"
+                                      DisplayMemberPath="Name" SelectedItem="{Binding SelectedCreateProduct}"
+                                      AutomationProperties.Name="Товар накладної"/>
+                        </StackPanel>
+                        <StackPanel Width="150" Margin="0,0,12,10">
+                            <TextBlock Text="Кількість" Style="{StaticResource FieldLabel}"/>
+                            <TextBox Style="{StaticResource SearchBox}" Text="{Binding CreationQuantity, UpdateSourceTrigger=PropertyChanged}"
+                                     AutomationProperties.Name="Кількість товару для руху"/>
+                        </StackPanel>
+                        <StackPanel Width="220" Margin="0,0,12,10">
+                            <TextBlock Text="Номер накладної" Style="{StaticResource FieldLabel}"/>
+                            <TextBox Style="{StaticResource SearchBox}" Text="{Binding CreationNumber, UpdateSourceTrigger=PropertyChanged}"
+                                     AutomationProperties.Name="Номер накладної для створення"/>
+                        </StackPanel>
+                        <StackPanel Width="170" Margin="0,0,12,10">
+                            <TextBlock Text="Дата" Style="{StaticResource FieldLabel}"/>
+                            <DatePicker Style="{StaticResource MovementDatePicker}" SelectedDate="{Binding CreationDate}"
+                                        AutomationProperties.Name="Дата накладної"/>
+                        </StackPanel>
+                        <StackPanel Width="230" Margin="0,0,12,10"
+                                    Visibility="{Binding IsReceipt, Converter={StaticResource VisibleIfTrue}}">
+                            <TextBlock Text="Постачальник" Style="{StaticResource FieldLabel}"/>
+                            <ComboBox Style="{StaticResource InputComboBox}" ItemsSource="{Binding CreateSuppliers}"
+                                      DisplayMemberPath="Name" SelectedItem="{Binding SelectedCreateSupplier}"
+                                      AutomationProperties.Name="Постачальник накладної"/>
+                        </StackPanel>
+                    </WrapPanel>
+                    <TextBlock Text="Примітка" Style="{StaticResource FieldLabel}"/>
+                    <TextBox Style="{StaticResource SearchBox}" Text="{Binding CreationNote, UpdateSourceTrigger=PropertyChanged}"
+                             AutomationProperties.Name="Примітка до накладної" Margin="0,0,0,8"/>
+                    <TextBlock Text="{Binding CreationError}" Style="{StaticResource Message}" Foreground="{StaticResource ErrorTextBrush}"/>
+                    <WrapPanel>
+                        <Button Content="Створити" Style="{StaticResource PrimaryButton}" Command="{Binding SaveMovementCommand}" Margin="0,0,8,0"/>
+                        <Button Content="Скасувати" Style="{StaticResource SecondaryButton}" Command="{Binding CancelCreateCommand}"/>
+                    </WrapPanel>
+                </StackPanel>
+            </Border>
+            <StackPanel Grid.Row="2">
                 <TextBlock Text="{Binding ListError}" Style="{StaticResource Message}" Foreground="{StaticResource ErrorTextBrush}"/>
                 <TextBlock Text="{Binding FilterError}" Style="{StaticResource Message}" Foreground="{StaticResource ErrorTextBrush}"/>
                 <TextBlock Text="Завантаження…" Margin="0,0,0,8" Visibility="{Binding IsBusy, Converter={StaticResource VisibleIfTrue}}" Foreground="{StaticResource SecondaryTextBrush}"/>
             </StackPanel>
-            <Grid Grid.Row="2">
+            <Grid Grid.Row="3">
                 <DataGrid Style="{StaticResource ListDataGrid}" ItemsSource="{Binding Movements}" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False" VerticalAlignment="Stretch">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Номер" Binding="{Binding Number}" Width="Auto" MinWidth="100"/>
@@ -115,17 +169,5 @@
                 </StackPanel>
             </Border>
         </ScrollViewer>
-        <ContentControl Grid.Row="1" Content="{Binding Editor}" HorizontalContentAlignment="Stretch"
-                        VerticalContentAlignment="Stretch">
-            <ContentControl.Style>
-                <Style TargetType="ContentControl">
-                    <Style.Triggers>
-                        <DataTrigger Binding="{Binding Editor}" Value="{x:Null}">
-                            <Setter Property="Visibility" Value="Collapsed"/>
-                        </DataTrigger>
-                    </Style.Triggers>
-                </Style>
-            </ContentControl.Style>
-        </ContentControl>
     </Grid>
 </UserControl>
