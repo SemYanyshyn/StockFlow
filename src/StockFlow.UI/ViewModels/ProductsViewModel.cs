@@ -88,18 +88,17 @@ public sealed partial class ProductsViewModel : ViewModelBase
     private async Task LoadAsync()
     {
         ErrorMessage = null;
-        try
+        await ExecuteSafelyAsync(async () =>
         {
             var (products, categories) = await Task.Run(() => (_productService.GetAll(), _categoryService.GetAll()));
             _allProducts = products;
             _categoryNames = categories.ToDictionary(category => category.Id, category => category.Name);
             RefreshCategories(categories);
-        }
-        catch (Exception error)
+        }, error =>
         {
             _allProducts = Array.Empty<Product>();
             ErrorMessage = DataErrorText.From(error);
-        }
+        });
 
         ApplyFilter();
     }
@@ -108,7 +107,7 @@ public sealed partial class ProductsViewModel : ViewModelBase
     private async Task SaveAsync()
     {
         FormErrorMessage = null;
-        try
+        var saved = await ExecuteSafelyAsync(async () =>
         {
             var name = NewProductName;
             var categoryId = NewProductCategory?.Id;
@@ -124,15 +123,14 @@ public sealed partial class ProductsViewModel : ViewModelBase
             }
 
             CloseForm();
-        }
-        catch (ValidationException error)
+        }, error =>
         {
-            FormErrorMessage = error.Message;
-            return;
-        }
-        catch (Exception error)
+            FormErrorMessage = error is ValidationException validationError
+                ? validationError.Message
+                : DataErrorText.From(error);
+        });
+        if (!saved)
         {
-            FormErrorMessage = DataErrorText.From(error);
             return;
         }
 
@@ -191,18 +189,16 @@ public sealed partial class ProductsViewModel : ViewModelBase
             return;
         }
 
-        try
+        var deleted = await ExecuteSafelyAsync(
+            () => Task.Run(() => _productService.Delete(row.Id)),
+            error =>
         {
-            await Task.Run(() => _productService.Delete(row.Id));
-        }
-        catch (ValidationException error)
+            FormErrorMessage = error is ValidationException validationError
+                ? validationError.Message
+                : DataErrorText.From(error);
+        });
+        if (!deleted)
         {
-            FormErrorMessage = error.Message;
-            return;
-        }
-        catch (Exception error)
-        {
-            FormErrorMessage = DataErrorText.From(error);
             return;
         }
 

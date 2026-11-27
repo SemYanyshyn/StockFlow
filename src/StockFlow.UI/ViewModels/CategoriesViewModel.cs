@@ -59,15 +59,13 @@ public sealed partial class CategoriesViewModel : ViewModelBase
     private async Task LoadAsync()
     {
         ErrorMessage = null;
-        try
-        {
-            _allCategories = await Task.Run(() => _categoryService.GetAll());
-        }
-        catch (Exception error)
-        {
-            _allCategories = Array.Empty<Category>();
-            ErrorMessage = DataErrorText.From(error);
-        }
+        await ExecuteSafelyAsync(
+            async () => _allCategories = await Task.Run(() => _categoryService.GetAll()),
+            error =>
+            {
+                _allCategories = Array.Empty<Category>();
+                ErrorMessage = DataErrorText.From(error);
+            });
 
         ApplyFilter();
     }
@@ -82,7 +80,7 @@ public sealed partial class CategoriesViewModel : ViewModelBase
     private async Task SaveAsync()
     {
         ErrorMessage = null;
-        try
+        var saved = await ExecuteSafelyAsync(async () =>
         {
             var name = NewCategoryName;
             var editing = EditingCategory;
@@ -96,15 +94,14 @@ public sealed partial class CategoriesViewModel : ViewModelBase
             }
 
             CloseForm();
-        }
-        catch (ValidationException error)
+        }, error =>
         {
-            ErrorMessage = error.Message;
-            return;
-        }
-        catch (Exception error)
+            ErrorMessage = error is ValidationException validationError
+                ? validationError.Message
+                : DataErrorText.From(error);
+        });
+        if (!saved)
         {
-            ErrorMessage = DataErrorText.From(error);
             return;
         }
 
@@ -147,18 +144,16 @@ public sealed partial class CategoriesViewModel : ViewModelBase
             return;
         }
 
-        try
+        var deleted = await ExecuteSafelyAsync(
+            () => Task.Run(() => _categoryService.Delete(category.Id)),
+            error =>
         {
-            await Task.Run(() => _categoryService.Delete(category.Id));
-        }
-        catch (ValidationException error)
+            ErrorMessage = error is ValidationException validationError
+                ? validationError.Message
+                : DataErrorText.From(error);
+        });
+        if (!deleted)
         {
-            ErrorMessage = error.Message;
-            return;
-        }
-        catch (Exception error)
-        {
-            ErrorMessage = DataErrorText.From(error);
             return;
         }
 

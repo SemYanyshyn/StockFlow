@@ -58,12 +58,25 @@ public sealed partial class UsersViewModel : ViewModelBase
     public async Task LoadAsync()
     {
         if (IsBusy) return;
-        IsBusy = true;
-        ErrorMessage = null;
-        try { _all = await Task.Run(_service.GetAll); }
-        catch (ValidationException error) { _all = Array.Empty<User>(); ErrorMessage = error.Message; }
-        catch (Exception) { _all = Array.Empty<User>(); ErrorMessage = DataErrorText.ConnectionFailed; }
-        finally { IsBusy = false; ApplyFilter(); }
+        await ExecuteSafelyAsync(
+            async () => _all = await Task.Run(_service.GetAll),
+            error =>
+            {
+                _all = Array.Empty<User>();
+                ErrorMessage = error is ValidationException validationError
+                    ? validationError.Message
+                    : DataErrorText.ConnectionFailed;
+            },
+            onStarting: () =>
+            {
+                IsBusy = true;
+                ErrorMessage = null;
+            },
+            onFinally: () =>
+            {
+                IsBusy = false;
+                ApplyFilter();
+            });
     }
     [RelayCommand]
     private void Create()
@@ -145,9 +158,7 @@ public sealed partial class UsersViewModel : ViewModelBase
     }
     private async Task MutateAsync(Func<IReadOnlyList<User>> action, bool closeEditor = false)
     {
-        IsBusy = true;
-        ErrorMessage = null;
-        try
+        await ExecuteSafelyAsync(async () =>
         {
             var fallback = await Task.Run(action);
             if (closeEditor) Reset();
@@ -155,9 +166,20 @@ public sealed partial class UsersViewModel : ViewModelBase
             try { _all = await Task.Run(_service.GetAll); }
             catch (ValidationException error) { _all = Array.Empty<User>(); ErrorMessage = error.Message; }
             catch (Exception) { ErrorMessage = "Зміни збережено, але оновити список не вдалося. Натисніть «Оновити»."; }
-        }
-        catch (ValidationException error) { ErrorMessage = error.Message; }
-        catch (Exception) { ErrorMessage = DataErrorText.ConnectionFailed; }
-        finally { IsBusy = false; ApplyFilter(); OnPropertyChanged(nameof(CanManage)); }
+        },
+        error => ErrorMessage = error is ValidationException validationError
+            ? validationError.Message
+            : DataErrorText.ConnectionFailed,
+        onStarting: () =>
+        {
+            IsBusy = true;
+            ErrorMessage = null;
+        },
+        onFinally: () =>
+        {
+            IsBusy = false;
+            ApplyFilter();
+            OnPropertyChanged(nameof(CanManage));
+        });
     }
 }

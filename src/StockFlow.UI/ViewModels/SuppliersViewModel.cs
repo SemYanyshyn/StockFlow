@@ -115,22 +115,23 @@ public sealed class SuppliersViewModel : ViewModelBase
     {
         if (IsBusy) return;
 
-        IsBusy = true;
-        ErrorMessage = null;
-        try
-        {
-            _allSuppliers = await Task.Run(_service.GetAll);
-        }
-        catch (Exception)
-        {
-            _allSuppliers = Array.Empty<Supplier>();
-            ErrorMessage = LoadErrorText;
-        }
-        finally
-        {
-            IsBusy = false;
-            ApplyFilter();
-        }
+        await ExecuteSafelyAsync(
+            async () => _allSuppliers = await Task.Run(_service.GetAll),
+            _ =>
+            {
+                _allSuppliers = Array.Empty<Supplier>();
+                ErrorMessage = LoadErrorText;
+            },
+            onStarting: () =>
+            {
+                IsBusy = true;
+                ErrorMessage = null;
+            },
+            onFinally: () =>
+            {
+                IsBusy = false;
+                ApplyFilter();
+            });
     }
 
     private void OpenEditor()
@@ -218,17 +219,26 @@ public sealed class SuppliersViewModel : ViewModelBase
     {
         if (!CanManage || IsBusy || supplier is null) return;
         if (!_confirmation.Confirm($"Видалити постачальника «{supplier.Name}»?")) return;
-        IsBusy = true;
-        ErrorMessage = null;
-        try
-        {
-            await Task.Run(() => _service.Delete(supplier.Id));
-            _allSuppliers = _allSuppliers.Where(s => s.Id != supplier.Id).ToArray();
-            if (_editingId == supplier.Id) CancelEditor();
-        }
-        catch (ValidationException error) { ErrorMessage = error.Message; }
-        catch (Exception) { ErrorMessage = SaveErrorText; }
-        finally { IsBusy = false; ApplyFilter(); }
+        await ExecuteSafelyAsync(
+            async () =>
+            {
+                await Task.Run(() => _service.Delete(supplier.Id));
+                _allSuppliers = _allSuppliers.Where(s => s.Id != supplier.Id).ToArray();
+                if (_editingId == supplier.Id) CancelEditor();
+            },
+            error => ErrorMessage = error is ValidationException validationError
+                ? validationError.Message
+                : SaveErrorText,
+            onStarting: () =>
+            {
+                IsBusy = true;
+                ErrorMessage = null;
+            },
+            onFinally: () =>
+            {
+                IsBusy = false;
+                ApplyFilter();
+            });
     }
 
     private void ApplyFilter()
