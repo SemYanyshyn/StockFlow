@@ -8,7 +8,7 @@ namespace StockFlow.Tests;
 public sealed class StockReportingQueryServiceTests
 {
     [Fact]
-    public void GetMovementSummary_ReversedPeriod_ThrowsValidationExceptionWithoutRepositoryCall()
+    public void GetMovementSummary_ПеревернутийПеріод_КидаєValidationExceptionБезВикликівРепозиторію()
     {
         var repository = new FakeStockReportingQueryRepository();
         var service = new StockReportingQueryService(repository);
@@ -21,7 +21,7 @@ public sealed class StockReportingQueryServiceTests
     }
 
     [Fact]
-    public void GetMovementSummary_SameDayAt2359_IncludesMovement()
+    public void GetMovementSummary_ОдинДень_ВключаєРухО2359()
     {
         var date = new DateTime(2026, 11, 13);
         var repository = new FakeStockReportingQueryRepository();
@@ -36,7 +36,7 @@ public sealed class StockReportingQueryServiceTests
     }
 
     [Fact]
-    public void GetMovementSummary_StartAndFinalMicrosecond_IncludesBothMovements()
+    public void GetMovementSummary_ПочатокТаОстанняМікросекунда_ВключаєОбидваРухи()
     {
         var dateFrom = new DateTime(2026, 11, 12);
         var dateTo = new DateTime(2026, 11, 13);
@@ -53,7 +53,7 @@ public sealed class StockReportingQueryServiceTests
     }
 
     [Fact]
-    public void GetMovementSummary_OutsidePeriod_ExcludesBothMovements()
+    public void GetMovementSummary_РухПозамежамиПеріоду_ВиключаєОбидваРухи()
     {
         var dateFrom = new DateTime(2026, 11, 12);
         var dateTo = new DateTime(2026, 11, 13);
@@ -70,7 +70,7 @@ public sealed class StockReportingQueryServiceTests
     }
 
     [Fact]
-    public void GetMovementSummary_EmptyPeriod_ReturnsEmptyResult()
+    public void GetMovementSummary_ПеріодБезРухів_ПовертаєПорожнійРезультат()
     {
         var repository = new FakeStockReportingQueryRepository();
         var service = new StockReportingQueryService(repository);
@@ -82,7 +82,7 @@ public sealed class StockReportingQueryServiceTests
     }
 
     [Fact]
-    public void GetMovementSummary_TwoWarehouses_GroupsTotalsByProductAndWarehouse()
+    public void GetMovementSummary_ДваСклади_ГрупуєЗаТоваромІСкладомІПовертаєТочніПідсумки()
     {
         var date = new DateTime(2026, 11, 13);
         var repository = new FakeStockReportingQueryRepository();
@@ -97,12 +97,18 @@ public sealed class StockReportingQueryServiceTests
         Assert.Equal(2, summary.Count);
         var firstWarehouse = Assert.Single(summary, row => row.WarehouseName == "Склад 1");
         var secondWarehouse = Assert.Single(summary, row => row.WarehouseName == "Склад 2");
-        Assert.Equal((10, 2), (firstWarehouse.IncomingQuantity, firstWarehouse.OutgoingQuantity));
-        Assert.Equal((7, 3), (secondWarehouse.IncomingQuantity, secondWarehouse.OutgoingQuantity));
+        Assert.Equal((10, 2, 8), (
+            firstWarehouse.IncomingQuantity,
+            firstWarehouse.OutgoingQuantity,
+            firstWarehouse.CurrentBalance));
+        Assert.Equal((7, 3, 4), (
+            secondWarehouse.IncomingQuantity,
+            secondWarehouse.OutgoingQuantity,
+            secondWarehouse.CurrentBalance));
     }
 
     [Fact]
-    public void GetMovementSummary_MultidayLastDayAt2359_IncludesMovement()
+    public void GetMovementSummary_БагатоденнийОстаннійДень_ВключаєРухО2359()
     {
         var dateFrom = new DateTime(2026, 11, 10);
         var dateTo = new DateTime(2026, 11, 12);
@@ -121,7 +127,7 @@ public sealed class StockReportingQueryServiceTests
     [InlineData(5, 5, false)]
     [InlineData(0, 0, false)]
     [InlineData(4, 5, true)]
-    public void GetStockBalances_LowStockRequiresPositiveThresholdAndQuantityBelowIt(
+    public void GetStockBalances_ПорігІКількість_ПовертаєОчікуванийСтанНизькогоЗапасу(
         int quantity,
         int minThreshold,
         bool expectedIsLow)
@@ -161,7 +167,9 @@ public sealed class StockReportingQueryServiceTests
                     WarehouseName: group.Key.WarehouseName,
                     IncomingQuantity: group.Where(movement => movement.IsIncoming).Sum(movement => movement.Quantity),
                     OutgoingQuantity: group.Where(movement => !movement.IsIncoming).Sum(movement => movement.Quantity),
-                    CurrentBalance: 0))
+                    CurrentBalance:
+                        group.Where(movement => movement.IsIncoming).Sum(movement => movement.Quantity) -
+                        group.Where(movement => !movement.IsIncoming).Sum(movement => movement.Quantity)))
                 .ToArray();
         }
     }
