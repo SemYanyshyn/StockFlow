@@ -21,12 +21,6 @@ public sealed record MovementReportDto(
     int OutgoingQuantity,
     int CurrentBalance);
 
-public sealed class StockService
-{
-    public static bool IsBelowThreshold(int quantity, int minThreshold) =>
-        minThreshold > 0 && quantity < minThreshold;
-}
-
 public sealed class StockReportingQueryService
 {
     private readonly IStockReportingQueryRepository _repository;
