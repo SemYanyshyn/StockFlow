@@ -77,6 +77,26 @@ public sealed class StockRepository : IStockRepository
         command.ExecuteNonQuery();
     }
 
+    public void SetMinThreshold(int productId, int warehouseId, int minThreshold)
+    {
+        using var connection = _connectionFactory.CreateConnection();
+        if (connection.State != ConnectionState.Open)
+            connection.Open();
+
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            INSERT INTO stock (product_id, warehouse_id, quantity, min_threshold)
+            VALUES (@productId, @warehouseId, 0, @minThreshold)
+            ON CONFLICT (product_id, warehouse_id)
+            DO UPDATE SET min_threshold = EXCLUDED.min_threshold;
+            """;
+
+        AddParameter(command, "@productId", productId);
+        AddParameter(command, "@warehouseId", warehouseId);
+        AddParameter(command, "@minThreshold", minThreshold);
+        command.ExecuteNonQuery();
+    }
+
     public IReadOnlyList<Stock> GetAll(int? warehouseId = null, IDbTransaction? transaction = null)
     {
         var ownsConnection = transaction is null;

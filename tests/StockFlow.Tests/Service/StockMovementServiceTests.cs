@@ -506,6 +506,9 @@ public sealed class StockMovementServiceTests
             work.PendingStock = Copy(stock);
         }
 
+        public void SetMinThreshold(int productId, int warehouseId, int minThreshold) =>
+            throw new NotSupportedException();
+
         public IReadOnlyList<Stock> GetAll(int? warehouseId = null, IDbTransaction? transaction = null)
         {
             var stock = ReferenceEquals(transaction, work.Transaction) && work.PendingStock is { } pendingStock

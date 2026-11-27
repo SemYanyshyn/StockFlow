@@ -20,6 +20,7 @@
     <Grid Grid.Row="1" Margin="24">
       <Grid.RowDefinitions>
         <RowDefinition Height="Auto"/>
+        <RowDefinition Height="Auto"/>
         <RowDefinition Height="*"/>
         <RowDefinition Height="Auto"/>
       </Grid.RowDefinitions>
@@ -55,9 +56,31 @@
         </ToggleButton>
       </Grid>
 
-      <DataGrid Grid.Row="1"
+      <StackPanel x:Name="ThresholdEditorPanel"
+                  Grid.Row="1"
+                  Orientation="Horizontal"
+                  VerticalAlignment="Center"
+                  Margin="0,0,0,16"
+                  Visibility="{Binding CanEditThreshold, Converter={StaticResource BoolToVis}}">
+        <TextBlock Text="Мінімальна норма для вибраного рядка:"
+                   VerticalAlignment="Center"
+                   Margin="0,0,12,0"/>
+        <TextBox x:Name="MinThresholdInput"
+                 Width="180"
+                 Height="40"
+                 Padding="12,0"
+                 VerticalContentAlignment="Center"
+                 Text="{Binding MinThresholdInput, UpdateSourceTrigger=PropertyChanged}"
+                 Margin="0,0,12,0"/>
+        <Button Style="{StaticResource PrimaryButton}"
+                Content="Зберегти норму"
+                Command="{Binding SaveMinThresholdCommand}"/>
+      </StackPanel>
+
+      <DataGrid Grid.Row="2"
                 Style="{StaticResource ListDataGrid}"
                 ItemsSource="{Binding FilteredRows}"
+                SelectedItem="{Binding SelectedRow}"
                 AutoGenerateColumns="False"
                 IsReadOnly="True"
                 CanUserAddRows="False">
@@ -192,7 +215,7 @@
           </DataGridTemplateColumn>
         </DataGrid.Columns>
       </DataGrid>
-<TextBlock Grid.Row="1" x:Name="EmptyStateText" Text="Записів про залишки не знайдено." HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource SecondaryTextBrush}" FontSize="15" Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVis}}"/><TextBlock Grid.Row="2" x:Name="ErrorMessageText" Text="{Binding ErrorMessage}" Foreground="{StaticResource CriticalTextBrush}" FontWeight="SemiBold" Margin="0,12,0,0"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Visible"/><Style.Triggers><DataTrigger Binding="{Binding ErrorMessage}" Value=""><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
+<TextBlock Grid.Row="2" x:Name="EmptyStateText" Text="Записів про залишки не знайдено." HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource SecondaryTextBrush}" FontSize="15" Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVis}}"/><TextBlock Grid.Row="3" x:Name="ErrorMessageText" Text="{Binding ErrorMessage}" Foreground="{StaticResource CriticalTextBrush}" FontWeight="SemiBold" Margin="0,12,0,0"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Visible"/><Style.Triggers><DataTrigger Binding="{Binding ErrorMessage}" Value=""><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
     </Grid>
   </Grid>
 </UserControl>

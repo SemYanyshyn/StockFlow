@@ -11,7 +11,9 @@ public sealed record StockBalanceDto(
     string WarehouseName,
     int Quantity,
     int MinThreshold,
-    bool IsLow);
+    bool IsLow,
+    int ProductId = 0,
+    int WarehouseId = 0);
 
 public sealed record MovementReportDto(
     string ProductName,
