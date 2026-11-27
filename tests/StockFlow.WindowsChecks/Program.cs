@@ -76,6 +76,24 @@ internal static class Program
         var directory = Path.Combine("TestResults", "windows-checks"); Directory.CreateDirectory(directory);
         using var stream = File.Create(Path.Combine(directory, name + ".png")); encoder.Save(stream);
     }
+    private static object? Scalar(string connectionString, string sql, params (string Name, object? Value)[] parameters)
+    {
+        using var connection = new NpgsqlConnection(connectionString);
+        connection.Open();
+        using var command = new NpgsqlCommand(sql, connection);
+        foreach (var parameter in parameters)
+            command.Parameters.AddWithValue(parameter.Name, parameter.Value ?? DBNull.Value);
+        return command.ExecuteScalar();
+    }
+    private static void Execute(string connectionString, string sql, params (string Name, object? Value)[] parameters)
+    {
+        using var connection = new NpgsqlConnection(connectionString);
+        connection.Open();
+        using var command = new NpgsqlCommand(sql, connection);
+        foreach (var parameter in parameters)
+            command.Parameters.AddWithValue(parameter.Name, parameter.Value ?? DBNull.Value);
+        command.ExecuteNonQuery();
+    }
     private static ServiceProvider Provider(string connection)
     {
         var services = new ServiceCollection().AddStockFlow(new ConfigurationBuilder()
@@ -205,6 +223,80 @@ internal static class Program
                 if (current is UIElement element && element.Visibility != Visibility.Visible) return true;
             return false;
         }), "employee supplier controls hidden");
+
+        var movements = employeeProvider.GetRequiredService<StockMovementsViewModel>();
+        await movements.LoadAsync();
+        var movementsView = new StockMovementsView { DataContext = movements };
+        await Render(movementsView, "movements-list");
+        Check(Descendants<Button>(movementsView).Any(button => button.Content?.ToString() == "+ Створити накладну"),
+            "employee movement screen renders the create action");
+        await movements.OpenCreateCommand.ExecuteAsync(null);
+        Check(movements.CreateProducts.Count > 0 && movements.CreateWarehouses.Count > 0 && movements.CreateSuppliers.Count > 0,
+            "movement form loads products, warehouses and suppliers");
+        Check(movements.CreateTypes.Select(option => option.Name).SequenceEqual(new[] { "Надходження", "Списання" }),
+            "movement form offers the domain-supported operation types");
+
+        var selectedProduct = movements.SelectedCreateProduct
+            ?? throw new InvalidOperationException("No product is available for the movement UI check.");
+        var selectedWarehouse = movements.SelectedCreateWarehouse
+            ?? throw new InvalidOperationException("No warehouse is available for the movement UI check.");
+        var movementNumber = movements.CreationNumber;
+        var hadStock = Convert.ToBoolean(Scalar(connection,
+            "SELECT EXISTS(SELECT 1 FROM stock WHERE product_id=@product AND warehouse_id=@warehouse)",
+            ("product", selectedProduct.Id), ("warehouse", selectedWarehouse.Id)));
+        var oldQuantity = hadStock
+            ? Convert.ToInt32(Scalar(connection,
+                "SELECT quantity FROM stock WHERE product_id=@product AND warehouse_id=@warehouse",
+                ("product", selectedProduct.Id), ("warehouse", selectedWarehouse.Id)))
+            : 0;
+        var oldThreshold = hadStock
+            ? Convert.ToInt32(Scalar(connection,
+                "SELECT min_threshold FROM stock WHERE product_id=@product AND warehouse_id=@warehouse",
+                ("product", selectedProduct.Id), ("warehouse", selectedWarehouse.Id)))
+            : 0;
+        try
+        {
+            movements.CreationQuantity = "0";
+            await Render(movementsView, "movements-create");
+            var quantityBox = Descendants<TextBox>(movementsView)
+                .Single(box => System.Windows.Automation.AutomationProperties.GetName(box) == "Кількість товару для руху");
+            Check(quantityBox.Text == "0", "movement form displays the selected quantity input");
+            await movements.SaveMovementCommand.ExecuteAsync(null);
+            Check(movements.CreationError == "Кількість має бути додатним цілим числом.",
+                "movement UI reports invalid quantity in Ukrainian");
+            Check(Descendants<TextBlock>(movementsView)
+                .Any(text => text.Text == "Кількість має бути додатним цілим числом."),
+                "movement UI displays the validation message");
+            Check(!Convert.ToBoolean(Scalar(connection, "SELECT EXISTS(SELECT 1 FROM stock_movements WHERE number=@number)",
+                ("number", movementNumber))), "invalid movement data is not persisted");
+
+            movements.CreationQuantity = "1";
+            await movements.SaveMovementCommand.ExecuteAsync(null);
+            Check(movements.CreationError is null && movements.Movements.Any(item => item.Number == movementNumber),
+                "movement UI creates a receipt and refreshes the invoice list");
+            Check(Convert.ToBoolean(Scalar(connection, "SELECT EXISTS(SELECT 1 FROM stock_movements WHERE number=@number)",
+                ("number", movementNumber))), "movement UI persists the created invoice");
+        }
+        finally
+        {
+            Execute(connection, "DELETE FROM stock_movements WHERE number=@number", ("number", movementNumber));
+            if (hadStock)
+            {
+                Execute(connection, """
+                    INSERT INTO stock(product_id, warehouse_id, quantity, min_threshold)
+                    VALUES (@product, @warehouse, @quantity, @threshold)
+                    ON CONFLICT (product_id, warehouse_id)
+                    DO UPDATE SET quantity=EXCLUDED.quantity, min_threshold=EXCLUDED.min_threshold
+                    """, ("product", selectedProduct.Id), ("warehouse", selectedWarehouse.Id),
+                    ("quantity", oldQuantity), ("threshold", oldThreshold));
+            }
+            else
+            {
+                Execute(connection, "DELETE FROM stock WHERE product_id=@product AND warehouse_id=@warehouse",
+                    ("product", selectedProduct.Id), ("warehouse", selectedWarehouse.Id));
+            }
+        }
+
         var denied = employeeProvider.GetRequiredService<UsersViewModel>();
         await denied.LoadAsync();
         Check(denied.ErrorMessage == UserService.AdminOnlyMessage && denied.Users.Count == 0, "employee user-screen access denied by service");

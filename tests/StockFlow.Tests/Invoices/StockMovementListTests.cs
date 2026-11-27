@@ -1,10 +1,14 @@
+using System.Data;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using StockFlow.BusinessLogic;
 using StockFlow.BusinessLogic.Products;
+using StockFlow.BusinessLogic.Suppliers;
 using StockFlow.BusinessLogic.Users;
 using StockFlow.BusinessLogic.Warehouses;
 using StockFlow.DataAccess;
+using StockFlow.DataAccess.Products;
+using StockFlow.DataAccess.Suppliers;
 using StockFlow.DataAccess.Warehouses;
 using StockFlow.Domain;
 using StockFlow.UI.ViewModels;
@@ -30,7 +34,7 @@ public sealed class StockMovementListTests
         vm.BackCommand.Execute(null);
         Assert.True(vm.IsListOpen);
         Assert.Equal(role == UserRole.Employee, vm.IsEmployee);
-        Assert.Equal(role == UserRole.Employee, vm.CreationUnavailableMessage is not null);
+        Assert.Equal(role == UserRole.Employee, vm.OpenCreateCommand.CanExecute(null));
     }
 
     [Fact]
@@ -215,7 +219,9 @@ public sealed class StockMovementListTests
         Assert.Equal("Примітки немає", row.NoteText);
     }
 
-    private sealed class Fixture(UserRole role = UserRole.Employee) : ICurrentUserContext, IStockMovementReadRepository, IWarehouseRepository
+    private sealed class Fixture(UserRole role = UserRole.Employee) : ICurrentUserContext,
+        IStockMovementReadRepository, IWarehouseRepository, IProductRepository, ISupplierRepository,
+        IStockRepository, IStockMovementRepository, IStockTransactionFactory
     {
         public User CurrentUser { get; } = new() { Id = 7, FullName = "Працівник", Role = role };
         public static StockMovementDetails Row(int id = 1) => new(id, "НК-001", new(2026, 11, 13),
@@ -229,7 +235,9 @@ public sealed class StockMovementListTests
         public bool MissingDetails { get; set; }
         public ManualResetEventSlim? Gate { get; set; }
         public ManualResetEventSlim? DetailGate { get; set; }
-        public StockMovementsViewModel ViewModel() => new(new(this), new(this, this), this);
+        public StockMovementsViewModel ViewModel() => new(
+            new(this), new(this, this), new ProductService(this, this), new SupplierService(this, this),
+            new StockMovementService(this, this, this, this), this);
         public StockMovementList Search(StockMovementFilter filter)
         {
             Gate?.Wait();
@@ -245,5 +253,20 @@ public sealed class StockMovementListTests
         }
         public IReadOnlyList<Warehouse> GetAll() => WarehouseError ? throw new IOException() : new[] { new Warehouse { Id = 1, Name = "Склад" } };
         public int Add(Warehouse warehouse) => throw new NotSupportedException();
+        IReadOnlyList<Product> IProductRepository.GetAll() => new[] { new Product { Id = 1, Name = "Товар" } };
+        int IProductRepository.Add(Product product) => throw new NotSupportedException();
+        Product? IProductRepository.GetById(int productId) => throw new NotSupportedException();
+        bool IProductRepository.Update(Product product) => throw new NotSupportedException();
+        bool IProductRepository.HasRelatedRecords(int productId) => throw new NotSupportedException();
+        bool IProductRepository.Delete(int productId) => throw new NotSupportedException();
+        IReadOnlyList<Supplier> ISupplierRepository.GetAll() => new[] { new Supplier { Id = 1, Name = "Постачальник" } };
+        int ISupplierRepository.Add(Supplier supplier) => throw new NotSupportedException();
+        bool ISupplierRepository.Update(Supplier supplier) => throw new NotSupportedException();
+        bool ISupplierRepository.Delete(int id) => throw new NotSupportedException();
+        Stock IStockRepository.GetForUpdate(int productId, int warehouseId, IDbTransaction transaction) => throw new NotSupportedException();
+        void IStockRepository.Save(Stock stock, IDbTransaction transaction) => throw new NotSupportedException();
+        IReadOnlyList<Stock> IStockRepository.GetAll(int? warehouseId, IDbTransaction? transaction) => Array.Empty<Stock>();
+        int IStockMovementRepository.Add(StockMovement movement, IDbTransaction transaction) => throw new NotSupportedException();
+        IStockTransaction IStockTransactionFactory.Begin() => throw new NotSupportedException();
     }
 }
