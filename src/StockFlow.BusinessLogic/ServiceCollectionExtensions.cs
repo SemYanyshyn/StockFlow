@@ -23,7 +23,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<DbConnectionFactory>(_ => new DbConnectionFactory(configuration));
         services.AddSingleton<IStockMovementRepository, StockMovementRepository>();
         services.AddSingleton<IStockTransactionFactory, NpgsqlStockTransactionFactory>();
-        // Activate AddStockMovementServices after the stock module registers its real IStockRepository.
         // Module owners add their real services/repositories here when implemented.
         services.AddSingleton<AuthenticatedUserContext>();
         services.AddSingleton<ICurrentUserContext>(sp => sp.GetRequiredService<AuthenticatedUserContext>());
@@ -48,6 +47,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IStockReportingQueryRepository, StockReportingQueryRepository>();
         services.AddSingleton<StockReportingQueryService>();
         services.AddSingleton<IStockRepository, StockRepository>();
+        services.AddStockMovementServices();
+        services.AddSingleton<StockMovementNumberRepository>();
+        services.AddTransient<IStockMovementEditorService, StockMovementEditorService>();
         return services;
     }
 }
