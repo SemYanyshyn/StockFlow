@@ -55,7 +55,6 @@ void Execute(string sql, params (string Name, object Value)[] parameters)
     foreach (var parameter in parameters) command.Parameters.AddWithValue(parameter.Name, parameter.Value);
     command.ExecuteNonQuery();
 }
-
 Task RunInvoiceConcurrency(AuthenticatedUserContext employee) =>
     InvoiceConcurrencyChecks.RunAsync(factory, new StockRepository(factory), employee, Check);
 
@@ -67,7 +66,7 @@ if (args is ["--invoice-concurrency-only"])
     Console.WriteLine($"All {checks} invoice concurrency checks passed.");
     return;
 }
-StockRepositoryChecks.Run(factory, Check);
+await StockRepositoryChecks.Run(factory, Check);
 SchemaConstraintChecks.Run(factory, Check);
 InvoiceDatabaseChecks.Run(factory, Check);
 StockReportingDatabaseChecks.Run(factory, Check);

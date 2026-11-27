@@ -2,12 +2,14 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Npgsql;
+using StockFlow.BusinessLogic;
+using StockFlow.BusinessLogic.Users;
 using StockFlow.DataAccess;
 using StockFlow.Domain;
 
 internal static class StockRepositoryChecks
 {
-    public static void Run(DbConnectionFactory factory, Action<bool, string> check)
+    public static async Task Run(DbConnectionFactory factory, Action<bool, string> check)
     {
         var repo = new StockRepository(factory);
         var suffix = Guid.NewGuid().ToString("N")[..8];
@@ -153,7 +155,51 @@ internal static class StockRepositoryChecks
                     "StockRepository.GetForUpdate unblocks after COMMIT and sees updated quantity");
             }
 
-            // 6. Negative quantity rejected by CHECK constraint
+            // 6. Concurrent write-offs cannot consume the same final unit.
+            Execute("UPDATE stock SET quantity = 1 WHERE product_id = @p AND warehouse_id = @w",
+                ("p", product1Id), ("w", warehouse1Id));
+            var employeeId = ScalarInt(
+                "SELECT id FROM users WHERE username = @username",
+                ("username", "employee"));
+            var movementService = new StockMovementService(
+                new DatabaseEmployeeContext(employeeId),
+                repo,
+                new StockMovementRepository(),
+                new NpgsqlStockTransactionFactory(factory));
+
+            using (var start = new Barrier(2))
+            {
+                var attempts = Enumerable.Range(0, 2).Select(index => Task.Run(() =>
+                {
+                    if (!start.SignalAndWait(TimeSpan.FromSeconds(10)))
+                        throw new TimeoutException("Concurrent movement checks did not start together.");
+
+                    return movementService.Register(new StockMovement
+                    {
+                        Number = $"Concurrent-{suffix}-{index}",
+                        Type = MovementType.WriteOff,
+                        ProductId = product1Id,
+                        WarehouseId = warehouse1Id,
+                        UserId = employeeId,
+                        Quantity = 1,
+                        MovementDate = DateTime.Now
+                    });
+                })).ToArray();
+
+                var results = await Task.WhenAll(attempts).WaitAsync(TimeSpan.FromSeconds(30));
+                var rejected = results.SingleOrDefault(result => !result.IsSuccess);
+                check(results.Count(result => result.IsSuccess) == 1 &&
+                      rejected?.Error == "Недостатньо товару на складі",
+                    "concurrent write-offs: one commits and the other is rejected for insufficient stock");
+                check(ScalarInt("SELECT quantity FROM stock WHERE product_id=@p AND warehouse_id=@w",
+                        ("p", product1Id), ("w", warehouse1Id)) == 0,
+                    "concurrent write-offs never produce a negative stock balance");
+                check(ScalarInt("SELECT count(*) FROM stock_movements WHERE product_id=@p AND warehouse_id=@w",
+                        ("p", product1Id), ("w", warehouse1Id)) == 1,
+                    "concurrent write-offs persist exactly one movement");
+            }
+
+            // 7. Negative quantity rejected by CHECK constraint
             try
             {
                 using var badConn = factory.CreateConnection();
@@ -175,7 +221,7 @@ internal static class StockRepositoryChecks
                     "stock.quantity < 0 rejected by CHECK constraint (23514)");
             }
 
-            // 7. Duplicate (product_id, warehouse_id) rejected by PRIMARY KEY
+            // 8. Duplicate (product_id, warehouse_id) rejected by PRIMARY KEY
             try
             {
                 Execute("INSERT INTO stock(product_id, warehouse_id, quantity, min_threshold) VALUES (@p, @w, 1, 0)",
@@ -188,7 +234,7 @@ internal static class StockRepositoryChecks
                     "stock duplicate (product_id, warehouse_id) rejected by PRIMARY KEY (23505)");
             }
 
-            // 8. GetAll filters by warehouse and returns empty list for empty table
+            // 9. GetAll filters by warehouse and returns empty list for empty table
             using (var conn = factory.CreateConnection())
             {
                 conn.Open();
@@ -237,10 +283,20 @@ internal static class StockRepositoryChecks
         }
         finally
         {
+            Execute("DELETE FROM stock_movements WHERE product_id IN (@p1, @p2)", ("p1", product1Id), ("p2", product2Id));
             Execute("DELETE FROM stock WHERE product_id IN (@p1, @p2)", ("p1", product1Id), ("p2", product2Id));
             Execute("DELETE FROM products WHERE id IN (@p1, @p2)", ("p1", product1Id), ("p2", product2Id));
             Execute("DELETE FROM warehouses WHERE id IN (@w1, @w2)", ("w1", warehouse1Id), ("w2", warehouse2Id));
             Execute("DELETE FROM categories WHERE id = @cat", ("cat", categoryId));
         }
+    }
+    private sealed class DatabaseEmployeeContext(int employeeId) : ICurrentUserContext
+    {
+        public User CurrentUser { get; } = new()
+        {
+            Id = employeeId,
+            Role = UserRole.Employee,
+            IsActive = true
+        };
     }
 }

@@ -93,6 +93,39 @@ public sealed class StockMovementServiceTests
         AssertReleased(fixture);
     }
 
+    [Fact]
+    public async Task ConcurrentWriteOffsForLastUnit_OnlyOneSucceedsAndOtherIsRejected()
+    {
+        using var stockLock = new SemaphoreSlim(1, 1);
+        var fixture = new Fixture(stockQuantity: 1, stockLock: stockLock);
+        using var start = new Barrier(2);
+        var attempts = Enumerable.Range(0, 2).Select(index => Task.Run(() =>
+        {
+            if (!start.SignalAndWait(TimeSpan.FromSeconds(10)))
+                throw new TimeoutException("Concurrent test workers did not start together.");
+
+            var request = Request(MovementType.WriteOff, 1);
+            request.Number = $"Concurrent-{index}";
+            return fixture.Service.Register(request);
+        })).ToArray();
+
+        var results = await Task.WhenAll(attempts).WaitAsync(TimeSpan.FromSeconds(30));
+
+        Assert.Single(results, result => result.IsSuccess);
+        var rejected = Assert.Single(results, result => !result.IsSuccess);
+        Assert.Equal("Недостатньо товару на складі", rejected.Error);
+        Assert.Equal(0, fixture.State.PersistedStock.Quantity);
+        Assert.Single(fixture.State.PersistedMovements);
+        Assert.Equal(2, fixture.Transactions.BeginCount);
+        Assert.Equal(1, fixture.Transactions.Created.Sum(transaction => transaction.CommitCount));
+        Assert.Equal(1, fixture.Transactions.Created.Sum(transaction => transaction.RollbackCount));
+        Assert.All(fixture.Transactions.Created, transaction =>
+        {
+            Assert.Equal(1, transaction.DisposeCount);
+            Assert.False(transaction.IsActive);
+        });
+    }
+
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
@@ -202,7 +235,39 @@ public sealed class StockMovementServiceTests
         Assert.Equal(0, fixture.Stocks.SaveCount);
         Assert.Equal(0, fixture.Transaction.CommitCount);
         Assert.Equal(1, fixture.Transaction.RollbackCount);
+        Assert.Equal(sqlState == "40001" ? 2 : 1, fixture.Transactions.BeginCount);
+        Assert.All(fixture.Transactions.Created, transaction =>
+        {
+            Assert.Equal(1, transaction.RollbackCount);
+            Assert.Equal(1, transaction.DisposeCount);
+            Assert.False(transaction.IsActive);
+            Assert.True(transaction.DatabaseTransaction.IsDisposed);
+        });
         AssertReleased(fixture);
+    }
+
+    [Fact]
+    public void SerializationConflictRetriesAndRevalidatesCurrentStock()
+    {
+        var fixture = new Fixture();
+        fixture.Stocks.ReadError = PostgreSqlError("40001");
+        fixture.Stocks.ReadErrorOnCall = 1;
+        fixture.Stocks.OnReadError = () => fixture.State.PersistedStock.Quantity = 0;
+
+        var result = fixture.Service.Register(Request(MovementType.WriteOff, 1));
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Недостатньо товару на складі", result.Error);
+        Assert.Equal(2, fixture.Transactions.BeginCount);
+        Assert.Equal(2, fixture.Stocks.ReadCount);
+        Assert.Equal(0, fixture.Movements.AddCount);
+        Assert.Equal(0, fixture.Stocks.SaveCount);
+        Assert.All(fixture.Transactions.Created, transaction =>
+        {
+            Assert.Equal(1, transaction.RollbackCount);
+            Assert.Equal(1, transaction.DisposeCount);
+            Assert.False(transaction.IsActive);
+        });
     }
 
     [Theory]
@@ -381,12 +446,16 @@ public sealed class StockMovementServiceTests
         public FakeMovementRepository Movements { get; }
         public StockMovementService Service { get; }
 
-        public Fixture(UserRole role = UserRole.Employee)
+        public Fixture(
+            UserRole role = UserRole.Employee,
+            int stockQuantity = 10,
+            SemaphoreSlim? stockLock = null)
         {
+            State.PersistedStock.Quantity = stockQuantity;
             Transaction = new FakeStockTransaction(State);
-            Transactions = new FakeTransactionFactory(Transaction);
-            Stocks = new FakeStockRepository(State, Transaction);
-            Movements = new FakeMovementRepository(Transaction);
+            Transactions = new FakeTransactionFactory(State, Transaction);
+            Stocks = new FakeStockRepository(State, stockLock);
+            Movements = new FakeMovementRepository();
             Service = new StockMovementService(new FakeCurrentUserContext(role), Stocks, Movements, Transactions);
         }
     }
@@ -411,22 +480,34 @@ public sealed class StockMovementServiceTests
         public List<StockMovement> PersistedMovements { get; } = [];
     }
 
-    private sealed class FakeTransactionFactory(FakeStockTransaction transaction) : IStockTransactionFactory
+    private sealed class FakeTransactionFactory(FakeState state, FakeStockTransaction firstTransaction) : IStockTransactionFactory
     {
+        private readonly object _gate = new();
         public int BeginCount { get; private set; }
         public Exception? BeginError { get; set; }
+        public List<FakeStockTransaction> Created { get; } = [];
+        private FakeStockTransaction? _firstTransaction = firstTransaction;
 
         public IStockTransaction Begin()
         {
-            BeginCount++;
-            if (BeginError is not null) throw BeginError;
-            return transaction;
+            lock (_gate)
+            {
+                BeginCount++;
+                if (BeginError is not null) throw BeginError;
+                var transaction = _firstTransaction ?? new FakeStockTransaction(state);
+                _firstTransaction = null;
+                Created.Add(transaction);
+                return transaction;
+            }
         }
     }
 
-    private sealed class FakeStockTransaction(FakeState state) : IStockTransaction
+    private sealed class FakeStockTransaction : IStockTransaction
     {
-        public FakeDatabaseTransaction DatabaseTransaction { get; } = new();
+        private readonly FakeState _state;
+        private SemaphoreSlim? _heldLock;
+
+        public FakeDatabaseTransaction DatabaseTransaction { get; }
         public IDbTransaction Transaction => DatabaseTransaction;
         public bool IsActive { get; private set; } = true;
         public int CommitCount { get; private set; }
@@ -437,16 +518,23 @@ public sealed class StockMovementServiceTests
         public Stock? PendingStock { get; set; }
         public List<StockMovement> PendingMovements { get; } = [];
 
+        public FakeStockTransaction(FakeState state)
+        {
+            _state = state;
+            DatabaseTransaction = new FakeDatabaseTransaction(this);
+        }
+
         public void Commit()
         {
             CommitCount++;
             if (CommitError is not null) throw CommitError;
             DatabaseTransaction.Commit();
-            if (PendingStock is not null) state.PersistedStock = Copy(PendingStock);
-            state.PersistedMovements.AddRange(PendingMovements.Select(Copy));
+            if (PendingStock is not null) _state.PersistedStock = Copy(PendingStock);
+            _state.PersistedMovements.AddRange(PendingMovements.Select(Copy));
             PendingStock = null;
             PendingMovements.Clear();
             IsActive = false;
+            ReleaseLock();
         }
 
         public void Rollback()
@@ -456,6 +544,7 @@ public sealed class StockMovementServiceTests
             PendingMovements.Clear();
             DatabaseTransaction.Rollback();
             IsActive = false;
+            ReleaseLock();
             if (RollbackError is not null) throw RollbackError;
         }
 
@@ -465,12 +554,28 @@ public sealed class StockMovementServiceTests
             PendingStock = null;
             PendingMovements.Clear();
             IsActive = false;
+            ReleaseLock();
             DatabaseTransaction.Dispose();
+        }
+
+        public void Acquire(SemaphoreSlim? stockLock)
+        {
+            if (stockLock is null) return;
+            if (!stockLock.Wait(TimeSpan.FromSeconds(10)))
+                throw new TimeoutException("Concurrent stock lock was not released.");
+            _heldLock = stockLock;
+        }
+
+        private void ReleaseLock()
+        {
+            _heldLock?.Release();
+            _heldLock = null;
         }
     }
 
-    private sealed class FakeDatabaseTransaction : IDbTransaction
+    private sealed class FakeDatabaseTransaction(FakeStockTransaction owner) : IDbTransaction
     {
+        public FakeStockTransaction Owner { get; } = owner;
         public IDbConnection? Connection => null;
         public IsolationLevel IsolationLevel => IsolationLevel.Serializable;
         public bool IsDisposed { get; private set; }
@@ -479,7 +584,7 @@ public sealed class StockMovementServiceTests
         public void Dispose() => IsDisposed = true;
     }
 
-    private sealed class FakeStockRepository(FakeState state, FakeStockTransaction work) : IStockRepository
+    private sealed class FakeStockRepository(FakeState state, SemaphoreSlim? stockLock = null) : IStockRepository
     {
         public int ReadCount { get; private set; }
         public int SaveCount { get; private set; }
@@ -487,6 +592,8 @@ public sealed class StockMovementServiceTests
         public IDbTransaction? ReadTransaction { get; private set; }
         public IDbTransaction? SaveTransaction { get; private set; }
         public Exception? ReadError { get; set; }
+        public int? ReadErrorOnCall { get; set; }
+        public Action? OnReadError { get; set; }
         public Exception? SaveError { get; set; }
 
         public Stock GetForUpdate(int productId, int warehouseId, IDbTransaction transaction)
@@ -494,7 +601,12 @@ public sealed class StockMovementServiceTests
             ReadCount++;
             LastRequestedPair = (productId, warehouseId);
             ReadTransaction = transaction;
-            if (ReadError is not null) throw ReadError;
+            GetScope(transaction).Acquire(stockLock);
+            if (ReadError is not null && (ReadErrorOnCall is null || ReadCount == ReadErrorOnCall))
+            {
+                OnReadError?.Invoke();
+                throw ReadError;
+            }
             return Copy(state.PersistedStock);
         }
 
@@ -503,7 +615,7 @@ public sealed class StockMovementServiceTests
             SaveCount++;
             SaveTransaction = transaction;
             if (SaveError is not null) throw SaveError;
-            work.PendingStock = Copy(stock);
+            GetScope(transaction).PendingStock = Copy(stock);
         }
 
         public void SetMinThreshold(int productId, int warehouseId, int minThreshold) =>
@@ -511,16 +623,24 @@ public sealed class StockMovementServiceTests
 
         public IReadOnlyList<Stock> GetAll(int? warehouseId = null, IDbTransaction? transaction = null)
         {
-            var stock = ReferenceEquals(transaction, work.Transaction) && work.PendingStock is { } pendingStock
+            var pendingStock = transaction is FakeDatabaseTransaction databaseTransaction
+                ? databaseTransaction.Owner.PendingStock
+                : null;
+            var stock = pendingStock is not null
                 ? pendingStock
                 : state.PersistedStock;
 
             return warehouseId is null || warehouseId == stock.WarehouseId
                 ? [Copy(stock)] : [];
         }
+
+        private static FakeStockTransaction GetScope(IDbTransaction transaction) =>
+            transaction is FakeDatabaseTransaction databaseTransaction
+                ? databaseTransaction.Owner
+                : throw new InvalidOperationException("Unexpected fake transaction.");
     }
 
-    private sealed class FakeMovementRepository(FakeStockTransaction work) : IStockMovementRepository
+    private sealed class FakeMovementRepository : IStockMovementRepository
     {
         public int AddCount { get; private set; }
         public IDbTransaction? AddTransaction { get; private set; }
@@ -531,7 +651,10 @@ public sealed class StockMovementServiceTests
             AddCount++;
             AddTransaction = transaction;
             if (AddError is not null) throw AddError;
-            work.PendingMovements.Add(Copy(movement));
+            var scope = transaction is FakeDatabaseTransaction databaseTransaction
+                ? databaseTransaction.Owner
+                : throw new InvalidOperationException("Unexpected fake transaction.");
+            scope.PendingMovements.Add(Copy(movement));
             return 42;
         }
     }
