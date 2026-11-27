@@ -15,7 +15,7 @@ using StockFlow.UI.Services;
 using StockFlow.UI.ViewModels;
 using StockFlow.UI.Views;
 
-internal static class Program
+internal static partial class Program
 {
     private sealed class Confirmation : IConfirmationService
     {
@@ -198,7 +198,7 @@ internal static class Program
         await employeeSuppliers.LoadAsync();
         var employeeView = new SuppliersView { DataContext = employeeSuppliers };
         await Render(employeeView, "suppliers-employee");
-        var manageButtons = Descendants<Button>(employeeView).Where(b => b.Content?.ToString() is "Редагувати" or "Видалити" or "+ Додати постачальника").ToArray();
+        var manageButtons = Descendants<Button>(employeeView).Where(b => b.Content?.ToString() is "Редагувати" or "Видалити" or "+ Додати").ToArray();
         Check(manageButtons.Length > 0 && !employeeSuppliers.CanManage && manageButtons.All(b =>
         {
             for (DependencyObject? current = b; current is not null; current = VisualTreeHelper.GetParent(current))
@@ -208,6 +208,7 @@ internal static class Program
         var denied = employeeProvider.GetRequiredService<UsersViewModel>();
         await denied.LoadAsync();
         Check(denied.ErrorMessage == UserService.AdminOnlyMessage && denied.Users.Count == 0, "employee user-screen access denied by service");
+        await CheckInvoices(provider, employeeProvider);
 
         var stockRepo = provider.GetRequiredService<StockFlow.DataAccess.IStockRepository>();
         var productRepo = provider.GetRequiredService<StockFlow.DataAccess.Products.IProductRepository>();

@@ -89,22 +89,22 @@ public sealed class StockServiceTests
     [Fact]
     public void IsBelowThreshold_QuantityBelowThreshold_ReturnsTrue()
     {
-        var service = CreateService(out _, out _, out _);
-        Assert.True(service.IsBelowThreshold(quantity: 4, minThreshold: 10));
+        _ = CreateService(out _, out _, out _);
+        Assert.True(StockService.IsBelowThreshold(quantity: 4, minThreshold: 10));
     }
 
     [Fact]
     public void IsBelowThreshold_QuantityEqualsThreshold_ReturnsFalse()
     {
-        var service = CreateService(out _, out _, out _);
-        Assert.False(service.IsBelowThreshold(quantity: 10, minThreshold: 10));
+        _ = CreateService(out _, out _, out _);
+        Assert.False(StockService.IsBelowThreshold(quantity: 10, minThreshold: 10));
     }
 
     [Fact]
     public void IsBelowThreshold_QuantityAboveThreshold_ReturnsFalse()
     {
-        var service = CreateService(out _, out _, out _);
-        Assert.False(service.IsBelowThreshold(quantity: 15, minThreshold: 10));
+        _ = CreateService(out _, out _, out _);
+        Assert.False(StockService.IsBelowThreshold(quantity: 15, minThreshold: 10));
     }
 
     [Theory]
@@ -113,8 +113,8 @@ public sealed class StockServiceTests
     [InlineData(50)]
     public void IsBelowThreshold_ThresholdIsZero_ReturnsFalse(int quantity)
     {
-        var service = CreateService(out _, out _, out _);
-        Assert.False(service.IsBelowThreshold(quantity: quantity, minThreshold: 0));
+        _ = CreateService(out _, out _, out _);
+        Assert.False(StockService.IsBelowThreshold(quantity: quantity, minThreshold: 0));
     }
 
     [Fact]

@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using StockFlow.BusinessLogic;
 using StockFlow.BusinessLogic.Warehouses;

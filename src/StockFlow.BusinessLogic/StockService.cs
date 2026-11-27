@@ -22,7 +22,7 @@ public sealed class StockService
         _warehouseRepository = warehouseRepository ?? throw new ArgumentNullException(nameof(warehouseRepository));
     }
 
-    public bool IsBelowThreshold(int quantity, int minThreshold) =>
+    public static bool IsBelowThreshold(int quantity, int minThreshold) =>
         minThreshold > 0 && quantity < minThreshold;
 
     public IReadOnlyList<StockBalanceDto> GetRows(int? warehouseId = null)
