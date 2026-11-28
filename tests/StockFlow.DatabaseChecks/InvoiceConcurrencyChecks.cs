@@ -1,3 +1,4 @@
+using System.Runtime.ExceptionServices;
 using Npgsql;
 using StockFlow.BusinessLogic;
 using StockFlow.BusinessLogic.Users;
@@ -19,25 +20,24 @@ internal static class InvoiceConcurrencyChecks
         var movements = new StockMovementRepository();
         try
         {
+            const string writeOffScenario = "parallel 8-from-10 write-offs";
             var writeOffProduct = CreateProduct("parallel-write-off", 10);
-            var writeOffs = await Race("parallel write-offs",
+            var writeOffs = await Race(writeOffScenario,
                 Movement("W1", writeOffProduct, MovementType.WriteOff, 8),
                 Movement("W2", writeOffProduct, MovementType.WriteOff, 8));
-            check(writeOffs.Count(x => x.IsSuccess) == 1 && writeOffs.Any(x => x.Error == "Спробуйте ще раз"),
-                "invoice concurrency: exactly one of two 8-from-10 write-offs commits and one gets a serialization refusal");
-            check(Quantity(writeOffProduct) == 2 && MovementCount(writeOffProduct) == 1 && Threshold(writeOffProduct) == 3,
-                "invoice concurrency: final stock 2, exactly one movement, original threshold unchanged");
+            var committedWriteOff = CheckRaceOutcome(writeOffScenario, writeOffs);
+            ReportFinalRows(writeOffScenario, writeOffProduct);
+            check(Quantity(writeOffProduct) == 2 && MovementCount(writeOffProduct) == 1 && Threshold(writeOffProduct) == 3 &&
+                (string)Sql("SELECT number FROM stock_movements WHERE product_id=@p", ("p", writeOffProduct)) == committedWriteOff.Number,
+                "invoice concurrency: final stock 2, exactly one committed movement, original threshold unchanged");
 
+            const string receiptScenario = "parallel first receipts";
             var receiptProduct = CreateProduct("parallel-receipt");
-            var receiptRequests = new[]
-            {
+            var receipts = await Race(receiptScenario,
                 Movement("R1", receiptProduct, MovementType.Receipt, 5),
-                Movement("R2", receiptProduct, MovementType.Receipt, 7)
-            };
-            var receipts = await Race("parallel first receipts", receiptRequests[0], receiptRequests[1]);
-            check(receipts.Count(x => x.IsSuccess) == 1 && receipts.Any(x => x.Error == "Спробуйте ще раз"),
-                "invoice concurrency: parallel first receipts yield one commit and one retry message");
-            var committed = receiptRequests[receipts[0].IsSuccess ? 0 : 1];
+                Movement("R2", receiptProduct, MovementType.Receipt, 7));
+            var committed = CheckRaceOutcome(receiptScenario, receipts);
+            ReportFinalRows(receiptScenario, receiptProduct);
             check((long)Sql("SELECT count(*) FROM stock WHERE product_id=@p AND warehouse_id=@w", ("p", receiptProduct), ("w", warehouseId)) == 1 &&
                 Quantity(receiptProduct) == committed.Quantity && Threshold(receiptProduct) == 0 && MovementCount(receiptProduct) == 1 &&
                 (string)Sql("SELECT number FROM stock_movements WHERE product_id=@p", ("p", receiptProduct)) == committed.Number,
@@ -65,24 +65,53 @@ internal static class InvoiceConcurrencyChecks
             tx.Commit();
         }
 
-        async Task<StockMovementRegistrationResult[]> Race(string scenario, StockMovement first, StockMovement second)
+        async Task<RegistrationAttempt[]> Race(string scenario, StockMovement first, StockMovement second)
         {
             using var gate = new Barrier(2);
             var boundary = new SynchronizedTransactions(transactions, gate, scenario);
             var service = new StockMovementService(employee, stocks, movements, boundary);
             return await Task.WhenAll(Run(first), Run(second));
 
-            async Task<StockMovementRegistrationResult> Run(StockMovement request)
+            async Task<RegistrationAttempt> Run(StockMovement request)
             {
                 try
                 {
-                    return await Task.Run(() => service.Register(request)).WaitAsync(WorkerTimeout);
+                    return await Task.Run(() => ObserveRegistration(service, request)).WaitAsync(WorkerTimeout);
                 }
                 catch (TimeoutException error)
                 {
                     throw new TimeoutException($"{scenario}: {request.Number} exceeded the 10-second worker timeout.", error);
                 }
             }
+        }
+
+        StockMovement CheckRaceOutcome(string scenario, IReadOnlyList<RegistrationAttempt> attempts)
+        {
+            check(attempts.Count(attempt => attempt.Result.IsSuccess) == 1 &&
+                attempts.Any(attempt => attempt.Result is { IsSuccess: false, Error: "Спробуйте ще раз" }),
+                $"invoice concurrency: {scenario} yields one commit and one retry message");
+            var committed = attempts.Single(attempt => attempt.Result.IsSuccess);
+            var refused = attempts.Single(attempt => !attempt.Result.IsSuccess);
+            var refusedStates = string.Join(", ", refused.SqlStates.Order(StringComparer.Ordinal));
+            var committedStates = string.Join(", ", committed.SqlStates.Order(StringComparer.Ordinal));
+            check(refused.SqlStates.SetEquals([PostgresErrorCodes.SerializationFailure]) && committed.SqlStates.Count == 0,
+                $"invoice concurrency: {scenario} refused {refused.Request.Number} with SQLSTATE [{refusedStates}], committed {committed.Request.Number} with SQLSTATE [{committedStates}]");
+            return committed.Request;
+        }
+
+        void ReportFinalRows(string scenario, int productId)
+        {
+            var stockRows = Sql("""
+                SELECT COALESCE(json_agg(rows), '[]'::json)::text
+                FROM (SELECT product_id, warehouse_id, quantity, min_threshold
+                      FROM stock WHERE product_id = @p ORDER BY warehouse_id) AS rows
+                """, ("p", productId));
+            var movementRows = Sql("""
+                SELECT COALESCE(json_agg(rows), '[]'::json)::text
+                FROM (SELECT number, type, product_id, warehouse_id, quantity
+                      FROM stock_movements WHERE product_id = @p ORDER BY number) AS rows
+                """, ("p", productId));
+            Console.WriteLine($"invoice concurrency: {scenario} final stock={stockRows}, stock_movements={movementRows}");
         }
 
         int CreateProduct(string label, int? quantity = null)
@@ -100,7 +129,11 @@ internal static class InvoiceConcurrencyChecks
 
         StockMovement Movement(string suffix, int product, MovementType type, int quantity) => new()
         {
-            Number = token + "-" + suffix, ProductId = product, WarehouseId = warehouseId, Type = type, Quantity = quantity,
+            Number = token + "-" + suffix,
+            ProductId = product,
+            WarehouseId = warehouseId,
+            Type = type,
+            Quantity = quantity,
             SupplierId = type == MovementType.Receipt ? supplierId : null,
             MovementDate = new DateTime(2026, 11, 26, 12, 0, 0, DateTimeKind.Unspecified)
         };
@@ -118,6 +151,34 @@ internal static class InvoiceConcurrencyChecks
             return command.ExecuteScalar()!;
         }
     }
+
+    private static RegistrationAttempt ObserveRegistration(StockMovementService service, StockMovement request)
+    {
+        var sqlStates = new HashSet<string>(StringComparer.Ordinal);
+        var workerId = Environment.CurrentManagedThreadId;
+
+        void RecordSqlState(object? sender, FirstChanceExceptionEventArgs args)
+        {
+            if (Environment.CurrentManagedThreadId == workerId && args.Exception is PostgresException error)
+                sqlStates.Add(error.SqlState);
+        }
+
+        // Observe the server exception before Register translates it into the user-facing refusal.
+        AppDomain.CurrentDomain.FirstChanceException += RecordSqlState;
+        try
+        {
+            return new RegistrationAttempt(request, service.Register(request), sqlStates);
+        }
+        finally
+        {
+            AppDomain.CurrentDomain.FirstChanceException -= RecordSqlState;
+        }
+    }
+
+    private sealed record RegistrationAttempt(
+        StockMovement Request,
+        StockMovementRegistrationResult Result,
+        IReadOnlySet<string> SqlStates);
 
     private sealed class SynchronizedTransactions(IStockTransactionFactory inner, Barrier gate, string scenario) : IStockTransactionFactory
     {
